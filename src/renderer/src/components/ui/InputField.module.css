@@ -1,0 +1,29 @@
+.field {
+  display: grid;
+  gap: var(--lab-space-2);
+}
+
+.label {
+  color: var(--lab-text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.control {
+  width: 100%;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lab-text);
+  padding: 10px 12px;
+}
+
+.mono {
+  font-family: var(--lab-font-mono);
+}
+
+.error {
+  color: #ff9fbf;
+  font-size: 0.8rem;
+}

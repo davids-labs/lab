@@ -1,0 +1,10 @@
+node_modules
+dist
+out
+release
+.DS_Store
+.eslintcache
+temp-ui
+scaffold-cache
+extract-electron-template
+quick-start-create-electron-1.0.30.tgz

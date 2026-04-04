@@ -1,0 +1,29 @@
+.stack {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  gap: 12px;
+  z-index: 60;
+}
+
+.toast {
+  min-width: 240px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--lab-border);
+  background: rgba(26, 29, 36, 0.95);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.success {
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+.error {
+  border-color: rgba(255, 42, 109, 0.35);
+}
+
+.info {
+  border-color: rgba(0, 229, 255, 0.35);
+}

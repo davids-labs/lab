@@ -1,0 +1,56 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lab-space-2);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  transition:
+    background var(--lab-transition),
+    border-color var(--lab-transition),
+    transform var(--lab-transition);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: var(--lab-primary);
+  color: #071016;
+}
+
+.ghost {
+  background: transparent;
+  border-color: var(--lab-border);
+  color: var(--lab-text);
+}
+
+.outline {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--lab-border);
+  color: var(--lab-text);
+}
+
+.danger {
+  background: rgba(255, 42, 109, 0.12);
+  border-color: rgba(255, 42, 109, 0.4);
+  color: #ffd7e4;
+}
+
+.sm {
+  padding: 8px 12px;
+  font-size: 0.84rem;
+}
+
+.lg {
+  padding: 12px 18px;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

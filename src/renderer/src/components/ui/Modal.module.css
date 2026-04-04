@@ -1,0 +1,30 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.66);
+  display: grid;
+  place-items: center;
+  padding: var(--lab-space-6);
+  z-index: 40;
+}
+
+.modal {
+  width: min(560px, 100%);
+  border-radius: 24px;
+  border: 1px solid var(--lab-border);
+  background: linear-gradient(180deg, rgba(35, 39, 48, 0.95), rgba(26, 29, 36, 0.98));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+}
+
+.header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.body {
+  padding: 20px 24px 24px;
+  display: grid;
+  gap: 16px;
+}
