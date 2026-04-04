@@ -1,0 +1,40 @@
+.handle {
+  position: relative;
+  width: 10px;
+  min-width: 10px;
+  cursor: col-resize;
+  background: rgba(8, 10, 14, 0.96);
+}
+
+.handle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background var(--lab-transition);
+}
+
+.handle:hover::before,
+.active::before {
+  background: rgba(0, 229, 255, 0.08);
+}
+
+.grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 56px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  transform: translate(-50%, -50%);
+  transition:
+    background var(--lab-transition),
+    height var(--lab-transition);
+}
+
+.handle:hover .grip,
+.active .grip {
+  height: 84px;
+  background: var(--lab-primary);
+}

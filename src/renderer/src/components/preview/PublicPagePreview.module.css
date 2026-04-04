@@ -1,11 +1,12 @@
 .panel {
-  width: 420px;
-  min-width: 360px;
+  width: 100%;
+  min-width: 0;
   border-left: 1px solid var(--lab-border-2);
   background: rgba(13, 15, 18, 0.98);
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .header {
@@ -17,7 +18,13 @@
   border-bottom: 1px solid var(--lab-border-2);
 }
 
+.body {
+  flex: 1;
+  min-height: 0;
+}
+
 .frame {
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;

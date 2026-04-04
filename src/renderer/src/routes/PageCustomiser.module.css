@@ -1,9 +1,10 @@
 .shell {
-  min-height: calc(100vh - 56px);
+  flex: 1;
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: var(--page-customiser-sidebar-width) 10px minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .panel {
@@ -14,6 +15,8 @@
   gap: 18px;
   align-content: start;
   overflow: auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .sectionCard {
@@ -33,4 +36,5 @@
 .preview {
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }

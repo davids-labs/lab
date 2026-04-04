@@ -1,10 +1,12 @@
 import { useCallback, useEffect } from 'react'
+import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { BlockPickerModal } from '@renderer/components/canvas/BlockPickerModal'
 import { Canvas } from '@renderer/components/canvas/Canvas'
-import { PublicPagePreview } from '@renderer/components/preview/PublicPagePreview'
 import { WorkspaceSidebar } from '@renderer/components/sidebar/WorkspaceSidebar'
+import { ResizeHandle } from '@renderer/components/ui/ResizeHandle'
 import { TitleBar } from '@renderer/components/workspace/TitleBar'
+import { useResizableWidth } from '@renderer/hooks/useResizableWidth'
 import { useAssetStore } from '@renderer/stores/assetStore'
 import { useBlockStore } from '@renderer/stores/blockStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
@@ -24,8 +26,15 @@ export function Workspace(): JSX.Element {
   const assets = useAssetStore((state) => state.assets)
   const importAsset = useAssetStore((state) => state.importAsset)
   const loadAssets = useAssetStore((state) => state.loadAssets)
-  const previewVisible = useUiStore((state) => state.previewVisible)
+  const workspaceSidebarWidth = useUiStore((state) => state.workspaceSidebarWidth)
+  const setWorkspaceSidebarWidth = useUiStore((state) => state.setWorkspaceSidebarWidth)
   const pushToast = useToastStore((state) => state.push)
+  const { isResizing, onPointerDown } = useResizableWidth({
+    value: workspaceSidebarWidth,
+    min: 240,
+    max: 520,
+    onChange: setWorkspaceSidebarWidth
+  })
 
   useEffect(() => {
     if (!projectId) {
@@ -71,13 +80,25 @@ export function Workspace(): JSX.Element {
   return (
     <div className="routeShell">
       <TitleBar project={project} view="workspace" />
-      <div className={styles.shell}>
+      <div
+        className={styles.shell}
+        style={
+          {
+            '--workspace-sidebar-width': `${workspaceSidebarWidth}px`
+          } as CSSProperties
+        }
+      >
         <WorkspaceSidebar
           activeBlockId={activeBlockId}
           assets={assets}
           blocks={blocks}
           onFocusBlock={setActiveBlock}
           onImportAssets={() => void handleImportAssets()}
+        />
+        <ResizeHandle
+          active={isResizing}
+          ariaLabel="Resize workspace sidebar"
+          onPointerDown={onPointerDown}
         />
         <main className={styles.main}>
           <Canvas activeBlockId={activeBlockId} blocks={blocks} />
@@ -88,9 +109,6 @@ export function Workspace(): JSX.Element {
             <span>{blocks.filter((block) => block.visible_on_page).length} visible on page</span>
           </div>
         </main>
-        {previewVisible ? (
-          <PublicPagePreview blocks={blocks} onFocusBlock={setActiveBlock} project={project} />
-        ) : null}
       </div>
       <BlockPickerModal projectId={projectId} />
     </div>

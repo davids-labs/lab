@@ -2,6 +2,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { ToastStack } from '@renderer/components/ui/ToastStack'
 import { Dashboard } from '@renderer/routes/Dashboard'
 import { PageCustomiser } from '@renderer/routes/PageCustomiser'
+import { ProjectPreview } from '@renderer/routes/ProjectPreview'
 import { Workspace } from '@renderer/routes/Workspace'
 import './styles/app.css'
 
@@ -17,6 +18,10 @@ const router = createMemoryRouter([
   {
     path: '/project/:id/customise',
     element: <PageCustomiser />
+  },
+  {
+    path: '/project/:id/preview',
+    element: <ProjectPreview />
   }
 ])
 

@@ -1,11 +1,11 @@
 .sidebar {
-  width: 280px;
-  min-width: 280px;
   border-right: 1px solid var(--lab-border-2);
   background: rgba(15, 17, 22, 0.94);
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tabs {

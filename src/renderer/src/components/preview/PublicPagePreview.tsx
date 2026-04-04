@@ -75,12 +75,14 @@ export function PublicPagePreview({
           Refresh
         </Button>
       </div>
-      <iframe
-        className={styles.frame}
-        srcDoc={html}
-        sandbox="allow-scripts allow-same-origin"
-        title="Public page preview"
-      />
+      <div className={styles.body}>
+        <iframe
+          className={styles.frame}
+          srcDoc={html}
+          sandbox="allow-scripts allow-same-origin"
+          title="Public page preview"
+        />
+      </div>
     </aside>
   )
 }

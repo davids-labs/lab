@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { TitleBar } from '@renderer/components/workspace/TitleBar'
 import { PublicPagePreview } from '@renderer/components/preview/PublicPagePreview'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
+import { ResizeHandle } from '@renderer/components/ui/ResizeHandle'
+import { useResizableWidth } from '@renderer/hooks/useResizableWidth'
 import { useBlockStore } from '@renderer/stores/blockStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
@@ -20,8 +23,16 @@ export function PageCustomiser(): JSX.Element {
   const loadBlocks = useBlockStore((state) => state.loadBlocks)
   const setActiveBlock = useBlockStore((state) => state.setActiveBlock)
   const pushToast = useToastStore((state) => state.push)
+  const pageCustomiserSidebarWidth = useUiStore((state) => state.pageCustomiserSidebarWidth)
+  const setPageCustomiserSidebarWidth = useUiStore((state) => state.setPageCustomiserSidebarWidth)
   const setSaveState = useUiStore((state) => state.setSaveState)
   const [draftConfig, setDraftConfig] = useState(project?.page_config ?? null)
+  const { isResizing, onPointerDown } = useResizableWidth({
+    value: pageCustomiserSidebarWidth,
+    min: 280,
+    max: 520,
+    onChange: setPageCustomiserSidebarWidth
+  })
 
   useEffect(() => {
     if (!projectId) {
@@ -85,7 +96,14 @@ export function PageCustomiser(): JSX.Element {
   return (
     <div className="routeShell">
       <TitleBar project={project} view="customise" />
-      <div className={styles.shell}>
+      <div
+        className={styles.shell}
+        style={
+          {
+            '--page-customiser-sidebar-width': `${pageCustomiserSidebarWidth}px`
+          } as CSSProperties
+        }
+      >
         <aside className={styles.panel}>
           <div>
             <div className={styles.muted}>Sections</div>
@@ -273,6 +291,11 @@ export function PageCustomiser(): JSX.Element {
             </select>
           </label>
         </aside>
+        <ResizeHandle
+          active={isResizing}
+          ariaLabel="Resize customiser sidebar"
+          onPointerDown={onPointerDown}
+        />
 
         <div className={styles.preview}>
           <PublicPagePreview

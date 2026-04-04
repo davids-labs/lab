@@ -4,20 +4,18 @@ import type { Project } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
 import { useProjectStore } from '@renderer/stores/projectStore'
-import { useUiStore } from '@renderer/stores/uiStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import styles from './TitleBar.module.css'
 
 interface TitleBarProps {
   project: Project
-  view: 'workspace' | 'customise'
+  view: 'workspace' | 'customise' | 'preview'
 }
 
 export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const navigate = useNavigate()
   const updateProject = useProjectStore((state) => state.updateProject)
-  const previewVisible = useUiStore((state) => state.previewVisible)
-  const togglePreview = useUiStore((state) => state.togglePreview)
   const saveState = useUiStore((state) => state.saveState)
   const pushToast = useToastStore((state) => state.push)
   const [editingName, setEditingName] = useState(false)
@@ -113,11 +111,13 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
         >
           Customise
         </Button>
-        {view === 'workspace' ? (
-          <Button variant="outline" size="sm" onClick={togglePreview}>
-            {previewVisible ? 'Hide Preview' : 'Show Preview'}
-          </Button>
-        ) : null}
+        <Button
+          variant={view === 'preview' ? 'primary' : 'outline'}
+          size="sm"
+          onClick={() => navigate(`/project/${project.id}/preview`)}
+        >
+          Public Page
+        </Button>
         <Button
           variant="outline"
           size="sm"
