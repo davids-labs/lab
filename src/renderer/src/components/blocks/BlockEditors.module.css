@@ -1,0 +1,83 @@
+.stack {
+  display: grid;
+  gap: var(--lab-space-3);
+}
+
+.row {
+  display: flex;
+  gap: var(--lab-space-3);
+  flex-wrap: wrap;
+}
+
+.row > * {
+  flex: 1 1 180px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--lab-border);
+  padding: 8px;
+  vertical-align: top;
+}
+
+.table input,
+.table textarea {
+  width: 100%;
+}
+
+.smallButton {
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lab-text);
+  padding: 7px 10px;
+  font-size: 0.8rem;
+}
+
+.card {
+  border: 1px solid var(--lab-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  display: grid;
+  gap: var(--lab-space-3);
+}
+
+.muted {
+  color: var(--lab-text-muted);
+}
+
+.checkboxList {
+  display: grid;
+  gap: var(--lab-space-2);
+}
+
+.checkboxRow {
+  display: flex;
+  gap: var(--lab-space-2);
+  align-items: center;
+}
+
+.pillSelect {
+  display: flex;
+  gap: var(--lab-space-2);
+  flex-wrap: wrap;
+}
+
+.pill {
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lab-text);
+  padding: 7px 10px;
+}
+
+.pillActive {
+  border-color: rgba(0, 229, 255, 0.4);
+  background: var(--lab-primary-dim);
+}

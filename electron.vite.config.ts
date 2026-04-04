@@ -6,14 +6,16 @@ export default defineConfig({
   main: {
     resolve: {
       alias: {
-        '@shared': resolve('src/shared')
+        '@shared': resolve('src/shared'),
+        '@preload': resolve('src/preload')
       }
     }
   },
   preload: {
     resolve: {
       alias: {
-        '@shared': resolve('src/shared')
+        '@shared': resolve('src/shared'),
+        '@preload': resolve('src/preload')
       }
     }
   },
@@ -21,7 +23,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@shared': resolve('src/shared')
+        '@shared': resolve('src/shared'),
+        '@preload': resolve('src/preload')
       }
     },
     plugins: [react()]

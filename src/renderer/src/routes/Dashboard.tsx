@@ -10,14 +10,8 @@ import { formatRelativeTime } from '@renderer/utils/relativeTime'
 
 export function Dashboard(): JSX.Element {
   const navigate = useNavigate()
-  const {
-    createProject,
-    deleteProject,
-    filter,
-    loadProjects,
-    projects,
-    setFilter
-  } = useProjectStore()
+  const { createProject, deleteProject, filter, loadProjects, projects, setFilter } =
+    useProjectStore()
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState<Project['type']>('build')
@@ -47,10 +41,22 @@ export function Dashboard(): JSX.Element {
 
   return (
     <div style={{ padding: 32, display: 'grid', gap: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}
+      >
         <div>
-          <div style={{ color: 'var(--lab-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>LAB</div>
-          <h1 style={{ margin: '8px 0 0', fontFamily: 'var(--lab-font-sans)' }}>Project Workspace</h1>
+          <div
+            style={{
+              color: 'var(--lab-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em'
+            }}
+          >
+            LAB
+          </div>
+          <h1 style={{ margin: '8px 0 0', fontFamily: 'var(--lab-font-sans)' }}>
+            Project Workspace
+          </h1>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New Project</Button>
       </div>
@@ -101,10 +107,21 @@ export function Dashboard(): JSX.Element {
               <Badge type={project.type} />
               <div>
                 <h2 style={{ margin: 0, fontFamily: 'var(--lab-font-sans)' }}>{project.name}</h2>
-                <p style={{ margin: '6px 0 0', color: 'var(--lab-text-muted)' }}>{project.subtitle || 'No subtitle yet'}</p>
+                <p style={{ margin: '6px 0 0', color: 'var(--lab-text-muted)' }}>
+                  {project.subtitle || 'No subtitle yet'}
+                </p>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: 'var(--lab-text-muted)' }}>Updated {formatRelativeTime(project.updated_at)}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  alignItems: 'center'
+                }}
+              >
+                <span style={{ color: 'var(--lab-text-muted)' }}>
+                  Updated {formatRelativeTime(project.updated_at)}
+                </span>
                 <Button
                   variant="danger"
                   size="sm"
@@ -123,9 +140,20 @@ export function Dashboard(): JSX.Element {
 
       {createOpen ? (
         <Modal onClose={() => setCreateOpen(false)} title="Create Project">
-          <InputField label="Project Name" value={name} onChange={(event) => setName(event.target.value)} />
+          <InputField
+            label="Project Name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
           <label style={{ display: 'grid', gap: 8 }}>
-            <span style={{ color: 'var(--lab-text-muted)', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <span
+              style={{
+                color: 'var(--lab-text-muted)',
+                fontSize: '0.82rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em'
+              }}
+            >
               Type
             </span>
             <select

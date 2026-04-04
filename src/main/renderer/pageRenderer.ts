@@ -200,7 +200,9 @@ const INTERACTIVE_JS = `
 `
 
 function buildGoogleFontsUrl(project: Project): string {
-  const fonts = [...new Set([project.page_config.theme.fontHeading, project.page_config.theme.fontBody])]
+  const fonts = [
+    ...new Set([project.page_config.theme.fontHeading, project.page_config.theme.fontBody])
+  ]
   const families = fonts
     .filter(Boolean)
     .map((font) => `family=${encodeURIComponent(font)}:wght@400;500;600;700;800`)
@@ -235,7 +237,9 @@ function toYoutubeEmbed(url: string): string {
 }
 
 function buildSectionTitle(block: Block, project: Project): string {
-  const customTitle = project.page_config.sections.find((section) => section.blockId === block.id)?.customTitle
+  const customTitle = project.page_config.sections.find(
+    (section) => section.blockId === block.id
+  )?.customTitle
   if (customTitle) {
     return customTitle
   }
@@ -243,7 +247,9 @@ function buildSectionTitle(block: Block, project: Project): string {
   if (block.type === 'markdown') {
     const markdown = block.data as MarkdownData
     const frontmatter = matter(markdown.raw)
-    return typeof frontmatter.data.title === 'string' ? frontmatter.data.title : BLOCK_LABELS.markdown
+    return typeof frontmatter.data.title === 'string'
+      ? frontmatter.data.title
+      : BLOCK_LABELS.markdown
   }
 
   return BLOCK_LABELS[block.type]
@@ -442,7 +448,10 @@ export function renderProjectHtml(projectId: string, mode: RenderMode = 'preview
 </html>`
 }
 
-export function writeHtmlExport(projectId: string, outputPath: string): { ok: boolean; path: string } {
+export function writeHtmlExport(
+  projectId: string,
+  outputPath: string
+): { ok: boolean; path: string } {
   fs.writeFileSync(outputPath, renderProjectHtml(projectId, 'export'), 'utf8')
   return { ok: true, path: outputPath }
 }
@@ -461,7 +470,9 @@ export async function writeZipExport(
     archive.append(renderProjectHtml(projectId, 'export'), { name: 'index.html' })
 
     assetQueries.list(projectId).forEach((asset: Asset) => {
-      archive.file(asset.stored_path, { name: path.join('assets', path.basename(asset.stored_path)) })
+      archive.file(asset.stored_path, {
+        name: path.join('assets', path.basename(asset.stored_path))
+      })
     })
 
     void archive.finalize()

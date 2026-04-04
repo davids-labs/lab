@@ -4,13 +4,18 @@ import { projectQueries } from '../db/queries/projects'
 import { renderProjectHtml, writeHtmlExport, writeZipExport } from '../renderer/pageRenderer'
 
 export function registerPageHandlers(): void {
-  ipcMain.handle('page:render', async (_event, projectId: string): Promise<string> =>
-    renderProjectHtml(projectId, 'preview')
+  ipcMain.handle(
+    'page:render',
+    async (_event, projectId: string): Promise<string> => renderProjectHtml(projectId, 'preview')
   )
 
   ipcMain.handle(
     'page:export-html',
-    async (_event, projectId: string, outputPath?: string): Promise<{ ok: boolean; path?: string }> => {
+    async (
+      _event,
+      projectId: string,
+      outputPath?: string
+    ): Promise<{ ok: boolean; path?: string }> => {
       const project = projectQueries.get(projectId)
       const finalPath =
         outputPath ??
@@ -32,7 +37,11 @@ export function registerPageHandlers(): void {
 
   ipcMain.handle(
     'page:export-zip',
-    async (_event, projectId: string, outputPath?: string): Promise<{ ok: boolean; path?: string }> => {
+    async (
+      _event,
+      projectId: string,
+      outputPath?: string
+    ): Promise<{ ok: boolean; path?: string }> => {
       const project = projectQueries.get(projectId)
       const finalPath =
         outputPath ??

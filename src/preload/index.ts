@@ -23,8 +23,10 @@ const bridge: LabBridge = {
   },
   page: {
     render: (projectId) => ipcRenderer.invoke('page:render', projectId),
-    exportHtml: (projectId, outputPath) => ipcRenderer.invoke('page:export-html', projectId, outputPath),
-    exportZip: (projectId, outputPath) => ipcRenderer.invoke('page:export-zip', projectId, outputPath)
+    exportHtml: (projectId, outputPath) =>
+      ipcRenderer.invoke('page:export-html', projectId, outputPath),
+    exportZip: (projectId, outputPath) =>
+      ipcRenderer.invoke('page:export-zip', projectId, outputPath)
   },
   git: {
     init: (projectId) => ipcRenderer.invoke('git:init', projectId),

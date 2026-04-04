@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: app
+appId: com.david.lab
+productName: LAB
 directories:
   buildResources: build
 files:
@@ -11,8 +11,9 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - 'resources/**'
+  - 'node_modules/better-sqlite3/**'
 win:
-  executableName: app
+  executableName: lab
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -33,11 +34,8 @@ linux:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: David
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

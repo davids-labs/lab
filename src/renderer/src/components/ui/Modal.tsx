@@ -11,7 +11,12 @@ interface ModalProps {
 export function Modal({ children, onClose, title }: ModalProps): JSX.Element {
   return (
     <div className={styles.backdrop} onClick={onClose} role="presentation">
-      <div className={styles.modal} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className={styles.modal}
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className={styles.header}>
           <strong>{title}</strong>
           <Button variant="ghost" size="sm" onClick={onClose}>

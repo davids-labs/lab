@@ -8,3 +8,4 @@ temp-ui
 scaffold-cache
 extract-electron-template
 quick-start-create-electron-1.0.30.tgz
+npm-tree.json

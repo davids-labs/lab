@@ -1,9 +1,4 @@
-import type {
-  BlockDataMap,
-  BlockType,
-  PublicPageConfig,
-  PublicPageSection
-} from '../preload/types'
+import type { BlockDataMap, BlockType, PublicPageConfig, PublicPageSection } from '../preload/types'
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   bom: 'Bill of Materials',
@@ -21,6 +16,21 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 }
 
 export const WORKSPACE_ONLY_BLOCK_TYPES: BlockType[] = ['note', 'todo']
+
+export const BLOCK_GROUPS: Array<{ title: string; types: BlockType[] }> = [
+  {
+    title: 'Structured',
+    types: ['bom', 'build_guide', 'how_it_works', 'case_study', 'spec_table']
+  },
+  {
+    title: 'Media & Content',
+    types: ['image_gallery', 'markdown', 'text', 'link', 'embed']
+  },
+  {
+    title: 'Workspace Only',
+    types: ['note', 'todo']
+  }
+]
 
 const DEFAULT_PAGE_CONFIG: PublicPageConfig = {
   theme: {

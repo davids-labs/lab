@@ -1,0 +1,39 @@
+.bar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lab-space-4);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--lab-border-2);
+  background: rgba(26, 29, 36, 0.94);
+}
+
+.left,
+.right {
+  display: flex;
+  align-items: center;
+  gap: var(--lab-space-3);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--lab-space-2);
+  min-width: 0;
+}
+
+.title input {
+  min-width: 240px;
+}
+
+.projectName {
+  font-family: var(--lab-font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.status {
+  color: var(--lab-text-muted);
+  font-size: 0.84rem;
+}

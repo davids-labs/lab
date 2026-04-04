@@ -11,7 +11,13 @@ interface SharedFieldProps {
 
 type InputFieldProps = SharedFieldProps & InputHTMLAttributes<HTMLInputElement>
 
-export function InputField({ className, error, label, mono, ...props }: InputFieldProps): JSX.Element {
+export function InputField({
+  className,
+  error,
+  label,
+  mono,
+  ...props
+}: InputFieldProps): JSX.Element {
   return (
     <label className={clsx(styles.field, className)}>
       {label ? <span className={styles.label}>{label}</span> : null}

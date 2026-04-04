@@ -3,7 +3,11 @@ import { ulid } from 'ulidx'
 import type { Block, UpsertBlockInput } from '../../../preload/types'
 import { createDefaultBlockData, getDefaultVisibility } from '@shared/defaults'
 import { calculateNextSortOrder } from '@shared/fractionalOrder'
-import { parseBlockData, validateReorderBlocksInput, validateUpsertBlockInput } from '@shared/validation'
+import {
+  parseBlockData,
+  validateReorderBlocksInput,
+  validateUpsertBlockInput
+} from '@shared/validation'
 import { getDb } from '../index'
 import { blocksTable, type BlockRow } from '../schema'
 import { projectQueries } from './projects'

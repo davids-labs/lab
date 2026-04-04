@@ -4,7 +4,10 @@ import { projectQueries } from '../db/queries/projects'
 
 export function registerProjectHandlers(): void {
   ipcMain.handle('project:list', async (): Promise<Project[]> => projectQueries.list())
-  ipcMain.handle('project:get', async (_event, id: string): Promise<Project> => projectQueries.get(id))
+  ipcMain.handle(
+    'project:get',
+    async (_event, id: string): Promise<Project> => projectQueries.get(id)
+  )
   ipcMain.handle(
     'project:create',
     async (_event, input: CreateProjectInput): Promise<Project> => projectQueries.create(input)
@@ -13,7 +16,8 @@ export function registerProjectHandlers(): void {
     'project:update',
     async (_event, input: UpdateProjectInput): Promise<Project> => projectQueries.update(input)
   )
-  ipcMain.handle('project:delete', async (_event, id: string): Promise<{ ok: boolean }> =>
-    projectQueries.delete(id)
+  ipcMain.handle(
+    'project:delete',
+    async (_event, id: string): Promise<{ ok: boolean }> => projectQueries.delete(id)
   )
 }

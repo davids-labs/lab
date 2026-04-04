@@ -3,10 +3,18 @@ import { desc, eq } from 'drizzle-orm'
 import { ulid } from 'ulidx'
 import type { Block, CreateProjectInput, Project, UpdateProjectInput } from '../../../preload/types'
 import { WORKSPACE_ONLY_BLOCK_TYPES, cloneDefaultPageConfig } from '@shared/defaults'
-import { parsePageConfig, validateCreateProjectInput, validateUpdateProjectInput } from '@shared/validation'
+import {
+  parsePageConfig,
+  validateCreateProjectInput,
+  validateUpdateProjectInput
+} from '@shared/validation'
 import { getDb } from '../index'
 import { projectsTable, type ProjectRow } from '../schema'
-import { assertPathInsideProjects, ensureProjectDirectories, getProjectDir } from '../../services/appPaths'
+import {
+  assertPathInsideProjects,
+  ensureProjectDirectories,
+  getProjectDir
+} from '../../services/appPaths'
 import { slugify } from '../../utils/slugify'
 
 function deserializeProject(row: ProjectRow): Project {

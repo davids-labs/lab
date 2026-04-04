@@ -1,0 +1,45 @@
+.editor {
+  display: grid;
+  gap: var(--lab-space-2);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--lab-space-2);
+  flex-wrap: wrap;
+}
+
+.button {
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lab-text);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.active {
+  background: var(--lab-primary-dim);
+  border-color: rgba(0, 229, 255, 0.42);
+}
+
+.surface {
+  min-height: 160px;
+  border: 1px solid var(--lab-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+}
+
+.surface :global(.ProseMirror) {
+  min-height: 132px;
+  outline: none;
+}
+
+.surface :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  color: var(--lab-text-faint);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
