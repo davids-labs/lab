@@ -21,6 +21,42 @@ const router = createMemoryRouter([
 ])
 
 export function App(): JSX.Element {
+  if (typeof window.lab === 'undefined') {
+    return (
+      <div
+        className="appShell"
+        style={{ display: 'grid', placeItems: 'center', padding: 32, minHeight: '100vh' }}
+      >
+        <div
+          style={{
+            width: 'min(560px, 100%)',
+            display: 'grid',
+            gap: 12,
+            padding: 24,
+            borderRadius: 24,
+            border: '1px solid var(--lab-border)',
+            background: 'rgba(16, 18, 23, 0.96)'
+          }}
+        >
+          <div
+            style={{
+              color: 'var(--lab-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em'
+            }}
+          >
+            LAB
+          </div>
+          <h1 style={{ margin: 0, fontFamily: 'var(--lab-font-sans)' }}>App bridge unavailable</h1>
+          <p style={{ margin: 0, color: 'var(--lab-text-muted)' }}>
+            The Electron preload script did not load, so LAB cannot talk to the local database or
+            filesystem. Restart the app or rebuild the release.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="appShell">
       <RouterProvider router={router} />

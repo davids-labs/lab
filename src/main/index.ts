@@ -1,4 +1,5 @@
 import { app, shell, BrowserWindow } from 'electron'
+import fs from 'node:fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -12,6 +13,10 @@ import { registerSystemHandlers } from './ipc/system'
 import { initializeAppPaths } from './services/appPaths'
 
 function createWindow(): void {
+  const preloadPath = fs.existsSync(join(__dirname, '../preload/index.mjs'))
+    ? join(__dirname, '../preload/index.mjs')
+    : join(__dirname, '../preload/index.js')
+
   const mainWindow = new BrowserWindow({
     width: 1560,
     height: 980,
@@ -23,7 +28,7 @@ function createWindow(): void {
     title: 'LAB',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true

@@ -62,30 +62,51 @@ export const useProjectStore = create<ProjectStore>((set) => ({
   },
 
   async createProject(input) {
-    const project = await window.lab.project.create(input)
-    set((state) => ({
-      projects: [project, ...state.projects],
-      activeProjectId: project.id,
-      activeProject: project
-    }))
-    return project
+    try {
+      const project = await window.lab.project.create(input)
+      set((state) => ({
+        projects: [project, ...state.projects],
+        activeProjectId: project.id,
+        activeProject: project,
+        error: null
+      }))
+      return project
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create project'
+      set({ error: message })
+      throw new Error(message)
+    }
   },
 
   async updateProject(input) {
-    const project = await window.lab.project.update(input)
-    set((state) => ({
-      activeProject: state.activeProject?.id === project.id ? project : state.activeProject,
-      projects: state.projects.map((entry) => (entry.id === project.id ? project : entry))
-    }))
-    return project
+    try {
+      const project = await window.lab.project.update(input)
+      set((state) => ({
+        activeProject: state.activeProject?.id === project.id ? project : state.activeProject,
+        projects: state.projects.map((entry) => (entry.id === project.id ? project : entry)),
+        error: null
+      }))
+      return project
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update project'
+      set({ error: message })
+      throw new Error(message)
+    }
   },
 
   async deleteProject(id) {
-    await window.lab.project.delete(id)
-    set((state) => ({
-      projects: state.projects.filter((project) => project.id !== id),
-      activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
-      activeProject: state.activeProject?.id === id ? null : state.activeProject
-    }))
+    try {
+      await window.lab.project.delete(id)
+      set((state) => ({
+        projects: state.projects.filter((project) => project.id !== id),
+        activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
+        activeProject: state.activeProject?.id === id ? null : state.activeProject,
+        error: null
+      }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete project'
+      set({ error: message })
+      throw new Error(message)
+    }
   }
 }))

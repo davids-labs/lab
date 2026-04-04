@@ -6,14 +6,18 @@ import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
 import { Modal } from '@renderer/components/ui/Modal'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useToastStore } from '@renderer/stores/toastStore'
 import { formatRelativeTime } from '@renderer/utils/relativeTime'
 
 export function Dashboard(): JSX.Element {
   const navigate = useNavigate()
-  const { createProject, deleteProject, filter, loadProjects, projects, setFilter } =
+  const { createProject, deleteProject, error, filter, loadProjects, projects, setFilter } =
     useProjectStore()
+  const pushToast = useToastStore((state) => state.push)
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
+  const [nameError, setNameError] = useState<string | undefined>()
+  const [isCreating, setIsCreating] = useState(false)
   const [type, setType] = useState<Project['type']>('build')
 
   useEffect(() => {
@@ -29,14 +33,30 @@ export function Dashboard(): JSX.Element {
   }, [filter, projects])
 
   async function handleCreate(): Promise<void> {
-    if (!name.trim()) {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
+      setNameError('Project name is required.')
+      pushToast({ message: 'Add a project name before creating it.', type: 'error' })
       return
     }
 
-    const project = await createProject({ name, type })
-    setCreateOpen(false)
-    setName('')
-    navigate(`/project/${project.id}`)
+    setIsCreating(true)
+    setNameError(undefined)
+
+    try {
+      const project = await createProject({ name: trimmedName, type })
+      setCreateOpen(false)
+      setName('')
+      navigate(`/project/${project.id}`)
+    } catch (error) {
+      pushToast({
+        message: error instanceof Error ? error.message : 'Failed to create project.',
+        type: 'error'
+      })
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
@@ -73,6 +93,20 @@ export function Dashboard(): JSX.Element {
           </Button>
         ))}
       </div>
+
+      {error ? (
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 18,
+            border: '1px solid rgba(255, 104, 104, 0.25)',
+            background: 'rgba(255, 104, 104, 0.08)',
+            color: '#ffd5d5'
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
 
       <div
         style={{
@@ -143,7 +177,13 @@ export function Dashboard(): JSX.Element {
           <InputField
             label="Project Name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            error={nameError}
+            onChange={(event) => {
+              setName(event.target.value)
+              if (nameError) {
+                setNameError(undefined)
+              }
+            }}
           />
           <label style={{ display: 'grid', gap: 8 }}>
             <span
@@ -173,7 +213,9 @@ export function Dashboard(): JSX.Element {
               <option value="concept">Concept</option>
             </select>
           </label>
-          <Button onClick={() => void handleCreate()}>Create</Button>
+          <Button disabled={isCreating} onClick={() => void handleCreate()}>
+            {isCreating ? 'Creating…' : 'Create'}
+          </Button>
         </Modal>
       ) : null}
     </div>

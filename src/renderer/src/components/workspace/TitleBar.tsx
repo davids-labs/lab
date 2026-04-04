@@ -22,6 +22,7 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const pushToast = useToastStore((state) => state.push)
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState(project.name)
+  const [exporting, setExporting] = useState<'html' | 'zip' | null>(null)
 
   useEffect(() => setDraftName(project.name), [project.name])
 
@@ -34,6 +35,37 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
 
     await updateProject({ id: project.id, name: draftName.trim() })
     setEditingName(false)
+  }
+
+  async function handleExport(kind: 'html' | 'zip'): Promise<void> {
+    setExporting(kind)
+
+    try {
+      const result =
+        kind === 'html'
+          ? await window.lab.page.exportHtml(project.id)
+          : await window.lab.page.exportZip(project.id)
+
+      if (!result.ok) {
+        pushToast({
+          message: `Cancelled ${kind.toUpperCase()} export.`,
+          type: 'info'
+        })
+        return
+      }
+
+      pushToast({
+        message: `Exported ${kind.toUpperCase()} to ${result.path}`,
+        type: 'success'
+      })
+    } catch (error) {
+      pushToast({
+        message: error instanceof Error ? error.message : `Failed to export ${kind.toUpperCase()}.`,
+        type: 'error'
+      })
+    } finally {
+      setExporting(null)
+    }
   }
 
   return (
@@ -89,28 +121,18 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
-            void window.lab.page.exportHtml(project.id).then((result) => {
-              if (result.ok) {
-                pushToast({ message: `Exported HTML to ${result.path}`, type: 'success' })
-              }
-            })
-          }
+          disabled={exporting !== null}
+          onClick={() => void handleExport('html')}
         >
-          Export HTML
+          {exporting === 'html' ? 'Exporting HTML…' : 'Export HTML'}
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() =>
-            void window.lab.page.exportZip(project.id).then((result) => {
-              if (result.ok) {
-                pushToast({ message: `Exported ZIP to ${result.path}`, type: 'success' })
-              }
-            })
-          }
+          disabled={exporting !== null}
+          onClick={() => void handleExport('zip')}
         >
-          Export ZIP
+          {exporting === 'zip' ? 'Exporting ZIP…' : 'Export ZIP'}
         </Button>
         <span className={styles.status}>
           {saveState === 'saved'

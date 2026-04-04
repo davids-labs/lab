@@ -7,6 +7,7 @@ import { InputField } from '@renderer/components/ui/InputField'
 import { useBlockStore } from '@renderer/stores/blockStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import styles from './PageCustomiser.module.css'
 
 export function PageCustomiser(): JSX.Element {
@@ -19,6 +20,7 @@ export function PageCustomiser(): JSX.Element {
   const loadBlocks = useBlockStore((state) => state.loadBlocks)
   const setActiveBlock = useBlockStore((state) => state.setActiveBlock)
   const pushToast = useToastStore((state) => state.push)
+  const setSaveState = useUiStore((state) => state.setSaveState)
   const [draftConfig, setDraftConfig] = useState(project?.page_config ?? null)
 
   useEffect(() => {
@@ -48,14 +50,25 @@ export function PageCustomiser(): JSX.Element {
       return
     }
 
+    setSaveState('saving')
+
     const timer = window.setTimeout(() => {
-      void updateProject({ id: project.id, page_config: draftConfig }).then(() => {
-        pushToast({ message: 'Updated public page settings', type: 'success' })
-      })
+      void updateProject({ id: project.id, page_config: draftConfig })
+        .then(() => {
+          setSaveState('saved')
+        })
+        .catch((error) => {
+          setSaveState('error')
+          pushToast({
+            message:
+              error instanceof Error ? error.message : 'Failed to update public page settings.',
+            type: 'error'
+          })
+        })
     }, 500)
 
     return () => window.clearTimeout(timer)
-  }, [draftConfig, project, pushToast, updateProject])
+  }, [draftConfig, project, pushToast, setSaveState, updateProject])
 
   const sections = useMemo(() => {
     if (!draftConfig) {
