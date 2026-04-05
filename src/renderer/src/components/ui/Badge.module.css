@@ -3,7 +3,7 @@
   align-items: center;
   gap: var(--lab-space-1);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;

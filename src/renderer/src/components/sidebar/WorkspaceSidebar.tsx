@@ -67,8 +67,8 @@ export function WorkspaceSidebar({
                 style={
                   activeBlockId === block.id
                     ? {
-                        borderColor: 'rgba(0, 229, 255, 0.4)',
-                        background: 'rgba(0, 229, 255, 0.08)'
+                        borderColor: 'rgba(79, 140, 255, 0.4)',
+                        background: 'rgba(79, 140, 255, 0.08)'
                       }
                     : undefined
                 }

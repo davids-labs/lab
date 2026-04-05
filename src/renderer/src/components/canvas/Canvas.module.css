@@ -14,24 +14,24 @@
 
 .addButton {
   border: 1px dashed var(--lab-border);
-  border-radius: 18px;
+  border-radius: 10px;
   padding: 18px;
   color: var(--lab-text-muted);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--lab-surface);
 }
 
 .wrapper {
   display: grid;
   gap: 10px;
   border: 1px solid var(--lab-border);
-  border-radius: 20px;
-  background: rgba(26, 29, 36, 0.94);
+  border-radius: 12px;
+  background: var(--lab-surface);
   padding: 14px;
 }
 
 .active {
-  border-color: rgba(0, 229, 255, 0.4);
-  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2);
+  border-color: rgba(79, 140, 255, 0.4);
+  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.2);
 }
 
 .toolbar {

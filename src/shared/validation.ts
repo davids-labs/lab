@@ -26,11 +26,11 @@ const footerLinkSchema = z.object({
 
 export const pageConfigSchema = z.object({
   theme: z.object({
-    accent: z.string().trim().default('#00e5ff'),
-    bg: z.string().trim().default('#0d0f12'),
-    surface: z.string().trim().default('#1a1d24'),
-    fontHeading: z.string().trim().default('Syne'),
-    fontBody: z.string().trim().default('Space Mono'),
+    accent: z.string().trim().default('#4f8cff'),
+    bg: z.string().trim().default('#0f1318'),
+    surface: z.string().trim().default('#171c23'),
+    fontHeading: z.string().trim().default('IBM Plex Sans'),
+    fontBody: z.string().trim().default('IBM Plex Mono'),
     layoutVariant: z.enum(PAGE_LAYOUT_VARIANTS).default('default')
   }),
   sections: z

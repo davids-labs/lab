@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import archiver from 'archiver'
-import matter from 'gray-matter'
 import createDOMPurify from 'dompurify'
 import { JSDOM } from 'jsdom'
 import { marked } from 'marked'
@@ -19,7 +18,14 @@ import type {
   SpecTableData,
   TextData
 } from '../../preload/types'
-import { BLOCK_LABELS } from '@shared/defaults'
+import { BLOCK_LABELS, WORKSPACE_ONLY_BLOCK_TYPES } from '@shared/defaults'
+import {
+  ensureUrlProtocol,
+  getUrlHostname,
+  inferEmbedType,
+  parseMarkdownDocument,
+  toEmbedSrc
+} from '@shared/content'
 import { assetQueries } from '../db/queries/assets'
 import { blockQueries } from '../db/queries/blocks'
 import { projectQueries } from '../db/queries/projects'
@@ -32,68 +38,132 @@ const purifier = createDOMPurify(jsdomWindow as unknown as Parameters<typeof cre
 
 const BASE_CSS = `
   :root {
-    --accent: #00e5ff;
-    --bg: #0d0f12;
-    --surface: #1a1d24;
-    --text: #e2e8f0;
-    --muted: #94a3b8;
-    --border: rgba(148, 163, 184, 0.2);
-    --heading-font: 'Syne', sans-serif;
-    --body-font: 'Space Mono', monospace;
+    --accent: #4f8cff;
+    --bg: #0f1318;
+    --surface: #171c23;
+    --surface-2: #1e252e;
+    --text: #e5e7eb;
+    --muted: #98a2b3;
+    --border: rgba(152, 162, 179, 0.24);
+    --heading-font: 'IBM Plex Sans', sans-serif;
+    --body-font: 'IBM Plex Mono', monospace;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: radial-gradient(circle at top, rgba(0, 229, 255, 0.12), transparent 30%), var(--bg);
+    background: var(--bg);
     color: var(--text);
     font-family: var(--body-font);
+    line-height: 1.55;
   }
   a { color: inherit; }
-  .shell { max-width: 1200px; margin: 0 auto; padding: 48px 24px 96px; }
+  img { display: block; max-width: 100%; }
+  .shell {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 72px;
+    display: grid;
+    gap: 20px;
+  }
   .hero {
     display: grid;
-    gap: 16px;
-    margin-bottom: 32px;
-    padding: 32px;
+    gap: 12px;
+    padding: 24px;
     border: 1px solid var(--border);
-    border-radius: 24px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    border-radius: 14px;
+    background: var(--surface);
+  }
+  .heroMeta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .hero h1 {
     margin: 0;
     font-family: var(--heading-font);
-    font-size: clamp(2.8rem, 5vw, 4.8rem);
-    line-height: 0.92;
+    font-size: clamp(2.2rem, 4vw, 3.8rem);
+    line-height: 0.96;
+    letter-spacing: -0.03em;
   }
   .hero p, .hero blockquote {
     margin: 0;
     color: var(--muted);
-    max-width: 72ch;
+    max-width: 76ch;
+  }
+  .hero blockquote {
+    padding-left: 12px;
+    border-left: 3px solid var(--accent);
   }
   .sections {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    align-items: start;
   }
   .section {
-    background: rgba(26, 29, 36, 0.92);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 24px;
+    border-radius: 14px;
+    padding: 20px;
+    background: var(--surface);
     overflow: hidden;
   }
   .section.full { grid-column: 1 / -1; }
+  .sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
   .section h2, .section h3 {
-    margin-top: 0;
+    margin: 0;
     font-family: var(--heading-font);
   }
-  .section .prose { display: grid; gap: 12px; }
+  .section h2 {
+    font-size: 1.08rem;
+    letter-spacing: -0.02em;
+  }
+  .sectionTag {
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .section .prose {
+    display: grid;
+    gap: 12px;
+  }
   .section .prose > *:first-child { margin-top: 0; }
   .section .prose > *:last-child { margin-bottom: 0; }
+  .section .prose p,
+  .section .prose ul,
+  .section .prose ol,
+  .section .prose blockquote,
+  .section .prose pre {
+    margin: 0;
+  }
+  .section .prose ul,
+  .section .prose ol {
+    padding-left: 20px;
+  }
+  .section .prose code {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 6px;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
   }
   th, td {
     padding: 10px;
@@ -101,10 +171,46 @@ const BASE_CSS = `
     text-align: left;
     vertical-align: top;
   }
+  th {
+    color: var(--muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  td:last-child,
+  th:last-child {
+    width: 1%;
+  }
+  .tableTotals {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .tableTotals span {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 10px;
+    background: var(--surface-2);
+  }
   .gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px;
+  }
+  .gallery.grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .gallery.carousel {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+  }
+  .gallery.fullwidth {
+    grid-template-columns: 1fr;
   }
   .gallery figure {
     margin: 0;
@@ -115,15 +221,28 @@ const BASE_CSS = `
     width: 100%;
     aspect-ratio: 16 / 10;
     object-fit: cover;
-    border-radius: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
     cursor: pointer;
   }
-  .steps { display: grid; gap: 16px; }
+  .gallery.carousel figure {
+    scroll-snap-align: start;
+  }
+  .gallery.fullwidth img {
+    aspect-ratio: auto;
+    max-height: 520px;
+    object-fit: contain;
+  }
+  figcaption {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .steps { display: grid; gap: 12px; }
   .step {
-    padding: 16px;
     border: 1px solid var(--border);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    background: var(--surface-2);
   }
   .stepButton {
     width: 100%;
@@ -132,33 +251,58 @@ const BASE_CSS = `
     border: 0;
     color: inherit;
     font: inherit;
-    padding: 0;
+    padding: 14px 16px;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
   }
-  .stepBody { display: none; margin-top: 12px; }
-  .step.open .stepBody { display: block; }
+  .stepIndex {
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stepBody {
+    display: none;
+    padding: 14px 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .step.open .stepBody { display: grid; gap: 12px; }
   .linkCard {
     display: grid;
     gap: 8px;
     padding: 18px;
-    border-radius: 16px;
-    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    background: var(--surface-2);
     text-decoration: none;
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+  }
+  .linkMeta {
+    color: var(--muted);
+    font-size: 0.82rem;
   }
   .embed {
     width: 100%;
     min-height: 360px;
-    border: 0;
-    border-radius: 16px;
-    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
   }
   .footer {
-    margin-top: 32px;
+    padding-top: 4px;
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     color: var(--muted);
+  }
+  .footer a {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
   }
   .lightbox {
     position: fixed;
@@ -174,10 +318,30 @@ const BASE_CSS = `
   .lightbox img {
     max-width: min(92vw, 1280px);
     max-height: 88vh;
-    border-radius: 18px;
+    border-radius: 12px;
+  }
+  .empty {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--muted);
   }
   body.layout-minimal .sections { grid-template-columns: 1fr; }
-  body.layout-magazine .hero { padding: 56px; min-height: 320px; }
+  body.layout-magazine .hero {
+    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+    align-items: end;
+    min-height: 280px;
+  }
+  body.layout-magazine .sections {
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+  }
+  @media (max-width: 900px) {
+    .shell { padding: 20px 16px 48px; }
+    body.layout-magazine .hero,
+    body.layout-magazine .sections {
+      grid-template-columns: 1fr;
+    }
+  }
 `
 
 const INTERACTIVE_JS = `
@@ -212,28 +376,11 @@ function buildGoogleFontsUrl(project: Project): string {
 }
 
 function renderMarkdown(raw: string): string {
-  const html = marked.parse(raw, { breaks: false, gfm: true }) as string
+  const html = marked.parse(parseMarkdownDocument(raw).content, {
+    breaks: false,
+    gfm: true
+  }) as string
   return purifier.sanitize(html)
-}
-
-function toYoutubeEmbed(url: string): string {
-  try {
-    const parsed = new URL(url)
-    if (parsed.hostname.includes('youtu.be')) {
-      return `https://www.youtube.com/embed/${parsed.pathname.replace('/', '')}`
-    }
-
-    if (parsed.hostname.includes('youtube.com')) {
-      const videoId = parsed.searchParams.get('v')
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`
-      }
-    }
-  } catch {
-    return url
-  }
-
-  return url
 }
 
 function buildSectionTitle(block: Block, project: Project): string {
@@ -246,24 +393,41 @@ function buildSectionTitle(block: Block, project: Project): string {
 
   if (block.type === 'markdown') {
     const markdown = block.data as MarkdownData
-    const frontmatter = matter(markdown.raw)
-    return typeof frontmatter.data.title === 'string'
-      ? frontmatter.data.title
-      : BLOCK_LABELS.markdown
+    return parseMarkdownDocument(markdown.raw).title ?? BLOCK_LABELS.markdown
   }
 
   return BLOCK_LABELS[block.type]
 }
 
-function renderBlock(block: Block, project: Project, assets: Map<string, string>): string {
+function renderSectionShell(
+  block: Block,
+  project: Project,
+  innerHtml: string,
+  label?: string
+): string {
   const title = escapeHtml(buildSectionTitle(block, project))
   const sectionClass = block.grid_col_span === 2 ? 'section full' : 'section'
+  const sectionLabel = escapeHtml(label ?? BLOCK_LABELS[block.type])
 
+  return `<section class="${sectionClass}" data-block-id="${block.id}">
+    <div class="sectionHeader">
+      <h2>${title}</h2>
+      <span class="sectionTag">${sectionLabel}</span>
+    </div>
+    ${innerHtml}
+  </section>`
+}
+
+function renderBlock(block: Block, project: Project, assets: Map<string, string>): string {
   switch (block.type) {
     case 'text':
     case 'how_it_works': {
       const data = block.data as TextData & { body?: string }
-      return `<section class="${sectionClass}" data-block-id="${block.id}"><h2>${title}</h2><div class="prose">${data.html ?? data.body ?? ''}</div></section>`
+      return renderSectionShell(
+        block,
+        project,
+        `<div class="prose">${data.html ?? data.body ?? ''}</div>`
+      )
     }
     case 'case_study': {
       const data = block.data as CaseStudyData
@@ -275,16 +439,21 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
               <h3>Approach</h3>${data.approach ?? '<p></p>'}
               <h3>Outcome</h3>${data.outcome ?? '<p></p>'}
             `
-      return `<section class="${sectionClass}" data-block-id="${block.id}"><h2>${title}</h2><div class="prose">${content}</div></section>`
+      return renderSectionShell(block, project, `<div class="prose">${content}</div>`)
     }
     case 'bom': {
       const data = block.data as BomData
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <h2>${title}</h2>
+      const items = data.items.filter((item) => item.item || item.detail || item.qty || item.cost)
+      const totalQuantity = items.reduce((sum, item) => sum + item.qty, 0)
+      return renderSectionShell(
+        block,
+        project,
+        items.length > 0
+          ? `
         <table>
           <thead><tr><th>Item</th><th>Detail</th><th>Qty</th><th>Cost</th></tr></thead>
           <tbody>
-            ${data.items
+            ${items
               .map(
                 (item) =>
                   `<tr><td>${escapeHtml(item.item)}</td><td>${escapeHtml(item.detail)}</td><td>${item.qty}</td><td>${escapeHtml(item.cost ?? '')}</td></tr>`
@@ -292,81 +461,122 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
               .join('')}
           </tbody>
         </table>
-      </section>`
+        <div class="tableTotals">
+          <span>${items.length} item${items.length === 1 ? '' : 's'}</span>
+          <span>${totalQuantity} total qty</span>
+        </div>
+      `
+          : `<div class="empty">No bill of materials entries yet.</div>`
+      )
     }
     case 'build_guide': {
       const data = block.data as BuildGuideData
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <h2>${title}</h2>
+      return renderSectionShell(
+        block,
+        project,
+        data.steps.length > 0
+          ? `
         <div class="steps">
           ${data.steps
             .map((step, index) => {
               const image = step.img_asset_id ? assets.get(step.img_asset_id) : null
-              return `<div class="step">
-                <button class="stepButton" data-step-toggle="true"><strong>${index + 1}. ${escapeHtml(step.title || `Step ${index + 1}`)}</strong></button>
+              return `<div class="step ${index === 0 ? 'open' : ''}">
+                <button class="stepButton" data-step-toggle="true">
+                  <strong>${escapeHtml(step.title || `Step ${index + 1}`)}</strong>
+                  <span class="stepIndex">Step ${index + 1}</span>
+                </button>
                 <div class="stepBody">
                   <div class="prose">${step.body}</div>
-                  ${image ? `<img src="${image}" alt="${escapeHtml(step.title || `Step ${index + 1}`)}" style="width:100%;margin-top:12px;border-radius:14px;" />` : ''}
+                  ${image ? `<img src="${image}" alt="${escapeHtml(step.title || `Step ${index + 1}`)}" />` : ''}
                 </div>
               </div>`
             })
             .join('')}
         </div>
-      </section>`
+      `
+          : `<div class="empty">No build steps yet.</div>`
+      )
     }
     case 'image_gallery': {
       const data = block.data as ImageGalleryData
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <h2>${title}</h2>
-        <div class="gallery">
-          ${data.asset_ids
-            .map((id) => {
-              const src = assets.get(id)
-              if (!src) {
-                return ''
-              }
-              const caption = data.captions[id] ?? ''
-              return `<figure>
-                <img src="${src}" alt="${escapeHtml(caption)}" data-lightbox-src="${src}" />
-                ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
-              </figure>`
-            })
-            .join('')}
-        </div>
-      </section>`
+      const figures = data.asset_ids
+        .map((id) => {
+          const src = assets.get(id)
+          if (!src) {
+            return ''
+          }
+          const caption = data.captions[id] ?? ''
+          return `<figure>
+            <img src="${src}" alt="${escapeHtml(caption || 'Gallery image')}" data-lightbox-src="${src}" />
+            ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+          </figure>`
+        })
+        .join('')
+
+      return renderSectionShell(
+        block,
+        project,
+        figures
+          ? `<div class="gallery ${escapeHtml(data.layout)}">${figures}</div>`
+          : `<div class="empty">No gallery images selected yet.</div>`
+      )
     }
     case 'markdown': {
       const data = block.data as MarkdownData
-      return `<section class="${sectionClass}" data-block-id="${block.id}"><h2>${title}</h2><div class="prose">${renderMarkdown(data.raw)}</div></section>`
+      return renderSectionShell(
+        block,
+        project,
+        `<div class="prose">${renderMarkdown(data.raw)}</div>`,
+        'Markdown'
+      )
     }
     case 'link': {
       const data = block.data as LinkData
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <a class="linkCard" href="${escapeHtml(data.url || '#')}" target="_blank" rel="noreferrer">
+      const hostname = getUrlHostname(data.url) ?? ''
+      const href = ensureUrlProtocol(data.url) || '#'
+
+      return renderSectionShell(
+        block,
+        project,
+        `
+        <a class="linkCard" href="${escapeHtml(href)}" target="_blank" rel="noreferrer">
           <strong>${escapeHtml(data.label || data.url || 'Untitled link')}</strong>
+          ${hostname ? `<span class="linkMeta">${escapeHtml(hostname)}</span>` : ''}
           ${data.description ? `<span>${escapeHtml(data.description)}</span>` : ''}
         </a>
-      </section>`
+      `,
+        'Link'
+      )
     }
     case 'spec_table': {
       const data = block.data as SpecTableData
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <h2>${title}</h2>
+      return renderSectionShell(
+        block,
+        project,
+        data.rows.length > 0
+          ? `
         <table>
           <thead><tr>${data.headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead>
           <tbody>${data.rows
             .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`)
             .join('')}</tbody>
         </table>
-      </section>`
+      `
+          : `<div class="empty">No specification rows yet.</div>`
+      )
     }
     case 'embed': {
       const data = block.data as EmbedData
-      const embedUrl = data.type === 'youtube' ? toYoutubeEmbed(data.url) : data.url
-      return `<section class="${sectionClass}" data-block-id="${block.id}">
-        <h2>${title}</h2>
-        <iframe class="embed" src="${escapeHtml(embedUrl)}" loading="lazy" allowfullscreen></iframe>
-      </section>`
+      const embedType = data.type === 'generic' ? inferEmbedType(data.url) : data.type
+      const embedUrl = toEmbedSrc(embedType, data.url)
+      return renderSectionShell(
+        block,
+        project,
+        embedUrl
+          ? `<iframe class="embed" src="${escapeHtml(embedUrl)}" loading="lazy" allowfullscreen></iframe>`
+          : `<div class="empty">Add an embed URL to render this block.</div>`,
+        'Embed'
+      )
     }
     case 'note':
     case 'todo':
@@ -401,10 +611,21 @@ function buildFooter(project: Project): string {
 
 export function renderProjectHtml(projectId: string, mode: RenderMode = 'preview'): string {
   const project = projectQueries.get(projectId)
+  const sectionMap = new Map(
+    project.page_config.sections.map((section) => [section.blockId, section])
+  )
   const blocks = blockQueries
     .list(projectId)
-    .filter((block) => block.visible_on_page)
-    .sort((left, right) => left.sort_order - right.sort_order)
+    .filter((block) => !WORKSPACE_ONLY_BLOCK_TYPES.includes(block.type))
+    .filter((block) => {
+      const section = sectionMap.get(block.id)
+      return section ? section.visible : block.visible_on_page
+    })
+    .sort((left, right) => {
+      const leftOrder = sectionMap.get(left.id)?.sortOrder ?? left.sort_order
+      const rightOrder = sectionMap.get(right.id)?.sortOrder ?? right.sort_order
+      return leftOrder - rightOrder || left.sort_order - right.sort_order
+    })
   const assets = new Map<string, string>()
 
   assetQueries.list(projectId).forEach((asset) => {
@@ -435,6 +656,11 @@ export function renderProjectHtml(projectId: string, mode: RenderMode = 'preview
   <body class="layout-${project.page_config.theme.layoutVariant}">
     <div class="shell">
       <header class="hero">
+        <div class="heroMeta">
+          <span>${escapeHtml(project.type)}</span>
+          <span>${escapeHtml(project.status)}</span>
+          <span>${blocks.length} public block${blocks.length === 1 ? '' : 's'}</span>
+        </div>
         <h1>${escapeHtml(project.name)}</h1>
         ${project.subtitle ? `<p>${escapeHtml(project.subtitle)}</p>` : ''}
         ${project.core_value ? `<blockquote>${escapeHtml(project.core_value)}</blockquote>` : ''}

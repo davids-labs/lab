@@ -14,9 +14,20 @@
   width: 100%;
   border: 1px solid var(--lab-border);
   border-radius: var(--lab-radius);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--lab-surface-2);
   color: var(--lab-text);
   padding: 10px 12px;
+  transition:
+    border-color var(--lab-transition),
+    background var(--lab-transition);
+}
+
+.control:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.control:focus {
+  border-color: rgba(79, 140, 255, 0.48);
 }
 
 .mono {

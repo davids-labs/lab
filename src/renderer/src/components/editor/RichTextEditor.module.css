@@ -11,8 +11,8 @@
 
 .button {
   border: 1px solid var(--lab-border);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--lab-radius);
+  background: var(--lab-surface-2);
   color: var(--lab-text);
   padding: 6px 10px;
   font-size: 0.8rem;
@@ -20,14 +20,14 @@
 
 .active {
   background: var(--lab-primary-dim);
-  border-color: rgba(0, 229, 255, 0.42);
+  border-color: rgba(79, 140, 255, 0.42);
 }
 
 .surface {
   min-height: 160px;
   border: 1px solid var(--lab-border);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  background: var(--lab-surface-2);
   padding: 12px 14px;
 }
 

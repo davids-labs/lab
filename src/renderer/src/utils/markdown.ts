@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
+import { extractMarkdownContent } from '@shared/content'
 
 marked.setOptions({
   gfm: true,
@@ -7,5 +8,5 @@ marked.setOptions({
 })
 
 export function renderMarkdownToHtml(raw: string): string {
-  return DOMPurify.sanitize(marked.parse(raw) as string)
+  return DOMPurify.sanitize(marked.parse(extractMarkdownContent(raw)) as string)
 }

@@ -74,9 +74,7 @@ export function Dashboard(): JSX.Element {
           >
             LAB
           </div>
-          <h1 style={{ margin: '8px 0 0', fontFamily: 'var(--lab-font-sans)' }}>
-            Project Workspace
-          </h1>
+          <h1 style={{ margin: '8px 0 0', fontFamily: 'var(--lab-font-sans)' }}>Projects</h1>
         </div>
         <Button onClick={() => setCreateOpen(true)}>New Project</Button>
       </div>
@@ -98,9 +96,9 @@ export function Dashboard(): JSX.Element {
         <div
           style={{
             padding: 16,
-            borderRadius: 18,
-            border: '1px solid rgba(255, 104, 104, 0.25)',
-            background: 'rgba(255, 104, 104, 0.08)',
+            borderRadius: 12,
+            border: '1px solid rgba(201, 108, 92, 0.3)',
+            background: 'rgba(201, 108, 92, 0.1)',
             color: '#ffd5d5'
           }}
         >
@@ -121,9 +119,9 @@ export function Dashboard(): JSX.Element {
             onClick={() => navigate(`/project/${project.id}`)}
             role="presentation"
             style={{
-              borderRadius: 24,
+              borderRadius: 14,
               border: '1px solid var(--lab-border)',
-              background: 'linear-gradient(180deg, rgba(35,39,48,0.94), rgba(26,29,36,0.98))',
+              background: 'var(--lab-surface)',
               padding: 20,
               display: 'grid',
               gap: 16
@@ -132,9 +130,10 @@ export function Dashboard(): JSX.Element {
             <div
               style={{
                 minHeight: 180,
-                borderRadius: 16,
+                borderRadius: 10,
+                border: '1px solid var(--lab-border)',
                 background:
-                  'linear-gradient(135deg, rgba(0,229,255,0.24), rgba(255,42,109,0.2), rgba(255,180,0,0.18))'
+                  'linear-gradient(135deg, rgba(79,140,255,0.12), rgba(255,255,255,0.02) 48%, rgba(79,140,255,0.04))'
               }}
             />
             <div style={{ display: 'grid', gap: 12 }}>
@@ -201,8 +200,8 @@ export function Dashboard(): JSX.Element {
               onChange={(event) => setType(event.target.value as Project['type'])}
               style={{
                 border: '1px solid var(--lab-border)',
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.03)',
+                borderRadius: 8,
+                background: 'var(--lab-surface-2)',
                 color: 'var(--lab-text)',
                 padding: '10px 12px'
               }}

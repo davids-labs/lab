@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
+import { BLOCK_LABELS } from '@shared/defaults'
 import { TitleBar } from '@renderer/components/workspace/TitleBar'
 import { PublicPagePreview } from '@renderer/components/preview/PublicPagePreview'
 import { Button } from '@renderer/components/ui/Button'
@@ -118,7 +119,7 @@ export function PageCustomiser(): JSX.Element {
             return (
               <div key={section.blockId} className={styles.sectionCard}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <strong>{block.type}</strong>
+                  <strong>{BLOCK_LABELS[block.type]}</strong>
                   <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input
                       checked={section.visible}
@@ -284,6 +285,13 @@ export function PageCustomiser(): JSX.Element {
                     : current
                 )
               }
+              style={{
+                border: '1px solid var(--lab-border)',
+                borderRadius: 8,
+                background: 'var(--lab-surface-2)',
+                color: 'var(--lab-text)',
+                padding: '10px 12px'
+              }}
             >
               <option value="default">Default</option>
               <option value="minimal">Minimal</option>

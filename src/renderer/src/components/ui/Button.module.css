@@ -4,22 +4,23 @@
   justify-content: center;
   gap: var(--lab-space-2);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--lab-radius);
   padding: 10px 16px;
   font-size: 0.9rem;
   transition:
     background var(--lab-transition),
     border-color var(--lab-transition),
-    transform var(--lab-transition);
+    color var(--lab-transition);
 }
 
 .button:hover {
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .primary {
   background: var(--lab-primary);
-  color: #071016;
+  border-color: rgba(79, 140, 255, 0.35);
+  color: #f8fbff;
 }
 
 .ghost {
@@ -29,15 +30,15 @@
 }
 
 .outline {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--lab-surface-2);
   border-color: var(--lab-border);
   color: var(--lab-text);
 }
 
 .danger {
-  background: rgba(255, 42, 109, 0.12);
-  border-color: rgba(255, 42, 109, 0.4);
-  color: #ffd7e4;
+  background: rgba(201, 108, 92, 0.12);
+  border-color: rgba(201, 108, 92, 0.34);
+  color: #ffd8d2;
 }
 
 .sm {
@@ -52,5 +53,5 @@
 .button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  transform: none;
+  border-color: transparent;
 }

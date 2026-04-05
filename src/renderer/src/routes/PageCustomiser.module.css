@@ -9,7 +9,7 @@
 
 .panel {
   border-right: 1px solid var(--lab-border-2);
-  background: rgba(15, 17, 22, 0.94);
+  background: rgba(15, 19, 24, 0.96);
   padding: 20px;
   display: grid;
   gap: 18px;
@@ -21,8 +21,8 @@
 
 .sectionCard {
   border: 1px solid var(--lab-border);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  background: var(--lab-surface);
   padding: 14px;
   display: grid;
   gap: 12px;

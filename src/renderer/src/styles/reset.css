@@ -14,8 +14,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top, rgba(0, 229, 255, 0.1), transparent 30%), var(--lab-bg);
+  background: linear-gradient(180deg, #121821 0%, var(--lab-bg) 120px);
   color: var(--lab-text);
   font-family: var(--lab-font-mono);
   line-height: 1.5;
@@ -30,6 +29,21 @@ select {
 
 button {
   cursor: pointer;
+}
+
+button,
+input,
+textarea,
+select {
+  color: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(79, 140, 255, 0.55);
+  outline-offset: 1px;
 }
 
 a {

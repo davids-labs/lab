@@ -139,15 +139,28 @@ export const projectQueries = {
     const existingSections = new Map(
       project.page_config.sections.map((section) => [section.blockId, section])
     )
-    const sections = blocks
+    const publicBlocks = blocks
       .filter((block) => !WORKSPACE_ONLY_BLOCK_TYPES.includes(block.type))
       .sort((left, right) => left.sort_order - right.sort_order)
+    const blockMap = new Map(publicBlocks.map((block) => [block.id, block]))
+    const existingOrdered = project.page_config.sections
+      .filter((section) => blockMap.has(section.blockId))
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+      .map((section, index) => ({
+        ...section,
+        visible: blockMap.get(section.blockId)?.visible_on_page ?? section.visible,
+        sortOrder: index
+      }))
+    const existingIds = new Set(existingOrdered.map((section) => section.blockId))
+    const appendedSections = publicBlocks
+      .filter((block) => !existingIds.has(block.id))
       .map((block, index) => ({
         blockId: block.id,
         visible: block.visible_on_page,
-        sortOrder: index,
+        sortOrder: existingOrdered.length + index,
         customTitle: existingSections.get(block.id)?.customTitle
       }))
+    const sections = [...existingOrdered, ...appendedSections]
 
     this.update({
       id: projectId,
