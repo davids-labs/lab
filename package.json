@@ -16,11 +16,11 @@
     "dev": "electron-vite dev",
     "build": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win portable",
-    "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux",
-    "release:local": "npm run build && node scripts/build-local-release.mjs"
+    "build:unpack": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build && node_modules\\.bin\\electron-builder.cmd --dir",
+    "build:win": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build && node_modules\\.bin\\electron-builder.cmd --win portable",
+    "build:mac": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build && node_modules\\.bin\\electron-builder.cmd --mac",
+    "build:linux": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build && node_modules\\.bin\\electron-builder.cmd --linux",
+    "release:local": "node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.node.json --composite false && node_modules\\.bin\\tsc.cmd --noEmit -p tsconfig.web.json --composite false && node_modules\\.bin\\electron-vite.cmd build && node scripts/build-local-release.mjs"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.3.0",
