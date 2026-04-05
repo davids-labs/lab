@@ -9,12 +9,15 @@ export const BLOCK_TYPES = [
   'bom',
   'build_guide',
   'case_study',
+  'pinout',
+  'gcode',
   'image_gallery',
   'markdown',
   'link',
   'spec_table',
   'embed',
   'text',
+  'failed_iteration',
   'note',
   'todo'
 ] as const
@@ -119,6 +122,24 @@ export interface BuildGuideData {
   steps: BuildGuideStep[]
 }
 
+export interface PinoutData {
+  pins: Array<{
+    id: string
+    pin: string
+    label: string
+    function: string
+    voltage?: string
+    notes?: string
+  }>
+  layout: 'vertical' | 'two_column'
+}
+
+export interface GCodeData {
+  code: string
+  machine?: string
+  description?: string
+}
+
 export interface CaseStudyData {
   mode: 'free' | 'structured'
   paragraphs?: string[]
@@ -169,6 +190,13 @@ export interface NoteData {
   colour: 'yellow' | 'blue' | 'red' | 'green'
 }
 
+export interface FailedIterationData {
+  title: string
+  summary: string
+  lessons: string[]
+  status: 'discarded' | 'parked' | 'resolved'
+}
+
 export interface TodoData {
   items: Array<{ id: string; done: boolean; label: string }>
 }
@@ -178,11 +206,14 @@ export type BlockDataMap = {
   build_guide: BuildGuideData
   case_study: CaseStudyData
   embed: EmbedData
+  failed_iteration: FailedIterationData
+  gcode: GCodeData
   how_it_works: HowItWorksData
   image_gallery: ImageGalleryData
   link: LinkData
   markdown: MarkdownData
   note: NoteData
+  pinout: PinoutData
   spec_table: SpecTableData
   text: TextData
   todo: TodoData

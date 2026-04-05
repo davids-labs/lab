@@ -92,6 +92,19 @@ const embedDataSchema = z.object({
   type: z.enum(['youtube', 'pdf', 'figma', 'generic']).default('generic')
 })
 
+const failedIterationDataSchema = z.object({
+  title: z.string().default(''),
+  summary: z.string().default(''),
+  lessons: z.array(z.string()).default([]),
+  status: z.enum(['discarded', 'parked', 'resolved']).default('discarded')
+})
+
+const gcodeDataSchema = z.object({
+  code: z.string().default(''),
+  machine: z.string().optional(),
+  description: z.string().optional()
+})
+
 const howItWorksDataSchema = z.object({
   body: z.string().default('<p></p>')
 })
@@ -120,6 +133,22 @@ const noteDataSchema = z.object({
   colour: z.enum(['yellow', 'blue', 'red', 'green']).default('yellow')
 })
 
+const pinoutDataSchema = z.object({
+  pins: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).default(''),
+        pin: z.string().default(''),
+        label: z.string().default(''),
+        function: z.string().default(''),
+        voltage: z.string().optional(),
+        notes: z.string().optional()
+      })
+    )
+    .default([]),
+  layout: z.enum(['vertical', 'two_column']).default('vertical')
+})
+
 const specTableDataSchema = z.object({
   headers: z.array(z.string()).default(['Property', 'Value']),
   rows: z.array(z.array(z.string())).default([['', '']])
@@ -146,11 +175,14 @@ const blockDataSchemas: Record<BlockType, z.ZodTypeAny> = {
   build_guide: buildGuideDataSchema,
   case_study: caseStudyDataSchema,
   embed: embedDataSchema,
+  failed_iteration: failedIterationDataSchema,
+  gcode: gcodeDataSchema,
   how_it_works: howItWorksDataSchema,
   image_gallery: imageGalleryDataSchema,
   link: linkDataSchema,
   markdown: markdownDataSchema,
   note: noteDataSchema,
+  pinout: pinoutDataSchema,
   spec_table: specTableDataSchema,
   text: textDataSchema,
   todo: todoDataSchema

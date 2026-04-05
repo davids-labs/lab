@@ -27,13 +27,26 @@ export const useAssetStore = create<AssetStore>((set) => ({
   },
 
   async importAsset(projectId, srcPath, tags) {
-    const asset = await window.lab.asset.import({ projectId, srcPath, tags })
-    set((state) => ({ assets: [asset, ...state.assets] }))
-    return asset
+    try {
+      const asset = await window.lab.asset.import({ projectId, srcPath, tags })
+      set((state) => ({ assets: [asset, ...state.assets], error: null }))
+      return asset
+    } catch (error) {
+      set({ error: String(error) })
+      throw error
+    }
   },
 
   async deleteAsset(id) {
-    await window.lab.asset.delete(id)
-    set((state) => ({ assets: state.assets.filter((asset) => asset.id !== id) }))
+    try {
+      await window.lab.asset.delete(id)
+      set((state) => ({
+        assets: state.assets.filter((asset) => asset.id !== id),
+        error: null
+      }))
+    } catch (error) {
+      set({ error: String(error) })
+      throw error
+    }
   }
 }))

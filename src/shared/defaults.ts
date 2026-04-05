@@ -5,30 +5,33 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   build_guide: 'Build Guide',
   case_study: 'Case Study',
   embed: 'Embed',
+  failed_iteration: 'Failed Iteration',
+  gcode: 'G-Code Snippet',
   how_it_works: 'How It Works',
   image_gallery: 'Image Gallery',
   link: 'Link',
   markdown: 'Markdown',
   note: 'Note',
+  pinout: 'Pinout Diagram',
   spec_table: 'Spec Table',
   text: 'Text',
   todo: 'Todo'
 }
 
-export const WORKSPACE_ONLY_BLOCK_TYPES: BlockType[] = ['note', 'todo']
+export const WORKSPACE_ONLY_BLOCK_TYPES: BlockType[] = ['failed_iteration', 'note', 'todo']
 
 export const BLOCK_GROUPS: Array<{ title: string; types: BlockType[] }> = [
   {
     title: 'Structured',
-    types: ['bom', 'build_guide', 'how_it_works', 'case_study', 'spec_table']
+    types: ['bom', 'build_guide', 'how_it_works', 'case_study', 'pinout', 'spec_table']
   },
   {
     title: 'Media & Content',
-    types: ['image_gallery', 'markdown', 'text', 'link', 'embed']
+    types: ['gcode', 'image_gallery', 'markdown', 'text', 'link', 'embed']
   },
   {
     title: 'Workspace Only',
-    types: ['note', 'todo']
+    types: ['failed_iteration', 'note', 'todo']
   }
 ]
 
@@ -67,6 +70,17 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
     url: '',
     type: 'generic'
   },
+  failed_iteration: {
+    title: '',
+    summary: '',
+    lessons: [],
+    status: 'discarded'
+  },
+  gcode: {
+    code: '',
+    machine: '',
+    description: ''
+  },
   how_it_works: {
     body: '<p></p>'
   },
@@ -86,6 +100,10 @@ const DEFAULT_BLOCK_DATA: BlockDataMap = {
   note: {
     body: '',
     colour: 'yellow'
+  },
+  pinout: {
+    pins: [],
+    layout: 'vertical'
   },
   spec_table: {
     headers: ['Property', 'Value'],

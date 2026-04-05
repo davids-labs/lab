@@ -1,5 +1,6 @@
 import type { Block, BlockDataMap } from '@preload/types'
 import { BuildGuideBlock } from './BuildGuideBlock'
+import { FailedIterationBlock, GCodeBlock, PinoutBlock } from './EngineeringBlocks'
 import { MarkdownBlock, ImageGalleryBlock, PlaceholderBlock } from './MediaBlocks'
 import { BomBlock, SpecTableBlock } from './TableBlocks'
 import { EmbedBlock, LinkBlock, NoteBlock, TodoBlock } from './UtilityBlocks'
@@ -19,12 +20,18 @@ export function BlockEditorRouter({ block }: BlockEditorRouterProps): JSX.Elemen
       return <CaseStudyBlock block={block as Block<BlockDataMap['case_study']>} />
     case 'bom':
       return <BomBlock block={block as Block<BlockDataMap['bom']>} />
+    case 'pinout':
+      return <PinoutBlock block={block as Block<BlockDataMap['pinout']>} />
     case 'spec_table':
       return <SpecTableBlock block={block as Block<BlockDataMap['spec_table']>} />
+    case 'gcode':
+      return <GCodeBlock block={block as Block<BlockDataMap['gcode']>} />
     case 'link':
       return <LinkBlock block={block as Block<BlockDataMap['link']>} />
     case 'embed':
       return <EmbedBlock block={block as Block<BlockDataMap['embed']>} />
+    case 'failed_iteration':
+      return <FailedIterationBlock block={block as Block<BlockDataMap['failed_iteration']>} />
     case 'note':
       return <NoteBlock block={block as Block<BlockDataMap['note']>} />
     case 'todo':

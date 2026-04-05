@@ -61,14 +61,23 @@ export function Workspace(): JSX.Element {
       properties: ['openFile', 'multiSelections']
     })
 
-    for (const filePath of filePaths) {
-      await importAsset(projectId, filePath)
+    const results = await Promise.allSettled(
+      filePaths.map((filePath) => importAsset(projectId, filePath))
+    )
+    const importedCount = results.filter((result) => result.status === 'fulfilled').length
+    const failedCount = results.length - importedCount
+
+    if (importedCount > 0) {
+      pushToast({
+        message: `Imported ${importedCount} asset${importedCount === 1 ? '' : 's'}`,
+        type: 'success'
+      })
     }
 
-    if (filePaths.length > 0) {
+    if (failedCount > 0) {
       pushToast({
-        message: `Imported ${filePaths.length} asset${filePaths.length === 1 ? '' : 's'}`,
-        type: 'success'
+        message: `${failedCount} asset import${failedCount === 1 ? '' : 's'} failed`,
+        type: 'error'
       })
     }
   }, [importAsset, projectId, pushToast])

@@ -11,9 +11,11 @@ import type {
   BuildGuideData,
   CaseStudyData,
   EmbedData,
+  GCodeData,
   ImageGalleryData,
   LinkData,
   MarkdownData,
+  PinoutData,
   Project,
   SpecTableData,
   TextData
@@ -291,6 +293,27 @@ const BASE_CSS = `
     border-radius: 12px;
     background: var(--surface-2);
   }
+  .codeBlock {
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .pinoutGrid {
+    display: grid;
+    gap: 12px;
+  }
+  .pinoutGrid.twoColumn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pinoutColumn {
+    display: grid;
+    gap: 8px;
+  }
   .footer {
     padding-top: 4px;
     display: flex;
@@ -339,6 +362,9 @@ const BASE_CSS = `
     .shell { padding: 20px 16px 48px; }
     body.layout-magazine .hero,
     body.layout-magazine .sections {
+      grid-template-columns: 1fr;
+    }
+    .pinoutGrid.twoColumn {
       grid-template-columns: 1fr;
     }
   }
@@ -418,6 +444,15 @@ function renderSectionShell(
   </section>`
 }
 
+function renderPinTableRows(pins: PinoutData['pins']): string {
+  return pins
+    .map(
+      (pin) =>
+        `<tr><td>${escapeHtml(pin.pin)}</td><td>${escapeHtml(pin.label)}</td><td>${escapeHtml(pin.function)}</td><td>${escapeHtml(pin.voltage ?? '')}</td><td>${escapeHtml(pin.notes ?? '')}</td></tr>`
+    )
+    .join('')
+}
+
 function renderBlock(block: Block, project: Project, assets: Map<string, string>): string {
   switch (block.type) {
     case 'text':
@@ -467,6 +502,53 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
         </div>
       `
           : `<div class="empty">No bill of materials entries yet.</div>`
+      )
+    }
+    case 'pinout': {
+      const data = block.data as PinoutData
+      const pins = data.pins.filter(
+        (pin) => pin.pin || pin.label || pin.function || pin.voltage || pin.notes
+      )
+
+      if (pins.length === 0) {
+        return renderSectionShell(
+          block,
+          project,
+          `<div class="empty">No pinout rows documented yet.</div>`,
+          'Pinout'
+        )
+      }
+
+      const columns =
+        data.layout === 'two_column'
+          ? [pins.slice(0, Math.ceil(pins.length / 2)), pins.slice(Math.ceil(pins.length / 2))]
+          : [pins]
+
+      return renderSectionShell(
+        block,
+        project,
+        `
+          <div class="tableTotals">
+            <span>${pins.length} pin${pins.length === 1 ? '' : 's'}</span>
+            <span>${data.layout === 'two_column' ? 'Two-column layout' : 'Single-column layout'}</span>
+          </div>
+          <div class="pinoutGrid ${data.layout === 'two_column' ? 'twoColumn' : ''}">
+            ${columns
+              .filter((column) => column.length > 0)
+              .map(
+                (column) => `
+                  <div class="pinoutColumn">
+                    <table>
+                      <thead><tr><th>Pin</th><th>Label</th><th>Function</th><th>Voltage</th><th>Notes</th></tr></thead>
+                      <tbody>${renderPinTableRows(column)}</tbody>
+                    </table>
+                  </div>
+                `
+              )
+              .join('')}
+          </div>
+        `,
+        'Pinout'
       )
     }
     case 'build_guide': {
@@ -548,6 +630,27 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
         'Link'
       )
     }
+    case 'gcode': {
+      const data = block.data as GCodeData
+      const trimmedCode = data.code.trim()
+      const lineCount = trimmedCode ? trimmedCode.split(/\r?\n/).length : 0
+
+      return renderSectionShell(
+        block,
+        project,
+        trimmedCode
+          ? `
+            ${data.description ? `<div class="prose"><p>${escapeHtml(data.description)}</p></div>` : ''}
+            <div class="tableTotals">
+              ${data.machine ? `<span>${escapeHtml(data.machine)}</span>` : ''}
+              <span>${lineCount} line${lineCount === 1 ? '' : 's'}</span>
+            </div>
+            <pre class="codeBlock"><code>${escapeHtml(data.code)}</code></pre>
+          `
+          : `<div class="empty">No G-code captured yet.</div>`,
+        'G-Code'
+      )
+    }
     case 'spec_table': {
       const data = block.data as SpecTableData
       return renderSectionShell(
@@ -580,6 +683,7 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
     }
     case 'note':
     case 'todo':
+    case 'failed_iteration':
       return ''
   }
 }
