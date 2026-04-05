@@ -95,7 +95,7 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   return (
     <header className={styles.bar}>
       <div className={styles.left}>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/ecosystem')}>
           Back
         </Button>
         <div className={styles.title}>

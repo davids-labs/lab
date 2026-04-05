@@ -1,0 +1,216 @@
+{
+  "countdowns": [
+    {
+      "title": "Foundation Scholarship Runway",
+      "target_date": "2026-12-18",
+      "category": "Academic",
+      "notes": "Countdown to the scholarship push window."
+    },
+    {
+      "title": "Apple Internship Window",
+      "target_date": "2026-10-01",
+      "category": "Career",
+      "notes": "Prepare application materials before the posting window opens."
+    }
+  ],
+  "os": {
+    "profiles": [
+      {
+        "key": "weekday",
+        "name": "Standard Weekday (TCD Grind)",
+        "is_default": true,
+        "time_blocks": [
+          { "label": "Sleep & Recovery", "hours": 8, "color": "#1d1d1f" },
+          { "label": "Meals & Routine", "hours": 2.5, "color": "#d2d2d7" },
+          { "label": "External Shift (TCD)", "hours": 6.5, "color": "#0071e3" },
+          { "label": "Deep Work", "hours": 4.5, "color": "#ff3b30" },
+          { "label": "Physical Training", "hours": 1, "color": "#34c759" },
+          { "label": "Review & Planning", "hours": 1.5, "color": "#8e8e93" }
+        ]
+      },
+      {
+        "key": "sunday",
+        "name": "Sunday Deep Sync",
+        "time_blocks": [
+          { "label": "Sleep & Recovery", "hours": 8, "color": "#1d1d1f" },
+          { "label": "Meals & Routine", "hours": 1.5, "color": "#d2d2d7" },
+          { "label": "External Shift", "hours": 7, "color": "#0071e3" },
+          { "label": "Deep Work", "hours": 3, "color": "#ff3b30" },
+          { "label": "Physical Training", "hours": 1, "color": "#34c759" },
+          { "label": "Weekly Sync", "hours": 3.5, "color": "#8e8e93" }
+        ]
+      }
+    ],
+    "habits": [
+      {
+        "name": "06:30 boot sequence",
+        "description": "Cold exposure, cardio, and calibration before the day starts.",
+        "frequency": "daily",
+        "target_count": 1
+      },
+      {
+        "name": "Hit deep-work quota",
+        "description": "Protect the daily engineering/study block.",
+        "frequency": "daily",
+        "target_count": 1
+      },
+      {
+        "name": "Gym / training",
+        "description": "Keep the physical system online.",
+        "frequency": "daily",
+        "target_count": 1
+      }
+    ]
+  },
+  "skills": [
+    {
+      "key": "mechanical-iq",
+      "title": "Mechanical IQ",
+      "description": "Mechanical reasoning, CAD quality, and production literacy.",
+      "nodes": [
+        {
+          "key": "gdt",
+          "title": "GD&T / Tolerance Stacks",
+          "description": "Demonstrate mechanical precision through stack-up reasoning and annotated deliverables."
+        },
+        {
+          "key": "dfm",
+          "title": "DFM (Molding / CNC)",
+          "description": "Show that geometry decisions can survive manufacturing reality."
+        },
+        {
+          "key": "cad-surfacing",
+          "title": "CAD Surfacing",
+          "description": "High-quality CAD for consumer-product level detailing."
+        }
+      ]
+    },
+    {
+      "key": "mechatronic-integration",
+      "title": "Mechatronic Integration",
+      "description": "The handoff between physical form, electronics, and firmware.",
+      "nodes": [
+        {
+          "key": "pcb-layout",
+          "title": "PCB Layout",
+          "description": "Evidence through routed boards, bring-up notes, and validation results."
+        },
+        {
+          "key": "bare-metal-c",
+          "title": "Bare-Metal C",
+          "description": "Low-level firmware work tied to physical prototypes."
+        },
+        {
+          "key": "sensor-calibration",
+          "title": "Sensor Calibration",
+          "description": "Calibration and integration work that proves systems thinking."
+        }
+      ]
+    },
+    {
+      "key": "validation-lab",
+      "title": "Validation & Lab",
+      "description": "Test planning, experiments, and failure analysis.",
+      "nodes": [
+        {
+          "key": "lab-validation",
+          "title": "Lab Validation",
+          "description": "Build repeatable test plans and document evidence clearly."
+        },
+        {
+          "key": "failure-analysis",
+          "title": "Failure Analysis",
+          "description": "Capture failed iterations and translate them into sharper next revisions."
+        }
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "key": "foundation",
+      "title": "Year 1: Foundation",
+      "kind": "phase",
+      "status": "in_progress",
+      "summary": "Establish systems thinking and a clean execution baseline.",
+      "children": [
+        {
+          "key": "schol",
+          "title": "Win Schol Standard",
+          "kind": "pillar",
+          "status": "in_progress",
+          "summary": "Drive grades and operating discipline toward scholarship level.",
+          "links": [
+            { "target_type": "countdown_item", "target_key": "Foundation Scholarship Runway" }
+          ],
+          "children": [
+            {
+              "key": "deep-work-dependency",
+              "title": "Protect Deep Work",
+              "kind": "dependency",
+              "status": "in_progress",
+              "summary": "Keep the daily schedule intact enough for long-form technical study."
+            }
+          ]
+        },
+        {
+          "key": "ship-ltd10",
+          "title": "Ship LTD-10 V2",
+          "kind": "pillar",
+          "status": "not_started",
+          "summary": "Turn the build-tier hardware work into portfolio-grade evidence.",
+          "links": [
+            { "target_type": "skill_node", "target_key": "pcb-layout" },
+            { "target_type": "skill_node", "target_key": "lab-validation" },
+            {
+              "target_type": "project",
+              "project_slug": "ltd-10",
+              "required_stage": "validation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "launchpad",
+      "title": "Year 2: The Launchpad",
+      "kind": "phase",
+      "status": "not_started",
+      "summary": "Turn consistency into leverage: scholarship, internship, and project momentum.",
+      "children": [
+        {
+          "key": "internship-campaign",
+          "title": "Summer Internship Campaign",
+          "kind": "pillar",
+          "status": "not_started",
+          "summary": "Translate execution proof into an internship pipeline.",
+          "links": [
+            { "target_type": "countdown_item", "target_key": "Apple Internship Window" },
+            { "target_type": "skill_node", "target_key": "cad-surfacing" },
+            { "target_type": "skill_node", "target_key": "bare-metal-c" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pivot",
+      "title": "Year 4: The Pivot",
+      "kind": "phase",
+      "status": "not_started",
+      "summary": "Convert accumulated evidence into Columbia and Apple readiness.",
+      "children": [
+        {
+          "key": "hero-project",
+          "title": "Complete HERO Portfolio Piece",
+          "kind": "pillar",
+          "status": "not_started",
+          "summary": "A signature proof that ties mechanical IQ, integration, and validation together.",
+          "links": [
+            { "target_type": "skill_node", "target_key": "gdt" },
+            { "target_type": "skill_node", "target_key": "dfm" },
+            { "target_type": "skill_node", "target_key": "sensor-calibration" }
+          ]
+        }
+      ]
+    }
+  ]
+}

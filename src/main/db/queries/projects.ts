@@ -21,6 +21,7 @@ function deserializeProject(row: ProjectRow): Project {
   return {
     ...row,
     type: row.type as Project['type'],
+    execution_stage: row.execution_stage as Project['execution_stage'],
     status: row.status as Project['status'],
     subtitle: row.subtitle ?? null,
     core_value: row.core_value ?? null,
@@ -84,6 +85,7 @@ export const projectQueries = {
         name: parsed.name,
         slug: buildUniqueSlug(parsed.name),
         type: parsed.type,
+        execution_stage: 'ideation',
         subtitle: parsed.subtitle ?? null,
         core_value: parsed.core_value ?? null,
         status: 'active',
@@ -111,6 +113,7 @@ export const projectQueries = {
         name: parsed.name ?? current.name,
         slug: parsed.name ? buildUniqueSlug(parsed.name, parsed.id) : current.slug,
         type: parsed.type ?? current.type,
+        execution_stage: parsed.execution_stage ?? current.execution_stage,
         subtitle: parsed.subtitle === undefined ? current.subtitle : parsed.subtitle,
         core_value: parsed.core_value === undefined ? current.core_value : parsed.core_value,
         status: parsed.status ?? current.status,

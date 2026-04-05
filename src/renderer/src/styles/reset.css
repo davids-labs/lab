@@ -16,7 +16,7 @@ body {
   margin: 0;
   background: var(--lab-bg);
   color: var(--lab-text);
-  font-family: var(--lab-font-mono);
+  font-family: var(--lab-font-sans);
   line-height: 1.5;
 }
 
@@ -42,8 +42,21 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid rgba(141, 148, 127, 0.45);
+  outline: 2px solid rgba(29, 29, 31, 0.18);
   outline-offset: 1px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--lab-text-faint);
+}
+
+select {
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-surface-2);
+  color: var(--lab-text);
+  padding: 10px 12px;
 }
 
 a {

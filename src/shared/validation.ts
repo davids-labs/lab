@@ -13,6 +13,7 @@ import type {
 } from '../preload/types'
 import {
   BLOCK_TYPES,
+  PROJECT_EXECUTION_STAGES,
   PAGE_LAYOUT_VARIANTS,
   PROJECT_STATUSES,
   PROJECT_TYPES
@@ -199,6 +200,7 @@ export const updateProjectInputSchema = z.object({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1).max(120).optional(),
   type: z.enum(PROJECT_TYPES).optional(),
+  execution_stage: z.enum(PROJECT_EXECUTION_STAGES).optional(),
   subtitle: z.string().trim().max(240).nullable().optional(),
   core_value: z.string().trim().max(240).nullable().optional(),
   status: z.enum(PROJECT_STATUSES).optional(),

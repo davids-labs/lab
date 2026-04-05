@@ -3,29 +3,31 @@
   align-items: center;
   gap: var(--lab-space-1);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border: 1px solid transparent;
+  color: var(--lab-text);
+  font-weight: 700;
 }
 
 .hero {
-  background: rgba(142, 117, 104, 0.16);
-  border-color: rgba(142, 117, 104, 0.34);
+  background: rgba(155, 105, 80, 0.08);
+  border-color: rgba(155, 105, 80, 0.2);
 }
 
 .build {
-  background: rgba(141, 148, 127, 0.16);
-  border-color: rgba(141, 148, 127, 0.34);
+  background: rgba(105, 126, 99, 0.08);
+  border-color: rgba(105, 126, 99, 0.18);
 }
 
 .design {
-  background: rgba(155, 139, 107, 0.16);
-  border-color: rgba(155, 139, 107, 0.34);
+  background: rgba(132, 113, 86, 0.08);
+  border-color: rgba(132, 113, 86, 0.18);
 }
 
 .concept {
-  background: rgba(126, 146, 134, 0.16);
-  border-color: rgba(126, 146, 134, 0.34);
+  background: rgba(95, 138, 109, 0.08);
+  border-color: rgba(95, 138, 109, 0.18);
 }

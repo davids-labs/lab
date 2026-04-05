@@ -1,20 +1,21 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.66);
+  background: rgba(17, 17, 19, 0.2);
   display: grid;
   place-items: center;
   padding: var(--lab-space-6);
   z-index: 40;
+  backdrop-filter: blur(6px);
 }
 
 .modal {
   width: min(560px, 100%);
   max-height: min(840px, calc(100vh - 48px));
-  border-radius: 8px;
+  border-radius: var(--lab-radius-xl);
   border: 1px solid var(--lab-border);
   background: var(--lab-surface);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 24px 60px rgba(17, 17, 19, 0.12);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -25,6 +26,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-family: var(--lab-font-sans);
 }
 
 .body {

@@ -7,13 +7,20 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const root = path.resolve(__dirname, '..')
 const releaseDir = path.join(root, 'release')
-const releaseDirName = process.env.LAB_RELEASE_DIR_NAME ?? 'LAB-win-unpacked'
-const portableZipName = process.env.LAB_RELEASE_ZIP_NAME ?? 'lab-0.1.0-win-portable.zip'
+const electronDist = path.join(root, 'node_modules', 'electron', 'dist')
+const outDir = path.join(root, 'out')
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+const safeProductName = (packageJson.productName ?? packageJson.name ?? 'davids.lab').replace(
+  /[^a-zA-Z0-9.-]+/g,
+  '-'
+)
+const zipBaseName = safeProductName.toLowerCase().replace(/\./g, '-')
+const releaseDirName = process.env.LAB_RELEASE_DIR_NAME ?? `${safeProductName}-win-unpacked`
+const portableZipName =
+  process.env.LAB_RELEASE_ZIP_NAME ?? `${zipBaseName}-${packageJson.version}-win-portable.zip`
 const unpackedDir = path.join(releaseDir, releaseDirName)
 const appDir = path.join(unpackedDir, 'resources', 'app')
 const portableZip = path.join(releaseDir, portableZipName)
-const electronDist = path.join(root, 'node_modules', 'electron', 'dist')
-const outDir = path.join(root, 'out')
 const runtimeNodeModules = path.join(appDir, 'node_modules')
 
 function safeRm(target) {
@@ -38,11 +45,13 @@ if (fs.existsSync(portableZip)) {
 }
 
 safeCp(electronDist, unpackedDir)
-fs.renameSync(path.join(unpackedDir, 'electron.exe'), path.join(unpackedDir, 'LAB.exe'))
+fs.renameSync(
+  path.join(unpackedDir, 'electron.exe'),
+  path.join(unpackedDir, `${safeProductName}.exe`)
+)
 fs.mkdirSync(appDir, { recursive: true })
 safeCp(outDir, path.join(appDir, 'out'))
 
-const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const runtimePackageJson = {
   name: packageJson.name,
   productName: packageJson.productName,
@@ -71,7 +80,7 @@ await new Promise((resolve, reject) => {
   output.on('close', resolve)
   archive.on('error', reject)
   archive.pipe(output)
-  archive.directory(unpackedDir, 'LAB-win-unpacked')
+  archive.directory(unpackedDir, releaseDirName)
   void archive.finalize()
 })
 

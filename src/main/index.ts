@@ -6,9 +6,13 @@ import icon from '../../resources/icon.png?asset'
 import { initializeDatabase } from './db'
 import { registerAssetHandlers } from './ipc/asset'
 import { registerBlockHandlers } from './ipc/block'
+import { registerDashboardHandlers } from './ipc/dashboard'
 import { registerGitHandlers } from './ipc/git'
+import { registerOsHandlers } from './ipc/os'
 import { registerPageHandlers } from './ipc/page'
+import { registerPlanHandlers } from './ipc/plan'
 import { registerProjectHandlers } from './ipc/project'
+import { registerSkillHandlers } from './ipc/skills'
 import { registerSystemHandlers } from './ipc/system'
 import { initializeAppPaths } from './services/appPaths'
 
@@ -24,8 +28,8 @@ function createWindow(): void {
     minHeight: 720,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#0f1318',
-    title: 'LAB',
+    backgroundColor: '#fbfbfd',
+    title: 'davids.lab',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: preloadPath,
@@ -52,9 +56,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.david.lab')
+  electronApp.setAppUserModelId('com.david.davids-lab')
   initializeAppPaths(app.getPath('userData'))
   initializeDatabase()
+  registerDashboardHandlers()
+  registerPlanHandlers()
+  registerSkillHandlers()
+  registerOsHandlers()
   registerProjectHandlers()
   registerBlockHandlers()
   registerAssetHandlers()

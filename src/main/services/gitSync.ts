@@ -11,10 +11,16 @@ import type {
   GitPublishResult,
   GitStatus,
   Project,
+  ProjectExecutionStage,
   ProjectStatus,
   ProjectType
 } from '../../preload/types'
-import { BLOCK_TYPES, PROJECT_STATUSES, PROJECT_TYPES } from '../../preload/types'
+import {
+  BLOCK_TYPES,
+  PROJECT_EXECUTION_STAGES,
+  PROJECT_STATUSES,
+  PROJECT_TYPES
+} from '../../preload/types'
 import { parseBlockData, parsePageConfig } from '@shared/validation'
 import { getDb, getSqlite } from '../db'
 import { blockQueries } from '../db/queries/blocks'
@@ -220,6 +226,13 @@ function maybeProjectStatus(value: unknown): ProjectStatus | undefined {
     : undefined
 }
 
+function maybeProjectExecutionStage(value: unknown): ProjectExecutionStage | undefined {
+  return typeof value === 'string' &&
+    PROJECT_EXECUTION_STAGES.includes(value as ProjectExecutionStage)
+    ? (value as ProjectExecutionStage)
+    : undefined
+}
+
 function parseGitHubPagesUrl(remoteUrl: string | null): string | null {
   if (!remoteUrl) {
     return null
@@ -362,6 +375,8 @@ function restoreProjectSnapshot(projectId: string, snapshot: Record<string, unkn
     id: projectId,
     name: typeof snapshot.name === 'string' && snapshot.name.trim() ? snapshot.name : current.name,
     type: maybeProjectType(snapshot.type) ?? current.type,
+    execution_stage:
+      maybeProjectExecutionStage(snapshot.execution_stage) ?? current.execution_stage,
     subtitle:
       typeof snapshot.subtitle === 'string'
         ? snapshot.subtitle

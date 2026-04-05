@@ -2,6 +2,56 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { LabBridge } from './types'
 
 const bridge: LabBridge = {
+  dashboard: {
+    summary: () => ipcRenderer.invoke('dashboard:summary'),
+    importStarterTemplate: () => ipcRenderer.invoke('dashboard:import-starter-template')
+  },
+  plan: {
+    listNodes: () => ipcRenderer.invoke('plan:list-nodes'),
+    getNode: (id) => ipcRenderer.invoke('plan:get-node', id),
+    createNode: (input) => ipcRenderer.invoke('plan:create-node', input),
+    updateNode: (input) => ipcRenderer.invoke('plan:update-node', input),
+    deleteNode: (id) => ipcRenderer.invoke('plan:delete-node', id),
+    listLinks: (nodeId) => ipcRenderer.invoke('plan:list-links', nodeId),
+    createLink: (input) => ipcRenderer.invoke('plan:create-link', input),
+    deleteLink: (id) => ipcRenderer.invoke('plan:delete-link', id)
+  },
+  skills: {
+    listDomains: () => ipcRenderer.invoke('skills:list-domains'),
+    createDomain: (input) => ipcRenderer.invoke('skills:create-domain', input),
+    updateDomain: (input) => ipcRenderer.invoke('skills:update-domain', input),
+    deleteDomain: (id) => ipcRenderer.invoke('skills:delete-domain', id),
+    listNodes: (domainId) => ipcRenderer.invoke('skills:list-nodes', domainId),
+    getNode: (id) => ipcRenderer.invoke('skills:get-node', id),
+    createNode: (input) => ipcRenderer.invoke('skills:create-node', input),
+    updateNode: (input) => ipcRenderer.invoke('skills:update-node', input),
+    deleteNode: (id) => ipcRenderer.invoke('skills:delete-node', id),
+    addEvidence: (input) => ipcRenderer.invoke('skills:add-evidence', input),
+    updateEvidence: (input) => ipcRenderer.invoke('skills:update-evidence', input),
+    confirmEvidence: (id) => ipcRenderer.invoke('skills:confirm-evidence', id),
+    deleteEvidence: (id) => ipcRenderer.invoke('skills:delete-evidence', id)
+  },
+  os: {
+    listProfiles: () => ipcRenderer.invoke('os:list-profiles'),
+    createProfile: (input) => ipcRenderer.invoke('os:create-profile', input),
+    updateProfile: (input) => ipcRenderer.invoke('os:update-profile', input),
+    deleteProfile: (id) => ipcRenderer.invoke('os:delete-profile', id),
+    listTimeBlocks: (profileId) => ipcRenderer.invoke('os:list-time-blocks', profileId),
+    upsertTimeBlock: (input) => ipcRenderer.invoke('os:upsert-time-block', input),
+    deleteTimeBlock: (id) => ipcRenderer.invoke('os:delete-time-block', id),
+    listDailyLogs: () => ipcRenderer.invoke('os:list-daily-logs'),
+    getDailyLog: (date) => ipcRenderer.invoke('os:get-daily-log', date),
+    upsertDailyLog: (input) => ipcRenderer.invoke('os:upsert-daily-log', input),
+    listHabits: () => ipcRenderer.invoke('os:list-habits'),
+    createHabit: (input) => ipcRenderer.invoke('os:create-habit', input),
+    updateHabit: (input) => ipcRenderer.invoke('os:update-habit', input),
+    deleteHabit: (id) => ipcRenderer.invoke('os:delete-habit', id),
+    upsertHabitLog: (input) => ipcRenderer.invoke('os:upsert-habit-log', input),
+    listCountdowns: () => ipcRenderer.invoke('os:list-countdowns'),
+    createCountdown: (input) => ipcRenderer.invoke('os:create-countdown', input),
+    updateCountdown: (input) => ipcRenderer.invoke('os:update-countdown', input),
+    deleteCountdown: (id) => ipcRenderer.invoke('os:delete-countdown', id)
+  },
   project: {
     list: () => ipcRenderer.invoke('project:list'),
     get: (id) => ipcRenderer.invoke('project:get', id),

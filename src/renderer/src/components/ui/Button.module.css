@@ -7,20 +7,22 @@
   border-radius: var(--lab-radius);
   padding: 10px 16px;
   font-size: 0.9rem;
+  font-weight: 600;
   transition:
     background var(--lab-transition),
     border-color var(--lab-transition),
-    color var(--lab-transition);
+    color var(--lab-transition),
+    box-shadow var(--lab-transition);
 }
 
 .button:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 24px rgba(29, 29, 31, 0.05);
 }
 
 .primary {
   background: var(--lab-primary);
-  border-color: rgba(79, 140, 255, 0.35);
-  color: #f8fbff;
+  border-color: var(--lab-primary);
+  color: var(--lab-primary-ink);
 }
 
 .ghost {
@@ -30,15 +32,15 @@
 }
 
 .outline {
-  background: var(--lab-surface-2);
+  background: var(--lab-surface);
   border-color: var(--lab-border);
   color: var(--lab-text);
 }
 
 .danger {
-  background: rgba(201, 108, 92, 0.12);
-  border-color: rgba(201, 108, 92, 0.34);
-  color: #ffd8d2;
+  background: var(--lab-danger-dim);
+  border-color: rgba(197, 59, 45, 0.18);
+  color: var(--lab-danger);
 }
 
 .sm {
@@ -53,5 +55,5 @@
 .button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  border-color: transparent;
+  box-shadow: none;
 }

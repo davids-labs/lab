@@ -1,21 +1,38 @@
 :root {
-  --lab-bg: #111315;
-  --lab-surface: #171a1d;
-  --lab-surface-2: #1d2126;
-  --lab-surface-3: #252a31;
-  --lab-primary: #8d947f;
-  --lab-primary-dim: rgba(141, 148, 127, 0.14);
-  --lab-hero: #8e7568;
-  --lab-build: #8d947f;
-  --lab-design: #9b8b6b;
-  --lab-green: #7e9286;
-  --lab-text: #e2e5e8;
-  --lab-text-muted: #99a0a8;
-  --lab-text-faint: #68717a;
-  --lab-border: #343a42;
-  --lab-border-2: #252a31;
-  --lab-font-sans: 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
-  --lab-font-mono: 'IBM Plex Mono', 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+  --lab-bg: #f6f6f3;
+  --lab-surface: #ffffff;
+  --lab-surface-muted: #f3f3ef;
+  --lab-surface-2: #f7f7f4;
+  --lab-surface-3: #ecece7;
+  --lab-primary: #1d1d1f;
+  --lab-primary-dim: rgba(29, 29, 31, 0.08);
+  --lab-primary-ink: #ffffff;
+  --lab-hero: #9b6950;
+  --lab-build: #697e63;
+  --lab-design: #847156;
+  --lab-green: #5f8a6d;
+  --lab-text: #1d1d1f;
+  --lab-text-muted: #6e6e73;
+  --lab-text-faint: #8c8c92;
+  --lab-border: #dddddf;
+  --lab-border-2: #ececef;
+  --lab-danger: #c53b2d;
+  --lab-danger-dim: rgba(197, 59, 45, 0.08);
+  --lab-warning: #b46a1f;
+  --lab-shadow-card: 0 16px 32px rgba(21, 21, 24, 0.04);
+  --lab-font-sans:
+    'Inter',
+    'Segoe UI Variable Display',
+    'Segoe UI',
+    'SF Pro Display',
+    system-ui,
+    sans-serif;
+  --lab-font-mono:
+    'IBM Plex Mono',
+    'Cascadia Mono',
+    'SFMono-Regular',
+    Consolas,
+    monospace;
   --lab-space-1: 4px;
   --lab-space-2: 8px;
   --lab-space-3: 12px;
@@ -24,11 +41,11 @@
   --lab-space-6: 24px;
   --lab-space-8: 32px;
   --lab-space-10: 40px;
-  --lab-radius-sm: 3px;
-  --lab-radius: 6px;
-  --lab-radius-lg: 8px;
-  --lab-radius-xl: 10px;
-  --lab-transition: 0.14s ease;
-  color-scheme: dark;
-  font-family: var(--lab-font-mono);
+  --lab-radius-sm: 4px;
+  --lab-radius: 8px;
+  --lab-radius-lg: 10px;
+  --lab-radius-xl: 14px;
+  --lab-transition: 0.16s ease;
+  color-scheme: light;
+  font-family: var(--lab-font-sans);
 }

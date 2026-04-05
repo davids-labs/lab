@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import type { CreateProjectInput, Project, UpdateProjectInput } from '../../preload/types'
 import { projectQueries } from '../db/queries/projects'
+import { skillQueries } from '../db/queries/skills'
 import { cancelScheduledCommit, scheduleProjectAutoCommit } from '../services/gitSync'
 
 export function registerProjectHandlers(): void {
@@ -15,6 +16,7 @@ export function registerProjectHandlers(): void {
   )
   ipcMain.handle('project:update', async (_event, input: UpdateProjectInput): Promise<Project> => {
     const project = projectQueries.update(input)
+    skillQueries.syncProjectEvidenceSuggestions(project.id)
     scheduleProjectAutoCommit(project.id)
     return project
   })
