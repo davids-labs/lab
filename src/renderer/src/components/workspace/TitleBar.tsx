@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Project } from '@preload/types'
+import { GitPanelModal } from '@renderer/components/git/GitPanelModal'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
 import { useProjectStore } from '@renderer/stores/projectStore'
@@ -15,12 +16,15 @@ interface TitleBarProps {
 
 export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const navigate = useNavigate()
+  const loadProject = useProjectStore((state) => state.loadProject)
   const updateProject = useProjectStore((state) => state.updateProject)
   const saveState = useUiStore((state) => state.saveState)
   const pushToast = useToastStore((state) => state.push)
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState(project.name)
   const [exporting, setExporting] = useState<'html' | 'zip' | null>(null)
+  const [publishing, setPublishing] = useState(false)
+  const [gitOpen, setGitOpen] = useState(false)
 
   useEffect(() => setDraftName(project.name), [project.name])
 
@@ -63,6 +67,26 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
       })
     } finally {
       setExporting(null)
+    }
+  }
+
+  async function handlePublish(): Promise<void> {
+    setPublishing(true)
+
+    try {
+      const result = await window.lab.git.publish(project.id)
+      await loadProject(project.id)
+      pushToast({
+        message: result.url ? `Published at ${result.url}` : 'Publish completed.',
+        type: 'success'
+      })
+    } catch (error) {
+      pushToast({
+        message: error instanceof Error ? error.message : 'Failed to publish project.',
+        type: 'error'
+      })
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -119,6 +143,18 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
           Public Page
         </Button>
         <Button
+          variant={project.git_enabled ? 'outline' : 'ghost'}
+          size="sm"
+          onClick={() => setGitOpen(true)}
+        >
+          Git
+        </Button>
+        {view === 'customise' && project.git_enabled ? (
+          <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
+            {publishing ? 'Publishing…' : 'Publish'}
+          </Button>
+        ) : null}
+        <Button
           variant="outline"
           size="sm"
           disabled={exporting !== null}
@@ -144,6 +180,7 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
                 : 'Idle'}
         </span>
       </div>
+      {gitOpen ? <GitPanelModal onClose={() => setGitOpen(false)} project={project} /> : null}
     </header>
   )
 }

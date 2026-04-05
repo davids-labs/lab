@@ -24,7 +24,7 @@ function createWindow(): void {
     minHeight: 720,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#0d0f12',
+    backgroundColor: '#0f1318',
     title: 'LAB',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {

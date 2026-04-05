@@ -1,0 +1,84 @@
+.shell {
+  display: grid;
+  gap: 16px;
+}
+
+.section {
+  border: 1px solid var(--lab-border);
+  border-radius: 10px;
+  background: var(--lab-surface-2);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.metaCard {
+  border: 1px solid var(--lab-border);
+  border-radius: 8px;
+  background: var(--lab-surface);
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.label {
+  color: var(--lab-text-muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.helper {
+  color: var(--lab-text-muted);
+  font-size: 0.82rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.historyList {
+  display: grid;
+  gap: 8px;
+}
+
+.historyRow {
+  border: 1px solid var(--lab-border);
+  border-radius: 8px;
+  background: var(--lab-surface);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.historyTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.hash {
+  color: var(--lab-text-muted);
+  font-size: 0.8rem;
+}
+
+.link {
+  color: var(--lab-primary);
+  word-break: break-all;
+}

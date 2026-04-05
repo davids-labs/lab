@@ -29,12 +29,15 @@ const bridge: LabBridge = {
       ipcRenderer.invoke('page:export-zip', projectId, outputPath)
   },
   git: {
+    status: (projectId) => ipcRenderer.invoke('git:status', projectId),
     init: (projectId) => ipcRenderer.invoke('git:init', projectId),
     commit: (projectId, message) => ipcRenderer.invoke('git:commit', projectId, message),
     log: (projectId) => ipcRenderer.invoke('git:log', projectId),
     push: (projectId) => ipcRenderer.invoke('git:push', projectId),
     restore: (projectId, hash) => ipcRenderer.invoke('git:restore', projectId, hash),
-    setRemote: (projectId, url) => ipcRenderer.invoke('git:set-remote', projectId, url)
+    setRemote: (projectId, url) => ipcRenderer.invoke('git:set-remote', projectId, url),
+    setToken: (token) => ipcRenderer.invoke('git:set-token', token),
+    publish: (projectId) => ipcRenderer.invoke('git:publish', projectId)
   },
   system: {
     openFiles: (options) => ipcRenderer.invoke('system:open-files', options),

@@ -260,6 +260,20 @@ export interface GitCommitRecord {
   timestamp: number
 }
 
+export interface GitStatus {
+  enabled: boolean
+  hasRepository: boolean
+  remoteUrl: string | null
+  hasToken: boolean
+  pagesUrl: string | null
+  autoCommitPending: boolean
+}
+
+export interface GitPublishResult {
+  ok: boolean
+  url: string | null
+}
+
 export interface LabBridge {
   project: {
     list: () => Promise<Project[]>
@@ -286,12 +300,15 @@ export interface LabBridge {
     exportZip: (projectId: string, outputPath?: string) => Promise<{ ok: boolean; path?: string }>
   }
   git: {
+    status: (projectId: string) => Promise<GitStatus>
     init: (projectId: string) => Promise<{ ok: boolean }>
     commit: (projectId: string, message?: string) => Promise<{ hash: string }>
     log: (projectId: string) => Promise<GitCommitRecord[]>
     push: (projectId: string) => Promise<{ ok: boolean }>
     restore: (projectId: string, hash: string) => Promise<{ ok: boolean }>
     setRemote: (projectId: string, url: string) => Promise<{ ok: boolean }>
+    setToken: (token: string | null) => Promise<{ ok: boolean }>
+    publish: (projectId: string) => Promise<GitPublishResult>
   }
   system: {
     openFiles: (options?: OpenFilesOptions) => Promise<string[]>
