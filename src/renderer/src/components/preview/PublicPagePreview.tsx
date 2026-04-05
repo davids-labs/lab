@@ -89,7 +89,7 @@ export function PublicPagePreview({
   return (
     <aside className={`${styles.panel} ${showBorder ? styles.bordered : styles.flush}`}>
       <div className={styles.header}>
-        <strong>Public Page</strong>
+        <strong>{project.name} public page</strong>
         <div className={styles.actions}>
           <Button size="sm" variant="outline" onClick={() => void refreshPreview()}>
             Refresh

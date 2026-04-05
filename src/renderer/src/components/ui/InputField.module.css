@@ -1,11 +1,12 @@
 .field {
   display: grid;
-  gap: var(--lab-space-2);
+  gap: 6px;
 }
 
 .label {
-  color: var(--lab-text-muted);
-  font-size: 0.82rem;
+  color: var(--lab-text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -13,11 +14,11 @@
 .control {
   width: 100%;
   border: 1px solid var(--lab-border);
-  border-radius: var(--lab-radius);
-  background: var(--lab-surface-2);
+  border-radius: 8px;
+  background: var(--lab-panel);
   color: var(--lab-text);
   padding: 10px 12px;
-  box-shadow: inset 0 1px 1px rgba(29, 29, 31, 0.02);
+  line-height: 1.5;
   transition:
     border-color var(--lab-transition),
     background var(--lab-transition),
@@ -25,19 +26,25 @@
 }
 
 .control:hover {
-  border-color: #cfcfd4;
+  border-color: rgba(55, 53, 47, 0.18);
 }
 
 .control:focus {
-  border-color: rgba(29, 29, 31, 0.24);
-  box-shadow: 0 0 0 4px rgba(29, 29, 31, 0.05);
+  border-color: rgba(47, 111, 235, 0.28);
+  box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.08);
+  outline: none;
 }
 
 .mono {
   font-family: var(--lab-font-mono);
 }
 
+textarea.control {
+  min-height: 104px;
+  resize: vertical;
+}
+
 .error {
   color: var(--lab-danger);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }

@@ -153,44 +153,46 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
       </div>
 
       <div className={styles.right}>
-        <Button
-          variant={view === 'workspace' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => navigate(`/project/${project.id}`)}
-        >
-          Workspace
-        </Button>
-        <Button
-          variant={view === 'customise' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => navigate(`/project/${project.id}/customise`)}
-        >
-          Customise
-        </Button>
-        <Button
-          variant={view === 'preview' ? 'primary' : 'outline'}
-          size="sm"
-          onClick={() => navigate(`/project/${project.id}/preview`)}
-        >
-          Public Page
-        </Button>
-        {view === 'workspace' ? (
+        <div className={styles.segmented}>
           <Button
-            variant={workspacePreviewVisible ? 'primary' : 'outline'}
+            variant={view === 'workspace' ? 'outline' : 'ghost'}
             size="sm"
-            onClick={toggleWorkspacePreview}
+            onClick={() => navigate(`/project/${project.id}`)}
           >
-            {workspacePreviewVisible ? 'Hide Preview' : 'Show Preview'}
+            Workspace
           </Button>
-        ) : null}
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={exporting !== null}
-          onClick={() => void handleExport('html')}
-        >
-          {exporting === 'html' ? 'Exporting HTML…' : 'Export HTML'}
-        </Button>
+          <Button
+            variant={view === 'customise' ? 'outline' : 'ghost'}
+            size="sm"
+            onClick={() => navigate(`/project/${project.id}/customise`)}
+          >
+            Customise
+          </Button>
+          <Button
+            variant={view === 'preview' ? 'outline' : 'ghost'}
+            size="sm"
+            onClick={() => navigate(`/project/${project.id}/preview`)}
+          >
+            Preview
+          </Button>
+        </div>
+        {view === 'workspace' ? (
+          <Button size="sm" onClick={toggleWorkspacePreview}>
+            {workspacePreviewVisible ? 'Hide preview' : 'Show preview'}
+          </Button>
+        ) : view === 'customise' && project.git_enabled ? (
+          <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
+            {publishing ? 'Publishing…' : 'Publish'}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            disabled={exporting !== null}
+            onClick={() => void handleExport('html')}
+          >
+            {exporting === 'html' ? 'Exporting HTML…' : 'Export HTML'}
+          </Button>
+        )}
         <details className={styles.menu}>
           <summary className={styles.menuTrigger}>More</summary>
           <div className={styles.menuPanel}>
@@ -204,11 +206,6 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
             <Button variant="outline" size="sm" onClick={() => void handleToggleFullscreen()}>
               {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             </Button>
-            {view === 'customise' && project.git_enabled ? (
-              <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
-                {publishing ? 'Publishing…' : 'Publish'}
-              </Button>
-            ) : null}
             <Button
               variant="outline"
               size="sm"

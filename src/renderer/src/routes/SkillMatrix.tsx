@@ -15,6 +15,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
+import styles from './SkillMatrix.module.css'
 
 Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Tooltip, Legend)
 
@@ -90,22 +91,22 @@ export function SkillMatrix(): JSX.Element {
         labels: domains.map((domain) => domain.title),
         datasets: [
           {
-            label: 'Verified Coverage',
+            label: 'Verified coverage',
             data: domains.map((domain) =>
               domain.total_nodes > 0 ? (domain.verified_nodes / domain.total_nodes) * 10 : 0
             ),
-            backgroundColor: 'rgba(0, 113, 227, 0.12)',
-            borderColor: 'rgba(0, 113, 227, 1)',
-            pointBackgroundColor: 'rgba(0, 113, 227, 1)',
+            backgroundColor: 'rgba(47, 111, 235, 0.08)',
+            borderColor: 'rgba(47, 111, 235, 0.88)',
+            pointBackgroundColor: 'rgba(47, 111, 235, 1)',
             borderWidth: 2
           },
           {
-            label: 'Target Readiness',
+            label: 'Target line',
             data: domains.map(() => 10),
-            backgroundColor: 'rgba(255, 59, 48, 0.08)',
-            borderColor: 'rgba(255, 59, 48, 0.64)',
-            pointBackgroundColor: 'rgba(255, 59, 48, 1)',
-            borderWidth: 2
+            backgroundColor: 'rgba(43, 41, 38, 0.03)',
+            borderColor: 'rgba(43, 41, 38, 0.34)',
+            pointBackgroundColor: 'rgba(43, 41, 38, 0.55)',
+            borderWidth: 1
           }
         ]
       },
@@ -117,10 +118,10 @@ export function SkillMatrix(): JSX.Element {
             beginAtZero: true,
             min: 0,
             max: 10,
-            angleLines: { color: 'rgba(0,0,0,0.08)' },
-            grid: { color: 'rgba(0,0,0,0.08)' },
+            angleLines: { color: 'rgba(55, 53, 47, 0.1)' },
+            grid: { color: 'rgba(55, 53, 47, 0.08)' },
             pointLabels: {
-              color: '#515154',
+              color: '#6e675f',
               font: {
                 family: 'Inter, Segoe UI, sans-serif',
                 size: 11
@@ -133,7 +134,7 @@ export function SkillMatrix(): JSX.Element {
           legend: {
             position: 'bottom',
             labels: {
-              color: '#515154',
+              color: '#6e675f',
               font: { family: 'Inter, Segoe UI, sans-serif', size: 11 }
             }
           }
@@ -207,51 +208,55 @@ export function SkillMatrix(): JSX.Element {
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.hero}>
-          <span className={pageStyles.eyebrow}>Skill Matrix</span>
-          <h1 className={pageStyles.title}>Evidence-Based Readiness</h1>
+        <section className={pageStyles.lead}>
+          <span className={pageStyles.eyebrow}>Proof / Skills</span>
+          <h1 className={pageStyles.title}>Evidence-based skill matrix</h1>
           <p className={pageStyles.description}>
-            Skills are not self-scored here. They become verified only when evidence is attached and
-            confirmed.
+            Domains, nodes, and evidence should read like a quiet collection-detail workflow. The
+            chart is context, not the page itself.
           </p>
         </section>
 
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
+        <section className={pageStyles.twoColumn}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Domain Coverage</h2>
-              <span className={pageStyles.pill}>{domains.length} domains</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Coverage map</h2>
+                <p className={pageStyles.sectionDescription}>
+                  A high-level read on how verified each domain is becoming.
+                </p>
+              </div>
+              <span className={pageStyles.chip}>{domains.length} domains</span>
             </div>
-            <div style={{ height: 320 }}>
+            <div className={styles.chartWrap}>
               <canvas ref={radarRef} />
             </div>
           </article>
-          <article className={pageStyles.card}>
+
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Add Domain</h2>
-              <span className={pageStyles.pill}>Buckets</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>New domain</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Domain buckets keep the matrix readable when the skill tree grows.
+                </p>
+              </div>
             </div>
-            <div className={pageStyles.inlineRow}>
+            <div className={pageStyles.inlineActions}>
               <InputField
                 placeholder="Mechanical IQ"
                 value={domainTitle}
                 onChange={(event) => setDomainTitle(event.target.value)}
               />
-              <Button onClick={() => void handleCreateDomain()}>Add Domain</Button>
+              <Button onClick={() => void handleCreateDomain()}>Add domain</Button>
             </div>
-            <div className={pageStyles.pillRow}>
+            <div className={pageStyles.chipRow}>
               {domains.map((domain) => (
                 <button
                   key={domain.id}
-                  className={pageStyles.pill}
+                  className={`${pageStyles.chip} ${domain.id === activeDomainId ? pageStyles.chipActive : ''}`}
                   onClick={() => setActiveDomainId(domain.id)}
                   type="button"
-                  style={{
-                    background:
-                      domain.id === activeDomainId
-                        ? 'rgba(0, 113, 227, 0.08)'
-                        : 'var(--lab-surface-muted)'
-                  }}
                 >
                   {domain.title}
                 </button>
@@ -260,22 +265,24 @@ export function SkillMatrix(): JSX.Element {
           </article>
         </section>
 
-        <section className={pageStyles.split}>
-          <article className={pageStyles.card}>
+        <section className={pageStyles.collectionDetailLayout}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Domains</h2>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Domains</h2>
+                <p className={pageStyles.sectionDescription}>Choose the bucket you want to work inside.</p>
+              </div>
             </div>
             <div className={pageStyles.list}>
               {domains.map((domain) => (
                 <button
                   key={domain.id}
-                  className={pageStyles.listRow}
-                  type="button"
+                  className={`${pageStyles.rowButton} ${domain.id === activeDomainId ? pageStyles.rowActive : ''}`}
                   onClick={() => setActiveDomainId(domain.id)}
-                  style={{ textAlign: 'left' }}
+                  type="button"
                 >
-                  <strong>{domain.title}</strong>
-                  <span className={pageStyles.muted}>
+                  <span className={pageStyles.rowTitle}>{domain.title}</span>
+                  <span className={pageStyles.rowMeta}>
                     {domain.verified_nodes}/{domain.total_nodes} verified
                   </span>
                 </button>
@@ -283,54 +290,67 @@ export function SkillMatrix(): JSX.Element {
             </div>
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Nodes</h2>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Nodes</h2>
+                <p className={pageStyles.sectionDescription}>Select a node, then work its evidence trail.</p>
+              </div>
             </div>
-            <div className={pageStyles.inlineRow}>
+            <div className={pageStyles.inlineActions}>
               <InputField
                 placeholder="Add skill node"
                 value={nodeTitle}
                 onChange={(event) => setNodeTitle(event.target.value)}
               />
-              <Button onClick={() => void handleCreateNode()}>Add Node</Button>
+              <Button onClick={() => void handleCreateNode()}>Add node</Button>
             </div>
             <div className={pageStyles.list}>
               {domainNodes.map((node) => (
                 <button
                   key={node.id}
-                  className={pageStyles.listRow}
-                  type="button"
+                  className={`${pageStyles.rowButton} ${node.id === activeNodeId ? pageStyles.rowActive : ''}`}
                   onClick={() => void loadNodeDetail(node.id)}
-                  style={{ textAlign: 'left' }}
+                  type="button"
                 >
-                  <strong>{node.title}</strong>
-                  <span className={pageStyles.muted}>
+                  <span className={pageStyles.rowTitle}>{node.title}</span>
+                  <span className={pageStyles.rowMeta}>
                     {node.state.replace(/_/g, ' ')} · {node.evidence_count} evidence items
                   </span>
                 </button>
               ))}
+              {domainNodes.length === 0 ? (
+                <div className={pageStyles.emptyState}>
+                  <strong>No nodes in this domain yet</strong>
+                  <span>Add the concrete capability nodes you want this bucket to track.</span>
+                </div>
+              ) : null}
             </div>
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Evidence Linking</h2>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Evidence detail</h2>
+                <p className={pageStyles.sectionDescription}>Attach proof and confirm suggested verification here.</p>
+              </div>
               {activeNodeDetail ? (
-                <span className={pageStyles.pill}>{activeNodeDetail.skill.state}</span>
+                <span className={styles.statePill} data-state={activeNodeDetail.skill.state}>
+                  {activeNodeDetail.skill.state.replace(/_/g, ' ')}
+                </span>
               ) : null}
             </div>
             {activeNodeDetail ? (
-              <div className={pageStyles.formGrid}>
-                <div>
+              <div className={pageStyles.document}>
+                <div className={pageStyles.propertyRow}>
                   <strong>{activeNodeDetail.skill.title}</strong>
-                  <p className={pageStyles.description}>
+                  <span className={pageStyles.muted}>
                     {activeNodeDetail.skill.description ??
                       'Add a description to clarify the proof required.'}
-                  </p>
+                  </span>
                 </div>
                 <label className={pageStyles.formGrid}>
-                  <span className={pageStyles.eyebrow}>Evidence Type</span>
+                  <span className={pageStyles.eyebrow}>Evidence type</span>
                   <select
                     value={evidenceDraft.source_type}
                     onChange={(event) =>
@@ -375,7 +395,7 @@ export function SkillMatrix(): JSX.Element {
                       </select>
                     </label>
                     <label className={pageStyles.formGrid}>
-                      <span className={pageStyles.eyebrow}>Required Stage</span>
+                      <span className={pageStyles.eyebrow}>Required stage</span>
                       <select
                         value={evidenceDraft.required_stage}
                         onChange={(event) =>
@@ -424,18 +444,18 @@ export function SkillMatrix(): JSX.Element {
                     setEvidenceDraft((current) => ({ ...current, notes: event.target.value }))
                   }
                 />
-                <Button onClick={() => void handleAddEvidence()}>Attach Evidence</Button>
+                <Button onClick={() => void handleAddEvidence()}>Attach evidence</Button>
                 <div className={pageStyles.list}>
                   {activeNodeDetail.evidence.map((evidence) => (
-                    <div key={evidence.id} className={pageStyles.listRow}>
-                      <strong>{evidence.label}</strong>
-                      <span className={pageStyles.muted}>
+                    <div key={evidence.id} className={pageStyles.row}>
+                      <span className={pageStyles.rowTitle}>{evidence.label}</span>
+                      <span className={pageStyles.rowMeta}>
                         {evidence.source_type} · {evidence.status}
                       </span>
-                      <div className={pageStyles.inlineRow}>
+                      <div className={pageStyles.inlineActions}>
                         {evidence.status === 'suggested' ? (
                           <Button size="sm" onClick={() => void confirmEvidence(evidence.id)}>
-                            Confirm Verification
+                            Confirm
                           </Button>
                         ) : null}
                         <Button
@@ -448,10 +468,19 @@ export function SkillMatrix(): JSX.Element {
                       </div>
                     </div>
                   ))}
+                  {activeNodeDetail.evidence.length === 0 ? (
+                    <div className={pageStyles.emptyState}>
+                      <strong>No evidence attached yet</strong>
+                      <span>Attach proof from projects, certifications, or links to verify this node.</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : (
-              <p className={pageStyles.description}>Select a skill node to attach evidence.</p>
+              <div className={pageStyles.emptyState}>
+                <strong>Select a skill node</strong>
+                <span>Its evidence record will open here.</span>
+              </div>
             )}
           </article>
         </section>

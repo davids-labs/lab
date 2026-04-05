@@ -5,36 +5,224 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  background: var(--lab-bg);
 }
 
 .panel {
-  border-right: 1px solid var(--lab-border-2);
-  background: rgba(15, 19, 24, 0.96);
-  padding: 20px;
   display: grid;
   gap: 18px;
   align-content: start;
-  overflow: auto;
   min-width: 0;
   min-height: 0;
+  padding: 22px;
+  overflow: auto;
+  border-right: 1px solid var(--lab-divider);
+  background: var(--lab-panel);
 }
 
-.sectionCard {
-  border: 1px solid var(--lab-border);
-  border-radius: 10px;
-  background: var(--lab-surface);
-  padding: 14px;
+.header {
   display: grid;
+  gap: 8px;
+}
+
+.eyebrow {
+  color: var(--lab-text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.22rem;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.description {
+  margin: 0;
+  color: var(--lab-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabButton {
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lab-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tabButton:hover {
+  background: var(--lab-hover);
+  color: var(--lab-text);
+}
+
+.tabButtonActive {
+  border-color: var(--lab-divider);
+  background: var(--lab-selected);
+  color: var(--lab-text);
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+.inlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.sectionList {
+  display: grid;
+  gap: 8px;
+}
+
+.sectionRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--lab-panel-subtle);
+}
+
+.sectionRow:hover {
+  border-color: var(--lab-divider);
+  background: var(--lab-hover);
+}
+
+.sectionRowActive {
+  border-color: var(--lab-divider);
+  background: var(--lab-selected);
+}
+
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lab-text-faint);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: grab;
+}
+
+.dragHandle:hover {
+  background: var(--lab-panel);
+  border-color: var(--lab-divider);
+  color: var(--lab-text);
+}
+
+.sectionMeta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+
+.sectionMeta strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.sectionMeta span {
+  color: var(--lab-text-muted);
+  font-size: 0.8rem;
+}
+
+.visibilityToggle,
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lab-text-muted);
+  font-size: 0.84rem;
+}
+
+.detailCard,
+.note {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--lab-divider);
+  border-radius: 14px;
+  background: var(--lab-panel-subtle);
+}
+
+.detailHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
   gap: 12px;
 }
 
-.muted {
-  color: var(--lab-text-muted);
-  font-size: 0.82rem;
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--lab-border);
+  border-radius: 10px;
+  background: var(--lab-panel);
+  color: var(--lab-text);
+  padding: 10px 12px;
+}
+
+.field select:focus {
+  border-color: rgba(47, 111, 235, 0.28);
+  box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.08);
+  outline: none;
+}
+
+.linkRow {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--lab-divider);
+  border-radius: 12px;
+  background: var(--lab-panel);
 }
 
 .preview {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  padding: 18px 18px 18px 0;
+}
+
+@media (max-width: 1100px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .preview {
+    padding: 0 18px 18px;
+  }
 }

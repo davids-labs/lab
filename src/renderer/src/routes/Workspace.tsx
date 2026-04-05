@@ -130,7 +130,7 @@ export function Workspace(): JSX.Element {
   }, [importAsset, projectId, pushToast])
 
   if (!project) {
-    return <div style={{ padding: 32 }}>Loading project…</div>
+    return <div style={{ padding: 32 }}>Loading project workspace…</div>
   }
 
   return (
@@ -160,11 +160,9 @@ export function Workspace(): JSX.Element {
         <main className={styles.main}>
           <Canvas activeBlockId={activeBlockId} blocks={blocks} />
           <div className={styles.statusBar}>
-            <span>
-              {blocks.length} block{blocks.length === 1 ? '' : 's'}
-            </span>
-            <span>{blocks.filter((block) => block.visible_on_page).length} visible on page</span>
-            <span>{workspacePreviewVisible ? 'Preview open' : 'Preview hidden'}</span>
+            <span>{blocks.length} block{blocks.length === 1 ? '' : 's'}</span>
+            <span>{blocks.filter((block) => block.visible_on_page).length} visible publicly</span>
+            <span>{workspacePreviewVisible ? 'Live preview open' : 'Live preview hidden'}</span>
           </div>
         </main>
         {workspacePreviewVisible ? (

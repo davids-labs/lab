@@ -1,3 +1,5 @@
+@import './tokens.css';
+
 *,
 *::before,
 *::after {
@@ -7,17 +9,22 @@
 html,
 body,
 #root {
-  width: 100%;
   height: 100%;
-  min-height: 100%;
+}
+
+html {
+  background: var(--lab-bg);
 }
 
 body {
   margin: 0;
-  background: var(--lab-bg);
+  background: linear-gradient(180deg, #fbfaf8 0%, var(--lab-bg) 100%);
   color: var(--lab-text);
   font-family: var(--lab-font-sans);
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -28,38 +35,36 @@ select {
 }
 
 button {
-  cursor: pointer;
-}
-
-button,
-input,
-textarea,
-select {
+  border: 0;
+  background: none;
   color: inherit;
 }
 
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid rgba(29, 29, 31, 0.18);
-  outline-offset: 1px;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--lab-text-faint);
-}
-
+input,
+textarea,
 select {
-  border: 1px solid var(--lab-border);
-  border-radius: var(--lab-radius);
-  background: var(--lab-surface-2);
-  color: var(--lab-text);
-  padding: 10px 12px;
+  min-width: 0;
+}
+
+textarea {
+  resize: vertical;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lab-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(47, 111, 235, 0.18);
 }

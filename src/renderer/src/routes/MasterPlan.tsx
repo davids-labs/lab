@@ -54,6 +54,8 @@ function findPhaseForNode(
   return phases.find((phase) => phase.id === nodeId) ?? phases[0] ?? null
 }
 
+type TimelineView = 'cards' | 'list'
+
 export function MasterPlan(): JSX.Element {
   const navigate = useNavigate()
   const {
@@ -90,6 +92,7 @@ export function MasterPlan(): JSX.Element {
   const [linkTargetId, setLinkTargetId] = useState('')
   const [requiredStage, setRequiredStage] =
     useState<(typeof PROJECT_EXECUTION_STAGES)[number]>('validation')
+  const [timelineView, setTimelineView] = useState<TimelineView>('cards')
 
   useEffect(() => {
     void loadNodes()
@@ -260,77 +263,95 @@ export function MasterPlan(): JSX.Element {
   }
 
   const topOrganizations = organizations.slice(0, 4)
+  const relationLinks =
+    selectedNodeDetail?.links.length && selectedNodeDetail.links.length > 0
+      ? selectedNodeDetail.links
+      : selectedNodeDetail
+        ? links.filter((link) => link.node_id === selectedNodeDetail.node.id)
+        : []
 
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.hero}>
+        <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Direction</span>
-          <h1 className={pageStyles.title}>North Star, Narrative, and Roadmap</h1>
+          <h1 className={pageStyles.title}>Narrative, phases, and dependencies</h1>
           <p className={pageStyles.description}>
-            This workspace defines the long-range self: who you are building into, which phase you
-            are in, what the major epics are, and which proof or opportunity dependencies can block
-            the path.
+            Direction should read like a working document with a database underneath it: the long
+            range self at the top, the phase structure below, and the linked proof or opportunity
+            dependencies alongside it.
           </p>
         </section>
 
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
+        <section className={pageStyles.twoColumn}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Personal Profile</h2>
-              <span className={pageStyles.pill}>North star</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Personal profile</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Identity defaults and the long-range aim that every phase should support.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => navigate('/settings')}>
+                Edit profile
+              </Button>
             </div>
-            <div className={pageStyles.list}>
-              <div className={pageStyles.listRow}>
+            <div className={pageStyles.propertyGrid}>
+              <div className={pageStyles.propertyRow}>
                 <strong>{bundle?.user_profile.full_name ?? 'Your profile'}</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.user_profile.location ?? 'Location not set'}
                 </span>
               </div>
-              <div className={pageStyles.listRow}>
+              <div className={pageStyles.propertyRow}>
                 <strong>Current education</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.user_profile.current_education ?? 'Add this in Settings'}
                 </span>
               </div>
-              <div className={pageStyles.listRow}>
+              <div className={pageStyles.propertyRow}>
                 <strong>North star goal</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.user_profile.north_star_goal ?? 'Add this in Settings'}
                 </span>
               </div>
-              <div className={pageStyles.listRow}>
+              <div className={pageStyles.propertyRow}>
                 <strong>Degree path</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.user_profile.degree_track ?? 'Add this in Settings'}
                 </span>
               </div>
             </div>
-            <Button variant="outline" onClick={() => navigate('/settings')}>
-              Edit in Settings
-            </Button>
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Strategic Narrative</h2>
-              <span className={pageStyles.pill}>{organizations.length} target orgs</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Strategic narrative</h2>
+                <p className={pageStyles.sectionDescription}>
+                  The concise story that connects Trinity, portfolio proof, and the Apple /
+                  Columbia path.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => navigate('/settings')}>
+                Edit narrative
+              </Button>
             </div>
-            <div className={pageStyles.list}>
-              <div className={pageStyles.listRow}>
+            <div className={pageStyles.document}>
+              <div className={pageStyles.propertyRow}>
                 <strong>Strategic narrative</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.narrative_profile.strategic_narrative ??
                     'Capture the long-range narrative in Settings.'}
                 </span>
               </div>
-              <div className={pageStyles.listRow}>
+              <div className={pageStyles.propertyRow}>
                 <strong>Apple strategy</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.narrative_profile.apple_strategy ?? 'Add Apple strategy notes.'}
                 </span>
               </div>
-              <div className={pageStyles.listRow}>
+              <div className={pageStyles.propertyRow}>
                 <strong>Columbia strategy</strong>
                 <span className={pageStyles.muted}>
                   {bundle?.narrative_profile.columbia_strategy ?? 'Add Columbia strategy notes.'}
@@ -340,105 +361,141 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.list}>
               {topOrganizations.length > 0 ? (
                 topOrganizations.map((organization) => (
-                  <div key={organization.id} className={pageStyles.listRow}>
-                    <strong>{organization.name}</strong>
-                    <span className={pageStyles.muted}>
+                  <div key={organization.id} className={pageStyles.row}>
+                    <span className={pageStyles.rowTitle}>{organization.name}</span>
+                    <span className={pageStyles.rowMeta}>
                       {organization.priority.replace(/_/g, ' ')}
                       {organization.why_fit ? ` · ${organization.why_fit}` : ''}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className={pageStyles.listRow}>
+                <div className={pageStyles.emptyState}>
                   <strong>No target organizations yet</strong>
-                  <span className={pageStyles.muted}>
-                    Add them in Pipeline so the roadmap can point at actual target landscapes.
-                  </span>
+                  <span>Add them in Pipeline so Direction can point at real landscapes.</span>
                 </div>
               )}
             </div>
           </article>
         </section>
 
-        <section className={pageStyles.card}>
+        <section className={pageStyles.section}>
           <div className={pageStyles.sectionHeader}>
             <div>
-              <h2 className={pageStyles.cardTitle}>Fractal Timeline</h2>
-              <p className={pageStyles.description}>
-                Phases are the outer frame. Click a phase to move into its epics and then wire each
-                item to the proof, skills, organizations, applications, or weekly priorities it
-                depends on.
+              <h2 className={pageStyles.sectionTitle}>Fractal timeline</h2>
+              <p className={pageStyles.sectionDescription}>
+                Phases are the outer frame. Pick a phase, then move into its pillars, dependencies,
+                and sprint-level items.
               </p>
             </div>
-            <div className={pageStyles.inlineRow}>
+            <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.tabs}>
+                <button
+                  className={`${pageStyles.tab} ${timelineView === 'cards' ? pageStyles.tabActive : ''}`}
+                  onClick={() => setTimelineView('cards')}
+                  type="button"
+                >
+                  Cards
+                </button>
+                <button
+                  className={`${pageStyles.tab} ${timelineView === 'list' ? pageStyles.tabActive : ''}`}
+                  onClick={() => setTimelineView('list')}
+                  type="button"
+                >
+                  List
+                </button>
+              </div>
               <InputField
                 placeholder="Add a new phase"
                 value={phaseTitle}
                 onChange={(event) => setPhaseTitle(event.target.value)}
               />
-              <Button onClick={() => void handleCreatePhase()}>Add Phase</Button>
+              <Button onClick={() => void handleCreatePhase()}>Add phase</Button>
             </div>
           </div>
-          <div className={styles.timelineGrid}>
-            {phases.map((phase) => (
-              <button
-                key={phase.id}
-                className={`${styles.timelineCard} ${
-                  phase.id === activePhase?.id ? styles.timelineCardActive : ''
-                }`}
-                onClick={() => void selectNode(phase.id)}
-                type="button"
-              >
-                <span className={styles.timelineKicker}>
-                  {phase.status.replace(/_/g, ' ')} · {phaseChildCounts.get(phase.id) ?? 0} items
-                </span>
-                <h3 className={styles.timelineTitle}>{phase.title}</h3>
-                <p className={styles.timelineSummary}>
-                  {phase.summary ?? 'Add the phase-level summary and key constraints here.'}
-                </p>
-              </button>
-            ))}
-          </div>
-          {activePhase ? (
-            <div className={styles.phaseSummary}>
-              <strong>{activePhase.title}</strong>
-              <span className={pageStyles.muted}>
-                {activePhase.summary ?? 'Select the phase to edit its summary, dates, and notes.'}
-              </span>
-              <div className={pageStyles.inlineRow}>
-                <span className={pageStyles.pill}>{activePhase.status.replace(/_/g, ' ')}</span>
-                {activePhase.due_at ? (
-                  <span className={pageStyles.pill}>
-                    Due {new Date(activePhase.due_at).toLocaleDateString('en-IE')}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </section>
-
-        <section className={pageStyles.split}>
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Nested Items</h2>
-              <span className={pageStyles.pill}>{selectedNodeDetail?.children.length ?? 0}</span>
-            </div>
-            <div className={pageStyles.list}>
-              {selectedNodeDetail?.children.map((child) => (
+          {timelineView === 'cards' ? (
+            <div className={styles.timelineGrid}>
+              {phases.map((phase) => (
                 <button
-                  key={child.id}
-                  className={pageStyles.listRow}
+                  key={phase.id}
+                  className={`${styles.timelineCard} ${
+                    phase.id === activePhase?.id ? styles.timelineCardActive : ''
+                  }`}
+                  onClick={() => void selectNode(phase.id)}
                   type="button"
-                  onClick={() => void selectNode(child.id)}
-                  style={{ textAlign: 'left' }}
                 >
-                  <strong>{child.title}</strong>
-                  <span className={pageStyles.muted}>
-                    {child.kind.replace(/_/g, ' ')} · {child.status.replace(/_/g, ' ')}
+                  <span className={styles.timelineKicker}>
+                    {phase.status.replace(/_/g, ' ')} · {phaseChildCounts.get(phase.id) ?? 0} items
+                  </span>
+                  <h3 className={styles.timelineTitle}>{phase.title}</h3>
+                  <p className={styles.timelineSummary}>
+                    {phase.summary ?? 'Add the phase-level summary and key constraints here.'}
+                  </p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className={pageStyles.list}>
+              {phases.map((phase) => (
+                <button
+                  key={phase.id}
+                  className={`${pageStyles.rowButton} ${phase.id === activePhase?.id ? pageStyles.rowActive : ''}`}
+                  onClick={() => void selectNode(phase.id)}
+                  type="button"
+                >
+                  <span className={pageStyles.rowTitle}>{phase.title}</span>
+                  <span className={pageStyles.rowMeta}>
+                    {phase.status.replace(/_/g, ' ')} · {phaseChildCounts.get(phase.id) ?? 0}{' '}
+                    items
                   </span>
                 </button>
               ))}
             </div>
+          )}
+        </section>
+
+        <section className={pageStyles.collectionDetailLayout}>
+          <article className={pageStyles.section}>
+            <div className={pageStyles.sectionHeader}>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Phase tree</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Select the active item, then branch deeper when you need more detail.
+                </p>
+              </div>
+            </div>
+
+            {activePhase ? (
+              <div className={pageStyles.list}>
+                <button
+                  className={`${pageStyles.rowButton} ${selectedNodeDetail?.node.id === activePhase.id ? pageStyles.rowActive : ''}`}
+                  onClick={() => void selectNode(activePhase.id)}
+                  type="button"
+                >
+                  <span className={pageStyles.rowTitle}>{activePhase.title}</span>
+                  <span className={pageStyles.rowMeta}>Phase · {activePhase.status.replace(/_/g, ' ')}</span>
+                </button>
+                {selectedNodeDetail?.children.map((child) => (
+                  <button
+                    key={child.id}
+                    className={`${pageStyles.rowButton} ${selectedNodeDetail.node.id === child.id ? pageStyles.rowActive : ''}`}
+                    onClick={() => void selectNode(child.id)}
+                    type="button"
+                  >
+                    <span className={pageStyles.rowTitle}>{child.title}</span>
+                    <span className={pageStyles.rowMeta}>
+                      {child.kind.replace(/_/g, ' ')} · {child.status.replace(/_/g, ' ')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className={pageStyles.emptyState}>
+                <strong>No phases yet</strong>
+                <span>Add the outer timeline first, then drill down into pillars and dependencies.</span>
+              </div>
+            )}
+
             {selectedNodeDetail ? (
               <div className={pageStyles.formGrid}>
                 <InputField
@@ -462,14 +519,19 @@ export function MasterPlan(): JSX.Element {
                     ))}
                   </select>
                 </label>
-                <Button onClick={() => void handleCreateChild()}>Add Child</Button>
+                <Button onClick={() => void handleCreateChild()}>Add child</Button>
               </div>
             ) : null}
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Selected Item</h2>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Selected item</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Edit the current record as a working note, not a crowded inspector.
+                </p>
+              </div>
               {selectedNodeDetail ? (
                 <Button
                   variant="danger"
@@ -480,8 +542,9 @@ export function MasterPlan(): JSX.Element {
                 </Button>
               ) : null}
             </div>
+
             {selectedNodeDetail ? (
-              <div className={pageStyles.formGrid}>
+              <div className={pageStyles.document}>
                 <InputField
                   label="Title"
                   value={selectedNodeDetail.node.title}
@@ -514,7 +577,7 @@ export function MasterPlan(): JSX.Element {
                     }))
                   }
                 />
-                <div className={pageStyles.grid2}>
+                <div className={pageStyles.propertyGrid}>
                   <label className={pageStyles.formGrid}>
                     <span className={pageStyles.eyebrow}>Kind</span>
                     <select
@@ -566,7 +629,7 @@ export function MasterPlan(): JSX.Element {
                     </select>
                   </label>
                 </div>
-                <div className={pageStyles.grid2}>
+                <div className={pageStyles.propertyGrid}>
                   <InputField
                     label="Start date"
                     type="date"
@@ -606,7 +669,7 @@ export function MasterPlan(): JSX.Element {
                 </div>
                 <TextareaField
                   label="Notes"
-                  rows={5}
+                  rows={7}
                   value={selectedNodeDetail.node.notes ?? ''}
                   onChange={(event) =>
                     usePlanStore.setState((state) => ({
@@ -622,32 +685,45 @@ export function MasterPlan(): JSX.Element {
                     }))
                   }
                 />
-                <Button onClick={() => void handleSaveNode()}>Save Changes</Button>
+                <Button onClick={() => void handleSaveNode()}>Save changes</Button>
                 {selectedNodeDetail.blocking_reasons.length > 0 ? (
-                  <div className={pageStyles.list}>
-                    {selectedNodeDetail.blocking_reasons.map((reason) => (
-                      <div key={reason} className={pageStyles.listRow}>
-                        <strong>Blocking signal</strong>
-                        <span className={pageStyles.muted}>{reason}</span>
-                      </div>
-                    ))}
+                  <div className={pageStyles.callout}>
+                    <strong>Blocking signals</strong>
+                    <div className={pageStyles.list}>
+                      {selectedNodeDetail.blocking_reasons.map((reason) => (
+                        <div key={reason} className={pageStyles.row}>
+                          <span className={pageStyles.rowMeta}>{reason}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
               </div>
             ) : (
-              <p className={pageStyles.description}>Select a roadmap item to edit it.</p>
+              <div className={pageStyles.emptyState}>
+                <strong>Select a roadmap item</strong>
+                <span>Pick any phase or nested item to edit it here.</span>
+              </div>
             )}
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Dependencies and Links</h2>
-              <span className={pageStyles.pill}>{selectedNodeDetail?.links.length ?? 0}</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Relations</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Link the item to proof, skills, targets, or execution objects.
+                </p>
+              </div>
+              {selectedNodeDetail ? (
+                <span className={pageStyles.chip}>{relationLinks.length} links</span>
+              ) : null}
             </div>
+
             {selectedNodeDetail ? (
-              <div className={pageStyles.formGrid}>
+              <div className={pageStyles.document}>
                 <label className={pageStyles.formGrid}>
-                  <span className={pageStyles.eyebrow}>Link type</span>
+                  <span className={pageStyles.eyebrow}>Relation type</span>
                   <select
                     value={linkType}
                     onChange={(event) => setLinkType(event.target.value as PlanLinkTargetType)}
@@ -694,34 +770,42 @@ export function MasterPlan(): JSX.Element {
                     </select>
                   </label>
                 ) : null}
-                <Button onClick={() => void handleCreateLink()}>Add Link</Button>
+                <Button onClick={() => void handleCreateLink()}>Add relation</Button>
                 <div className={pageStyles.list}>
-                  {(selectedNodeDetail.links.length > 0
-                    ? selectedNodeDetail.links
-                    : links.filter((link) => link.node_id === selectedNodeDetail.node.id)
-                  ).map((link) => (
-                    <div key={link.id} className={pageStyles.listRow}>
-                      <strong>{link.target_type.replace(/_/g, ' ')}</strong>
-                      <span className={pageStyles.muted}>
+                  {relationLinks.map((link) => (
+                    <div key={link.id} className={pageStyles.row}>
+                      <span className={pageStyles.rowTitle}>
+                        {link.target_type.replace(/_/g, ' ')}
+                      </span>
+                      <span className={pageStyles.rowMeta}>
                         {targetLabels.get(link.target_id) ?? link.target_id}
                         {link.required_stage ? ` · requires ${link.required_stage}` : ''}
                       </span>
-                      <Button size="sm" variant="ghost" onClick={() => void deleteLink(link.id)}>
-                        Remove
-                      </Button>
+                      <div className={pageStyles.inlineActions}>
+                        <Button size="sm" variant="ghost" onClick={() => void deleteLink(link.id)}>
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ))}
+                  {relationLinks.length === 0 ? (
+                    <div className={pageStyles.emptyState}>
+                      <strong>No relations yet</strong>
+                      <span>Use relations to connect this item to skills, projects, and targets.</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : (
-              <p className={pageStyles.description}>
-                Select a roadmap item to link it to proof, pipeline, or weekly execution objects.
-              </p>
+              <div className={pageStyles.emptyState}>
+                <strong>Select a roadmap item</strong>
+                <span>Its linked proof and dependencies will appear here.</span>
+              </div>
             )}
           </article>
         </section>
 
-        {error ? <div className={pageStyles.card}>{error}</div> : null}
+        {error ? <section className={pageStyles.callout}>{error}</section> : null}
       </div>
     </div>
   )

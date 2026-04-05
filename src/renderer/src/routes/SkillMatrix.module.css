@@ -1,0 +1,29 @@
+.chartWrap {
+  height: 320px;
+}
+
+.statePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--lab-border);
+  background: var(--lab-panel);
+  color: var(--lab-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.statePill[data-state='verified'] {
+  border-color: rgba(43, 122, 91, 0.2);
+  background: rgba(43, 122, 91, 0.1);
+  color: var(--lab-success);
+}
+
+.statePill[data-state='in_progress'] {
+  border-color: rgba(168, 111, 30, 0.2);
+  background: rgba(168, 111, 30, 0.1);
+  color: var(--lab-warning);
+}

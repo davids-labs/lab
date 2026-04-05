@@ -1,19 +1,23 @@
+@import './reset.css';
+
 .appShell {
-  height: 100vh;
+  height: 100%;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background: var(--lab-bg);
+  color: var(--lab-text);
 }
 
 .routeShell {
   height: 100%;
-  min-height: 0;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  background: var(--lab-page);
 }
 
 .contentShell {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }

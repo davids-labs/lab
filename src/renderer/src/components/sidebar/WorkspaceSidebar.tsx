@@ -105,14 +105,14 @@ export function WorkspaceSidebar({
       <div className={styles.tabs}>
         <Button
           size="sm"
-          variant={sidebarTab === 'assets' ? 'primary' : 'outline'}
+          variant={sidebarTab === 'assets' ? 'outline' : 'ghost'}
           onClick={() => setSidebarTab('assets')}
         >
           Assets
         </Button>
         <Button
           size="sm"
-          variant={sidebarTab === 'navigator' ? 'primary' : 'outline'}
+          variant={sidebarTab === 'navigator' ? 'outline' : 'ghost'}
           onClick={() => setSidebarTab('navigator')}
         >
           Navigator

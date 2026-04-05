@@ -58,8 +58,14 @@ const DEFAULT_DASHBOARD_PREFERENCES: DashboardPreferences = {
   ],
   pinned_actions: ['add_weekly_priority', 'add_application', 'add_countdown', 'import_document'],
   compact_mode: false,
+  focus_mode_default: false,
   start_workspace: 'home',
-  show_onboarding: true
+  show_onboarding: true,
+  sidebar_collapsed: false,
+  sidebar_mode: 'full',
+  reduced_chrome: false,
+  command_palette_enabled: true,
+  preferred_home_layout: 'horizons'
 }
 
 const DEFAULT_INTEGRATION_SETTINGS: IntegrationSettings = {
@@ -135,7 +141,17 @@ export const settingsQueries = {
   },
 
   updateDashboardPreferences(input: UpdateDashboardPreferencesInput): DashboardPreferences {
-    const next = { ...this.getBundle().dashboard_preferences, ...input }
+    const current = this.getBundle().dashboard_preferences
+    const next = {
+      ...current,
+      ...input,
+      compact_mode: input.compact_mode ?? input.focus_mode_default ?? current.compact_mode,
+      focus_mode_default:
+        input.focus_mode_default ?? input.compact_mode ?? current.focus_mode_default,
+      sidebar_collapsed:
+        input.sidebar_collapsed ??
+        (input.sidebar_mode ? input.sidebar_mode !== 'full' : current.sidebar_collapsed)
+    }
     saveSetting('dashboard_preferences', next)
     return next
   },

@@ -1,4 +1,4 @@
-import { Navigate, createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { Navigate, createHashRouter, RouterProvider } from 'react-router-dom'
 import { ToastStack } from '@renderer/components/ui/ToastStack'
 import { HomeDashboard } from '@renderer/routes/HomeDashboard'
 import { CommandCenterLayout } from '@renderer/routes/CommandCenterLayout'
@@ -16,7 +16,7 @@ import { SkillMatrix } from '@renderer/routes/SkillMatrix'
 import { Workspace } from '@renderer/routes/Workspace'
 import './styles/app.css'
 
-const router = createMemoryRouter([
+const router = createHashRouter([
   {
     path: '/',
     element: <CommandCenterLayout />,
@@ -110,10 +110,10 @@ export function App(): JSX.Element {
             display: 'grid',
             gap: 12,
             padding: 24,
-            borderRadius: 16,
+            borderRadius: 14,
             border: '1px solid var(--lab-border)',
-            background: 'var(--lab-surface)',
-            boxShadow: 'var(--lab-shadow-card)'
+            background: 'var(--lab-panel)',
+            boxShadow: '0 18px 48px rgba(15, 15, 15, 0.08)'
           }}
         >
           <div

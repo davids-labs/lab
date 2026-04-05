@@ -8,6 +8,9 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { formatRelativeTime } from '@renderer/utils/relativeTime'
 import pageStyles from './CommandCenterPages.module.css'
+import styles from './ProjectEcosystem.module.css'
+
+type EcosystemView = 'table' | 'board'
 
 export function ProjectEcosystem(): JSX.Element {
   const navigate = useNavigate()
@@ -17,6 +20,7 @@ export function ProjectEcosystem(): JSX.Element {
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState<Project['type']>('build')
+  const [view, setView] = useState<EcosystemView>('table')
 
   useEffect(() => {
     void loadProjects()
@@ -29,6 +33,17 @@ export function ProjectEcosystem(): JSX.Element {
 
     return projects.filter((project) => project.type === filter)
   }, [filter, projects])
+
+  const groupedByStage = useMemo(
+    () =>
+      Object.fromEntries(
+        PROJECT_EXECUTION_STAGES.map((stage) => [
+          stage,
+          filteredProjects.filter((project) => project.execution_stage === stage)
+        ])
+      ) as Record<Project['execution_stage'], Project[]>,
+    [filteredProjects]
+  )
 
   async function handleCreateProject(): Promise<void> {
     if (!name.trim()) {
@@ -52,97 +67,178 @@ export function ProjectEcosystem(): JSX.Element {
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.hero}>
-          <span className={pageStyles.eyebrow}>Project Ecosystem</span>
-          <h1 className={pageStyles.title}>Portfolio Architecture</h1>
+        <section className={pageStyles.lead}>
+          <span className={pageStyles.eyebrow}>Proof / Projects</span>
+          <h1 className={pageStyles.title}>Project ecosystem</h1>
           <p className={pageStyles.description}>
-            The block editor remains intact here, but now it sits inside the wider command center.
+            Projects should behave like a working database: sortable, filterable, and quiet by
+            default, with the editor only one click away.
           </p>
         </section>
 
-        <section className={pageStyles.card}>
+        <section className={pageStyles.section}>
           <div className={pageStyles.sectionHeader}>
             <div>
-              <h2 className={pageStyles.cardTitle}>Projects</h2>
-              <p className={pageStyles.description}>
-                Manage tier, execution stage, and the route into the existing high-polish workspace.
+              <h2 className={pageStyles.sectionTitle}>Views</h2>
+              <p className={pageStyles.sectionDescription}>
+                Use the table when you need a calm operational view, or switch to board mode to
+                read execution stage distribution at a glance.
               </p>
             </div>
-            <Button onClick={() => setCreateOpen(true)}>New Project</Button>
+            <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.tabs}>
+                <button
+                  className={`${pageStyles.tab} ${view === 'table' ? pageStyles.tabActive : ''}`}
+                  onClick={() => setView('table')}
+                  type="button"
+                >
+                  Table
+                </button>
+                <button
+                  className={`${pageStyles.tab} ${view === 'board' ? pageStyles.tabActive : ''}`}
+                  onClick={() => setView('board')}
+                  type="button"
+                >
+                  Board
+                </button>
+              </div>
+              <div className={pageStyles.chipRow}>
+                {(['all', 'hero', 'build', 'design', 'concept'] as const).map((entry) => (
+                  <button
+                    key={entry}
+                    className={`${pageStyles.chip} ${filter === entry ? pageStyles.chipActive : ''}`}
+                    onClick={() => setFilter(entry)}
+                    type="button"
+                  >
+                    {entry}
+                  </button>
+                ))}
+              </div>
+              <Button onClick={() => setCreateOpen(true)}>New project</Button>
+            </div>
           </div>
-          <div className={pageStyles.pillRow}>
-            {(['all', 'hero', 'build', 'design', 'concept'] as const).map((entry) => (
-              <button
-                key={entry}
-                className={pageStyles.pill}
-                onClick={() => setFilter(entry)}
-                type="button"
-                style={{
-                  background:
-                    filter === entry ? 'rgba(0, 113, 227, 0.08)' : 'var(--lab-surface-muted)'
-                }}
-              >
-                {entry}
-              </button>
-            ))}
-          </div>
-        </section>
 
-        <section className={pageStyles.grid3}>
-          {filteredProjects.map((project) => (
-            <article key={project.id} className={pageStyles.card}>
-              <div className={pageStyles.sectionHeader}>
-                <h2 className={pageStyles.cardTitle}>{project.name}</h2>
-                <span className={pageStyles.pill}>{project.type}</span>
+          {view === 'table' ? (
+            <div className={pageStyles.table}>
+              <div className={pageStyles.tableHeader}>
+                <div>Name</div>
+                <div>Tier</div>
+                <div>Stage</div>
+                <div>Status</div>
+                <div>Updated</div>
+                <div />
               </div>
-              <p className={pageStyles.description}>
-                {project.subtitle || 'No subtitle yet. Add one in the workspace or customise flow.'}
-              </p>
-              <label className={pageStyles.formGrid}>
-                <span className={pageStyles.eyebrow}>Execution Stage</span>
-                <select
-                  value={project.execution_stage}
-                  onChange={(event) =>
-                    void handleStageChange(
-                      project.id,
-                      event.target.value as Project['execution_stage']
-                    )
-                  }
-                >
-                  {PROJECT_EXECUTION_STAGES.map((stage) => (
-                    <option key={stage} value={stage}>
-                      {stage.replace(/_/g, ' ')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className={pageStyles.inlineRow}>
-                <Button size="sm" onClick={() => navigate(`/project/${project.id}`)}>
-                  Open Workspace
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate(`/project/${project.id}/customise`)}
-                >
-                  Public Page
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => void deleteProject(project.id)}>
-                  Delete
-                </Button>
-              </div>
-              <span className={pageStyles.muted}>
-                Updated {formatRelativeTime(project.updated_at)}
-              </span>
-            </article>
-          ))}
+              {filteredProjects.map((project) => (
+                <div key={project.id} className={pageStyles.tableRow}>
+                  <div className={pageStyles.tableCell}>
+                    <strong>{project.name}</strong>
+                    <span>
+                      {project.subtitle || 'No subtitle yet. Add positioning in the workspace.'}
+                    </span>
+                  </div>
+                  <div className={pageStyles.tableCell}>
+                    <strong>{project.type}</strong>
+                    <span>Portfolio tier</span>
+                  </div>
+                  <div className={pageStyles.tableCell}>
+                    <select
+                      value={project.execution_stage}
+                      onChange={(event) =>
+                        void handleStageChange(
+                          project.id,
+                          event.target.value as Project['execution_stage']
+                        )
+                      }
+                    >
+                      {PROJECT_EXECUTION_STAGES.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {stage.replace(/_/g, ' ')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={pageStyles.tableCell}>
+                    <strong>{project.status}</strong>
+                    <span>{project.git_enabled ? 'Git enabled' : 'Local only'}</span>
+                  </div>
+                  <div className={pageStyles.tableCell}>
+                    <strong>{formatRelativeTime(project.updated_at)}</strong>
+                    <span>Last updated</span>
+                  </div>
+                  <div className={styles.rowActions}>
+                    <Button size="sm" onClick={() => navigate(`/project/${project.id}`)}>
+                      Open
+                    </Button>
+                    <details className={styles.menu}>
+                      <summary className={styles.menuTrigger}>More</summary>
+                      <div className={styles.menuPanel}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => navigate(`/project/${project.id}/customise`)}
+                        >
+                          Customise
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => navigate(`/project/${project.id}/preview`)}
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => void deleteProject(project.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              ))}
+              {filteredProjects.length === 0 ? (
+                <div className={styles.tableEmpty}>No projects match this filter yet.</div>
+              ) : null}
+            </div>
+          ) : (
+            <div className={styles.board}>
+              {PROJECT_EXECUTION_STAGES.map((stage) => (
+                <section key={stage} className={styles.boardColumn}>
+                  <div className={styles.boardHeader}>
+                    <strong>{stage.replace(/_/g, ' ')}</strong>
+                    <span>{groupedByStage[stage].length}</span>
+                  </div>
+                  <div className={styles.boardList}>
+                    {groupedByStage[stage].map((project) => (
+                      <button
+                        key={project.id}
+                        className={styles.boardCard}
+                        onClick={() => navigate(`/project/${project.id}`)}
+                        type="button"
+                      >
+                        <strong>{project.name}</strong>
+                        <span>
+                          {project.type} · updated {formatRelativeTime(project.updated_at)}
+                        </span>
+                      </button>
+                    ))}
+                    {groupedByStage[stage].length === 0 ? (
+                      <div className={styles.boardEmpty}>No projects in this stage.</div>
+                    ) : null}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
       {createOpen ? (
         <Modal onClose={() => setCreateOpen(false)} title="Create Project">
           <InputField
-            label="Project Name"
+            label="Project name"
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
@@ -158,7 +254,7 @@ export function ProjectEcosystem(): JSX.Element {
               <option value="concept">Concept</option>
             </select>
           </label>
-          <Button onClick={() => void handleCreateProject()}>Create Project</Button>
+          <Button onClick={() => void handleCreateProject()}>Create project</Button>
         </Modal>
       ) : null}
     </div>

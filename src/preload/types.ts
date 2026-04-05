@@ -127,6 +127,12 @@ export type ShellDensity = (typeof SHELL_DENSITIES)[number]
 export const FONT_SCALES = ['sm', 'md', 'lg'] as const
 export type FontScale = (typeof FONT_SCALES)[number]
 
+export const SIDEBAR_MODES = ['full', 'compact', 'hidden'] as const
+export type SidebarMode = (typeof SIDEBAR_MODES)[number]
+
+export const HOME_LAYOUTS = ['horizons', 'focused'] as const
+export type HomeLayout = (typeof HOME_LAYOUTS)[number]
+
 export interface PublicPageConfig {
   theme: {
     accent: string
@@ -406,8 +412,14 @@ export interface DashboardPreferences {
   visible_sections: string[]
   pinned_actions: string[]
   compact_mode: boolean
+  focus_mode_default: boolean
   start_workspace: string
   show_onboarding: boolean
+  sidebar_collapsed: boolean
+  sidebar_mode: SidebarMode
+  reduced_chrome: boolean
+  command_palette_enabled: boolean
+  preferred_home_layout: HomeLayout
 }
 
 export interface IntegrationSettings {
@@ -1069,8 +1081,14 @@ export interface UpdateDashboardPreferencesInput {
   visible_sections?: string[]
   pinned_actions?: string[]
   compact_mode?: boolean
+  focus_mode_default?: boolean
   start_workspace?: string
   show_onboarding?: boolean
+  sidebar_collapsed?: boolean
+  sidebar_mode?: SidebarMode
+  reduced_chrome?: boolean
+  command_palette_enabled?: boolean
+  preferred_home_layout?: HomeLayout
 }
 
 export interface UpdateIntegrationSettingsInput {

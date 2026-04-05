@@ -5,6 +5,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  background: var(--lab-bg);
 }
 
 .withPreview {
@@ -17,11 +18,10 @@
 }
 
 .main {
-  flex: 1;
   min-width: 0;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
 }
 
@@ -29,15 +29,26 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  padding: 18px 18px 18px 0;
 }
 
 .statusBar {
-  height: 32px;
-  border-top: 1px solid var(--lab-border-2);
-  padding: 0 20px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 28px 16px;
   color: var(--lab-text-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1100px) {
+  .withPreview {
+    grid-template-columns: var(--workspace-sidebar-width) 10px minmax(0, 1fr);
+  }
+
+  .previewPane {
+    display: none;
+  }
 }

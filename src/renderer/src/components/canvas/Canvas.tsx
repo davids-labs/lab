@@ -1,12 +1,19 @@
 import {
   DndContext,
   type DragEndEvent,
+  KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
   useSensors
 } from '@dnd-kit/core'
-import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Block } from '@preload/types'
 import { BLOCK_LABELS } from '@shared/defaults'
@@ -26,7 +33,10 @@ export function Canvas({ activeBlockId, blocks }: CanvasProps): JSX.Element {
   const reorderBlocks = useBlockStore((state) => state.reorderBlocks)
   const upsertBlock = useBlockStore((state) => state.upsertBlock)
   const openBlockPicker = useUiStore((state) => state.openBlockPicker)
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
   const ordered = [...blocks].sort((left, right) => left.sort_order - right.sort_order)
 
   async function handleDragEnd(event: DragEndEvent): Promise<void> {
@@ -134,12 +144,12 @@ function SortableBlock({
         <div className={styles.toolbarGroup}>
           <span className={styles.label}>{BLOCK_LABELS[block.type]}</span>
         </div>
-        <div className={styles.toolbarGroup}>
+        <div className={`${styles.toolbarGroup} ${styles.toolbarActions}`}>
           <Button size="sm" variant={block.visible_on_page ? 'outline' : 'ghost'} onClick={onToggleVisibility}>
             {block.visible_on_page ? 'Public' : 'Private'}
           </Button>
           <details className={styles.moreMenu}>
-            <summary className={styles.moreSummary}>More</summary>
+            <summary className={styles.moreSummary}>•••</summary>
             <div className={styles.moreActions}>
               <Button size="sm" variant="ghost" {...attributes} {...listeners}>
                 Drag
@@ -157,7 +167,9 @@ function SortableBlock({
           </details>
         </div>
       </div>
-      <BlockEditorRouter block={block} />
+      <div className={styles.editorBody}>
+        <BlockEditorRouter block={block} />
+      </div>
     </div>
   )
 }

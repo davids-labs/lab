@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Button } from '@renderer/components/ui/Button'
 import { useLibraryStore } from '@renderer/stores/libraryStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
@@ -11,10 +11,10 @@ export function LibraryWorkspace(): JSX.Element {
     excerpts,
     suggestions,
     deleteDocument,
-    loadDocuments,
-    selectDocument,
     importDocuments,
-    resolveSuggestion
+    loadDocuments,
+    resolveSuggestion,
+    selectDocument
   } = useLibraryStore()
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
@@ -23,6 +23,22 @@ export function LibraryWorkspace(): JSX.Element {
     void loadDocuments()
     void loadBundle()
   }, [loadBundle, loadDocuments])
+
+  useEffect(() => {
+    if (!activeDocumentId && documents[0]) {
+      void selectDocument(documents[0].id)
+    }
+  }, [activeDocumentId, documents, selectDocument])
+
+  const activeDocument =
+    documents.find((document) => document.id === activeDocumentId) ?? documents[0] ?? null
+  const activeDocumentSuggestions = useMemo(
+    () =>
+      suggestions.filter((suggestion) =>
+        activeDocument ? suggestion.document_id === activeDocument.id : true
+      ),
+    [activeDocument, suggestions]
+  )
 
   async function handleImportDocuments(): Promise<void> {
     const defaultPath = bundle?.integration_settings.default_document_directory
@@ -60,131 +76,168 @@ export function LibraryWorkspace(): JSX.Element {
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.hero}>
+        <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Library</span>
-          <h1 className={pageStyles.title}>Living Source Library</h1>
+          <h1 className={pageStyles.title}>Source documents and structured suggestions</h1>
           <p className={pageStyles.description}>
-            Import strategic source docs, inspect excerpts, and accept or dismiss structured
-            suggestions instead of manually retyping your whole system.
+            Keep the raw material visible. The library should feel like a quiet review workspace:
+            import source docs, read the extracted sections, and accept only the structured
+            suggestions you actually want in the system.
           </p>
         </section>
 
-        <section className={pageStyles.card}>
+        <section className={pageStyles.callout}>
           <div className={pageStyles.sectionHeader}>
             <div>
-              <h2 className={pageStyles.cardTitle}>Import Strategic Docs</h2>
+              <strong>Import strategic source material</strong>
               <p className={pageStyles.description}>
-                DOCX, markdown, and text are supported. The current library can bootstrap directly
-                from your downloaded career-planning documents.
+                DOCX, markdown, and text are supported. If a default document folder is set in
+                Settings, davids.lab can bootstrap from it without manual path entry.
               </p>
             </div>
-            <Button onClick={() => void handleImportDocuments()}>Import Documents</Button>
+            <Button onClick={() => void handleImportDocuments()}>Import documents</Button>
           </div>
         </section>
 
-        <section className={pageStyles.split}>
-          <article className={pageStyles.card}>
+        <section className={pageStyles.collectionDetailLayout}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Documents</h2>
-              <span className={pageStyles.pill}>{documents.length}</span>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Documents</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Select a source to inspect its excerpts and related suggestions.
+                </p>
+              </div>
+              <span className={pageStyles.chip}>{documents.length}</span>
             </div>
             <div className={pageStyles.list}>
-              {documents.map((document) => (
-                <div key={document.id} className={pageStyles.listRow}>
-                  <button
-                    onClick={() => void selectDocument(document.id)}
-                    style={{
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: 0
-                    }}
-                    type="button"
-                  >
-                    <strong>{document.title}</strong>
-                    <span className={pageStyles.muted}>
-                      {document.kind} · {document.excerpt_count} excerpts · {document.status}
-                    </span>
-                  </button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => void deleteDocument(document.id)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Excerpts</h2>
-              <span className={pageStyles.pill}>{excerpts.length}</span>
-            </div>
-            <div className={pageStyles.list}>
-              {activeDocumentId ? (
-                excerpts.map((excerpt) => (
-                  <div key={excerpt.id} className={pageStyles.listRow}>
-                    <strong>{excerpt.heading ?? `Excerpt ${excerpt.excerpt_index + 1}`}</strong>
-                    <span className={pageStyles.muted}>{excerpt.content}</span>
+              {documents.length > 0 ? (
+                documents.map((document) => (
+                  <div key={document.id} className={pageStyles.row}>
+                    <button
+                      className={`${pageStyles.rowButton} ${document.id === activeDocument?.id ? pageStyles.rowActive : ''}`}
+                      onClick={() => void selectDocument(document.id)}
+                      type="button"
+                    >
+                      <span className={pageStyles.rowTitle}>{document.title}</span>
+                      <span className={pageStyles.rowMeta}>
+                        {document.kind} · {document.excerpt_count} excerpts · {document.status}
+                      </span>
+                    </button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void deleteDocument(document.id)}
+                    >
+                      Remove
+                    </Button>
                   </div>
                 ))
               ) : (
-                <div className={pageStyles.listRow}>
-                  <strong>No document selected</strong>
-                  <span className={pageStyles.muted}>
-                    Select a source document to inspect its extracted sections.
-                  </span>
+                <div className={pageStyles.emptyState}>
+                  <strong>No source documents yet</strong>
+                  <span>Import your planning docs to start building a reviewable knowledge base.</span>
                 </div>
               )}
             </div>
           </article>
 
-          <article className={pageStyles.card}>
+          <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Suggestions</h2>
-              <span className={pageStyles.pill}>
-                {suggestions.filter((entry) => entry.status === 'pending').length} pending
+              <div>
+                <h2 className={pageStyles.sectionTitle}>
+                  {activeDocument ? activeDocument.title : 'Excerpt reader'}
+                </h2>
+                <p className={pageStyles.sectionDescription}>
+                  Read the extracted chunks before accepting anything into structured data.
+                </p>
+              </div>
+              <span className={pageStyles.chip}>{excerpts.length}</span>
+            </div>
+            <div className={pageStyles.document}>
+              {activeDocument ? (
+                excerpts.length > 0 ? (
+                  excerpts.map((excerpt) => (
+                    <div key={excerpt.id} className={pageStyles.documentSection}>
+                      <strong>{excerpt.heading ?? `Excerpt ${excerpt.excerpt_index + 1}`}</strong>
+                      <p className={pageStyles.description}>{excerpt.content}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className={pageStyles.emptyState}>
+                    <strong>No excerpts yet</strong>
+                    <span>This document imported, but no excerpts are available to review yet.</span>
+                  </div>
+                )
+              ) : (
+                <div className={pageStyles.emptyState}>
+                  <strong>Select a document</strong>
+                  <span>Choose a source document from the left to inspect its extracted text.</span>
+                </div>
+              )}
+            </div>
+          </article>
+
+          <article className={pageStyles.section}>
+            <div className={pageStyles.sectionHeader}>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Suggestions</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Accept or dismiss suggestions explicitly. Nothing should silently rewrite your
+                  system.
+                </p>
+              </div>
+              <span className={pageStyles.chip}>
+                {
+                  activeDocumentSuggestions.filter((suggestion) => suggestion.status === 'pending')
+                    .length
+                }{' '}
+                pending
               </span>
             </div>
             <div className={pageStyles.list}>
-              {suggestions.map((suggestion) => (
-                <div key={suggestion.id} className={pageStyles.listRow}>
-                  <strong>{suggestion.title}</strong>
-                  <span className={pageStyles.muted}>
-                    {suggestion.suggestion_type.replace(/_/g, ' ')} · {suggestion.status}
-                  </span>
-                  {suggestion.status === 'pending' ? (
-                    <div className={pageStyles.inlineRow}>
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          void resolveSuggestion({
-                            suggestion_id: suggestion.id,
-                            action: 'accepted'
-                          })
-                        }
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          void resolveSuggestion({
-                            suggestion_id: suggestion.id,
-                            action: 'dismissed'
-                          })
-                        }
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  ) : null}
+              {activeDocumentSuggestions.length > 0 ? (
+                activeDocumentSuggestions.map((suggestion) => (
+                  <div key={suggestion.id} className={pageStyles.row}>
+                    <span className={pageStyles.rowTitle}>{suggestion.title}</span>
+                    <span className={pageStyles.rowMeta}>
+                      {suggestion.suggestion_type.replace(/_/g, ' ')} · {suggestion.status}
+                    </span>
+                    {suggestion.status === 'pending' ? (
+                      <div className={pageStyles.inlineActions}>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            void resolveSuggestion({
+                              suggestion_id: suggestion.id,
+                              action: 'accepted'
+                            })
+                          }
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            void resolveSuggestion({
+                              suggestion_id: suggestion.id,
+                              action: 'dismissed'
+                            })
+                          }
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <div className={pageStyles.emptyState}>
+                  <strong>No suggestions yet</strong>
+                  <span>Once the library extracts structure, suggestions will appear here for review.</span>
                 </div>
-              ))}
+              )}
             </div>
           </article>
         </section>
