@@ -1,18 +1,33 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/Button'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
+import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
+
+function formatDate(value: number | null | undefined): string {
+  if (!value) {
+    return 'No date set'
+  }
+
+  return new Date(value).toLocaleDateString('en-IE', {
+    day: 'numeric',
+    month: 'short'
+  })
+}
 
 export function HomeDashboard(): JSX.Element {
   const navigate = useNavigate()
   const { error, importStarterTemplate, isLoading, loadSummary, summary } = useDashboardStore()
+  const bundle = useSettingsStore((state) => state.bundle)
+  const loadBundle = useSettingsStore((state) => state.loadBundle)
   const pushToast = useToastStore((state) => state.push)
 
   useEffect(() => {
     void loadSummary()
-  }, [loadSummary])
+    void loadBundle()
+  }, [loadBundle, loadSummary])
 
   const showStarterPrompt =
     summary &&
@@ -20,6 +35,11 @@ export function HomeDashboard(): JSX.Element {
     summary.counts.skills === 0 &&
     summary.counts.countdowns === 0 &&
     summary.os.profiles.length === 0
+
+  const todayCompletedHabits = useMemo(
+    () => (summary?.os.habits ?? []).filter((habit) => habit.today_completed).length,
+    [summary]
+  )
 
   async function handleImportStarterTemplate(): Promise<void> {
     try {
@@ -41,13 +61,13 @@ export function HomeDashboard(): JSX.Element {
     return (
       <div className={pageStyles.page}>
         <div className={pageStyles.stack}>
-          <div className={pageStyles.hero}>
+          <section className={pageStyles.hero}>
             <span className={pageStyles.eyebrow}>Home</span>
-            <h1 className={pageStyles.title}>davids.lab</h1>
+            <h1 className={pageStyles.title}>Command Surface</h1>
             <p className={pageStyles.description}>
-              {isLoading ? 'Loading command center…' : (error ?? 'Preparing your command center…')}
+              {isLoading ? 'Loading the operating dashboard…' : (error ?? 'Preparing the system…')}
             </p>
-          </div>
+          </section>
         </div>
       </div>
     )
@@ -58,10 +78,10 @@ export function HomeDashboard(): JSX.Element {
       <div className={pageStyles.stack}>
         <section className={pageStyles.hero}>
           <span className={pageStyles.eyebrow}>Home</span>
-          <h1 className={pageStyles.title}>Command Center</h1>
+          <h1 className={pageStyles.title}>Three Horizons</h1>
           <p className={pageStyles.description}>
-            A local-first operating surface for trajectory, evidence, execution, and portfolio
-            output.
+            Keep the day light, the week concrete, and the current phase honest. This page is the
+            overview that tells you where to act next.
           </p>
         </section>
 
@@ -69,9 +89,10 @@ export function HomeDashboard(): JSX.Element {
           <section className={`${pageStyles.card} ${pageStyles.cardTight}`}>
             <div className={pageStyles.sectionHeader}>
               <div>
-                <h2 className={pageStyles.cardTitle}>Load Starter Template</h2>
+                <h2 className={pageStyles.cardTitle}>Bootstrap the system</h2>
                 <p className={pageStyles.description}>
-                  Bring in the TCD → Columbia → Apple starter structure as editable local data.
+                  Bring in the TCD → Columbia → Apple starter structure as editable local data, then
+                  customize every piece from there.
                 </p>
               </div>
               <Button disabled={isLoading} onClick={() => void handleImportStarterTemplate()}>
@@ -81,115 +102,13 @@ export function HomeDashboard(): JSX.Element {
           </section>
         ) : null}
 
-        <section className={pageStyles.card}>
-          <div className={pageStyles.sectionHeader}>
-            <div>
-              <h2 className={pageStyles.cardTitle}>Where To Edit Things</h2>
-              <p className={pageStyles.description}>
-                Timeline and dependencies live in Master Plan. Schedules, habits, and countdowns
-                live in Personal OS. Skills and evidence live in Skill Matrix. Projects and public
-                pages live in Project Ecosystem.
-              </p>
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <Button variant="outline" onClick={() => navigate('/plan')}>
-                Master Plan
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/os')}>
-                Personal OS
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/skills')}>
-                Skill Matrix
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/ecosystem')}>
-                Ecosystem
-              </Button>
-            </div>
-          </div>
-        </section>
-
         <section className={pageStyles.grid3}>
-          {summary.countdowns.map((countdown) => (
-            <article key={countdown.id} className={pageStyles.card}>
-              <div className={pageStyles.eyebrow}>{countdown.category}</div>
-              <h2 className={pageStyles.cardTitle}>{countdown.title}</h2>
-              <div className={pageStyles.metricValue}>{countdown.days_remaining}</div>
-              <div className={pageStyles.muted}>days remaining</div>
-            </article>
-          ))}
-        </section>
-
-        <section className={pageStyles.grid2}>
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Active Phase</h2>
-              <span className={pageStyles.pill}>
-                {summary.active_phase?.status.replace(/_/g, ' ') ?? 'none'}
-              </span>
-            </div>
-            {summary.active_phase ? (
-              <>
-                <div>
-                  <strong>{summary.active_phase.title}</strong>
-                  <p className={pageStyles.description}>
-                    {summary.active_phase.summary ?? 'No summary yet.'}
-                  </p>
-                </div>
-                <div className={pageStyles.list}>
-                  {summary.active_phase_children.map((child) => (
-                    <div key={child.id} className={pageStyles.listRow}>
-                      <strong>{child.title}</strong>
-                      <span className={pageStyles.muted}>{child.status.replace(/_/g, ' ')}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className={pageStyles.description}>
-                No roadmap phases yet. Add one in Master Plan or load the starter template.
-              </p>
-            )}
-          </article>
-
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Blocking Alerts</h2>
-              <span className={pageStyles.pill}>{summary.blocking_alerts.length} active</span>
-            </div>
-            <div className={pageStyles.list}>
-              {summary.blocking_alerts.length > 0 ? (
-                summary.blocking_alerts.map((alert) => (
-                  <div key={alert.id} className={pageStyles.listRow}>
-                    <strong>{alert.node_title}</strong>
-                    <span className={pageStyles.muted}>{alert.reason}</span>
-                  </div>
-                ))
-              ) : (
-                <div className={pageStyles.listRow}>
-                  <strong>No blockers right now</strong>
-                  <span className={pageStyles.muted}>
-                    As you wire dependencies, skills, and projects together, alerts will appear
-                    here.
-                  </span>
-                </div>
-              )}
-            </div>
-          </article>
-        </section>
-
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Personal OS Today</h2>
-              <span className={pageStyles.pill}>{summary.os.week.days_logged} logs this week</span>
+              <h2 className={pageStyles.cardTitle}>Today</h2>
+              <span className={pageStyles.pill}>{summary.os.today ? 'logged' : 'not logged'}</span>
             </div>
             <div className={pageStyles.metricGrid}>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Sleep</span>
-                <div className={pageStyles.metricValue}>
-                  {summary.os.today?.sleep_hours?.toFixed(1) ?? '0.0'}
-                </div>
-              </div>
               <div className={pageStyles.metricCard}>
                 <span className={pageStyles.muted}>Deep Work</span>
                 <div className={pageStyles.metricValue}>
@@ -197,95 +116,363 @@ export function HomeDashboard(): JSX.Element {
                 </div>
               </div>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Protein</span>
-                <div className={pageStyles.metricValue}>{summary.os.today?.protein_grams ?? 0}</div>
+                <span className={pageStyles.muted}>Sleep</span>
+                <div className={pageStyles.metricValue}>
+                  {summary.os.today?.sleep_hours?.toFixed(1) ?? '0.0'}
+                </div>
               </div>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Gym</span>
+                <span className={pageStyles.muted}>Habits</span>
                 <div className={pageStyles.metricValue}>
-                  {summary.os.today?.gym_done ? 'Yes' : 'No'}
+                  {todayCompletedHabits}/{summary.os.habits.length}
                 </div>
               </div>
             </div>
-            <div className={pageStyles.pillRow}>
-              {summary.os.habits.map((habit) => (
-                <span key={habit.id} className={pageStyles.pill}>
-                  {habit.today_completed ? 'Done' : 'Open'} · {habit.name}
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>Primary profile</strong>
+                <span className={pageStyles.muted}>
+                  {summary.os.profiles.find(
+                    (profile) => profile.id === summary.os.active_profile_id
+                  )?.name ?? 'No profile selected'}
                 </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Training</strong>
+                <span className={pageStyles.muted}>
+                  {summary.os.today?.gym_done ? 'Done today' : 'Still open'}
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => navigate('/execution')}>
+              Open Execution
+            </Button>
+          </article>
+
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>This Week</h2>
+              <span className={pageStyles.pill}>{summary.weekly_priorities.length} priorities</span>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.weekly_priorities.length > 0 ? (
+                summary.weekly_priorities.slice(0, 4).map((priority) => (
+                  <div key={priority.id} className={pageStyles.listRow}>
+                    <strong>{priority.title}</strong>
+                    <span className={pageStyles.muted}>
+                      {priority.status.replace(/_/g, ' ')}
+                      {priority.linked_plan_node_id ? ' · phase-linked' : ''}
+                      {priority.linked_application_id ? ' · pipeline-linked' : ''}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className={pageStyles.listRow}>
+                  <strong>No weekly priorities set</strong>
+                  <span className={pageStyles.muted}>
+                    Add 3–5 concrete priorities in Execution so the week has a real operating
+                    horizon.
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>Weekly review</strong>
+                <span className={pageStyles.muted}>
+                  {summary.weekly_review?.focus_next
+                    ? 'Review captured and ready to guide the next move.'
+                    : 'No weekly review written yet.'}
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => navigate('/execution')}>
+              Plan the week
+            </Button>
+          </article>
+
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Current Phase</h2>
+              <span className={pageStyles.pill}>
+                {summary.active_phase?.status.replace(/_/g, ' ') ?? 'unset'}
+              </span>
+            </div>
+            {summary.active_phase ? (
+              <>
+                <div className={pageStyles.listRow}>
+                  <strong>{summary.active_phase.title}</strong>
+                  <span className={pageStyles.muted}>
+                    {summary.active_phase.summary ?? 'Add a phase summary in Direction.'}
+                  </span>
+                </div>
+                <div className={pageStyles.list}>
+                  {summary.active_phase_children.slice(0, 3).map((child) => (
+                    <div key={child.id} className={pageStyles.listRow}>
+                      <strong>{child.title}</strong>
+                      <span className={pageStyles.muted}>
+                        {child.kind.replace(/_/g, ' ')} · {child.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className={pageStyles.listRow}>
+                <strong>No active phase yet</strong>
+                <span className={pageStyles.muted}>
+                  Direction is where the long-range plan becomes a real editable system.
+                </span>
+              </div>
+            )}
+            <Button variant="outline" onClick={() => navigate('/direction')}>
+              Open Direction
+            </Button>
+          </article>
+        </section>
+
+        <section className={pageStyles.grid2}>
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Deadlines and Blockers</h2>
+              <span className={pageStyles.pill}>{summary.blocking_alerts.length} blockers</span>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.countdowns.slice(0, 4).map((countdown) => (
+                <div key={countdown.id} className={pageStyles.listRow}>
+                  <strong>{countdown.title}</strong>
+                  <span className={pageStyles.muted}>
+                    {countdown.category} · {countdown.days_remaining} days remaining
+                  </span>
+                </div>
               ))}
+            </div>
+            <div className={pageStyles.list}>
+              {summary.blocking_alerts.length > 0 ? (
+                summary.blocking_alerts.slice(0, 4).map((alert) => (
+                  <div key={alert.id} className={pageStyles.listRow}>
+                    <strong>{alert.node_title}</strong>
+                    <span className={pageStyles.muted}>{alert.reason}</span>
+                  </div>
+                ))
+              ) : (
+                <div className={pageStyles.listRow}>
+                  <strong>No active blockers</strong>
+                  <span className={pageStyles.muted}>
+                    As phases gain dependencies, projects, skills, and target links, blockers will
+                    show up here automatically.
+                  </span>
+                </div>
+              )}
             </div>
           </article>
 
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Skill Readiness</h2>
-              <span className={pageStyles.pill}>{summary.skill_coverage.total} tracked</span>
+              <h2 className={pageStyles.cardTitle}>Pipeline Next Actions</h2>
+              <span className={pageStyles.pill}>
+                {summary.pipeline.active_applications} active applications
+              </span>
             </div>
             <div className={pageStyles.metricGrid}>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Verified</span>
-                <div className={pageStyles.metricValue}>{summary.skill_coverage.verified}</div>
+                <span className={pageStyles.muted}>Organizations</span>
+                <div className={pageStyles.metricValue}>{summary.pipeline.organizations}</div>
               </div>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>In Progress</span>
-                <div className={pageStyles.metricValue}>{summary.skill_coverage.in_progress}</div>
+                <span className={pageStyles.muted}>Active</span>
+                <div className={pageStyles.metricValue}>{summary.pipeline.active_applications}</div>
+              </div>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.pipeline.next_actions.length > 0 ? (
+                summary.pipeline.next_actions.map((application) => (
+                  <div key={application.id} className={pageStyles.listRow}>
+                    <strong>{application.title}</strong>
+                    <span className={pageStyles.muted}>
+                      {application.status.replace(/_/g, ' ')}
+                      {application.follow_up_at
+                        ? ` · follow up ${formatDate(application.follow_up_at)}`
+                        : application.deadline_at
+                          ? ` · deadline ${formatDate(application.deadline_at)}`
+                          : ''}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className={pageStyles.listRow}>
+                  <strong>No pipeline deadlines yet</strong>
+                  <span className={pageStyles.muted}>
+                    Add target orgs, applications, and follow-up dates so opportunity management has
+                    real structure.
+                  </span>
+                </div>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => navigate('/pipeline')}>
+              Open Pipeline
+            </Button>
+          </article>
+        </section>
+
+        <section className={pageStyles.grid2}>
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Proof and Readiness</h2>
+              <span className={pageStyles.pill}>{summary.ecosystem.total_projects} projects</span>
+            </div>
+            <div className={pageStyles.metricGrid}>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Verified Skills</span>
+                <div className={pageStyles.metricValue}>{summary.skill_coverage.verified}</div>
               </div>
               <div className={pageStyles.metricCard}>
                 <span className={pageStyles.muted}>Unverified</span>
                 <div className={pageStyles.metricValue}>{summary.skill_coverage.unverified}</div>
               </div>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Completed</span>
+                <div className={pageStyles.metricValue}>
+                  {summary.ecosystem.by_execution_stage.completed}
+                </div>
+              </div>
             </div>
             <div className={pageStyles.list}>
-              {summary.skill_coverage.domains.map((domain) => (
-                <div key={domain.domain_id} className={pageStyles.listRow}>
-                  <strong>{domain.title}</strong>
+              {summary.ecosystem.recently_updated.slice(0, 4).map((project) => (
+                <div key={project.id} className={pageStyles.listRow}>
+                  <strong>{project.name}</strong>
                   <span className={pageStyles.muted}>
-                    {domain.verified}/{domain.total} verified
+                    {project.type} · {project.execution_stage.replace(/_/g, ' ')}
                   </span>
                 </div>
               ))}
+            </div>
+            <div className={pageStyles.inlineRow}>
+              <Button onClick={() => navigate('/proof/projects')}>Projects</Button>
+              <Button variant="outline" onClick={() => navigate('/proof/skills')}>
+                Skills
+              </Button>
+            </div>
+          </article>
+
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Presence and Library</h2>
+              <span className={pageStyles.pill}>{summary.library.documents} docs imported</span>
+            </div>
+            <div className={pageStyles.metricGrid}>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Ready Assets</span>
+                <div className={pageStyles.metricValue}>{summary.presence.ready_assets}</div>
+              </div>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Open Ideas</span>
+                <div className={pageStyles.metricValue}>{summary.presence.open_ideas}</div>
+              </div>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Pending Suggestions</span>
+                <div className={pageStyles.metricValue}>{summary.library.pending_suggestions}</div>
+              </div>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.presence.prompts.map((prompt) => (
+                <div key={prompt} className={pageStyles.listRow}>
+                  <strong>Prompt</strong>
+                  <span className={pageStyles.muted}>{prompt}</span>
+                </div>
+              ))}
+            </div>
+            <div className={pageStyles.inlineRow}>
+              <Button variant="outline" onClick={() => navigate('/presence')}>
+                Presence
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/library')}>
+                Library
+              </Button>
             </div>
           </article>
         </section>
 
         <section className={pageStyles.card}>
           <div className={pageStyles.sectionHeader}>
-            <h2 className={pageStyles.cardTitle}>Project Ecosystem</h2>
-            <span className={pageStyles.pill}>
-              {summary.ecosystem.total_projects} total projects
-            </span>
-          </div>
-          <div className={pageStyles.metricGrid}>
-            <div className={pageStyles.metricCard}>
-              <span className={pageStyles.muted}>HERO</span>
-              <div className={pageStyles.metricValue}>{summary.ecosystem.by_type.hero}</div>
+            <div>
+              <h2 className={pageStyles.cardTitle}>Operating Notes</h2>
+              <p className={pageStyles.description}>
+                davids.lab works best when it becomes the weekly review surface, not a place you
+                only visit during big planning sessions.
+              </p>
             </div>
-            <div className={pageStyles.metricCard}>
-              <span className={pageStyles.muted}>BUILD</span>
-              <div className={pageStyles.metricValue}>{summary.ecosystem.by_type.build}</div>
-            </div>
-            <div className={pageStyles.metricCard}>
-              <span className={pageStyles.muted}>DESIGN</span>
-              <div className={pageStyles.metricValue}>{summary.ecosystem.by_type.design}</div>
-            </div>
-            <div className={pageStyles.metricCard}>
-              <span className={pageStyles.muted}>COMPLETED</span>
-              <div className={pageStyles.metricValue}>
-                {summary.ecosystem.by_execution_stage.completed}
-              </div>
+            <div className={pageStyles.inlineRow}>
+              <Button variant="outline" onClick={() => navigate('/execution')}>
+                Add weekly priority
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/pipeline')}>
+                Add application
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/library')}>
+                Import document
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/settings')}>
+                Open settings
+              </Button>
             </div>
           </div>
-          <div className={pageStyles.list}>
-            {summary.ecosystem.recently_updated.map((project) => (
-              <div key={project.id} className={pageStyles.listRow}>
-                <strong>{project.name}</strong>
+          <div className={pageStyles.grid2}>
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>Direction</strong>
                 <span className={pageStyles.muted}>
-                  {project.type} · {project.execution_stage.replace(/_/g, ' ')}
+                  Keep the long-range plan current, then use it to constrain the week instead of
+                  letting the week drift.
                 </span>
               </div>
-            ))}
+              <div className={pageStyles.listRow}>
+                <strong>Execution</strong>
+                <span className={pageStyles.muted}>
+                  Capture daily telemetry lightly, but take the weekly priorities and review
+                  seriously.
+                </span>
+              </div>
+            </div>
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>Proof → Presence</strong>
+                <span className={pageStyles.muted}>
+                  Promote finished work into verified skills, then turn that proof into public
+                  narrative assets.
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Settings</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.user_profile.full_name
+                    ? `Identity defaults are loaded for ${bundle.user_profile.full_name}.`
+                    : 'Use Settings to define your identity, defaults, and source paths.'}
+                </span>
+              </div>
+            </div>
           </div>
         </section>
+
+        {bundle?.dashboard_preferences.show_onboarding && summary.onboarding.needs_setup ? (
+          <section className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Onboarding Signals</h2>
+              <span className={pageStyles.pill}>{summary.onboarding.missing.length} missing</span>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.onboarding.missing.map((item) => (
+                <div key={item} className={pageStyles.listRow}>
+                  <strong>{item}</strong>
+                  <span className={pageStyles.muted}>
+                    Add this so the dashboard can behave like a real life operating system instead
+                    of a partial shell.
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   )

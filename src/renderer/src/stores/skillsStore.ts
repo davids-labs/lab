@@ -75,7 +75,7 @@ export const useSkillsStore = create<SkillsStore>((set, get) => ({
         activeNodeId:
           state.activeNodeId && nodes.some((node) => node.id === state.activeNodeId)
             ? state.activeNodeId
-            : nodes[0]?.id ?? null,
+            : (nodes[0]?.id ?? null),
         isLoading: false
       }))
     } catch (error) {

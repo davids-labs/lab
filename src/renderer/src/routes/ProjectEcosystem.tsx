@@ -42,7 +42,10 @@ export function ProjectEcosystem(): JSX.Element {
     navigate(`/project/${project.id}`)
   }
 
-  async function handleStageChange(projectId: string, executionStage: Project['execution_stage']): Promise<void> {
+  async function handleStageChange(
+    projectId: string,
+    executionStage: Project['execution_stage']
+  ): Promise<void> {
     await updateProject({ id: projectId, execution_stage: executionStage })
   }
 
@@ -128,7 +131,9 @@ export function ProjectEcosystem(): JSX.Element {
                   Delete
                 </Button>
               </div>
-              <span className={pageStyles.muted}>Updated {formatRelativeTime(project.updated_at)}</span>
+              <span className={pageStyles.muted}>
+                Updated {formatRelativeTime(project.updated_at)}
+              </span>
             </article>
           ))}
         </section>
@@ -143,7 +148,10 @@ export function ProjectEcosystem(): JSX.Element {
           />
           <label className={pageStyles.formGrid}>
             <span className={pageStyles.eyebrow}>Tier</span>
-            <select value={type} onChange={(event) => setType(event.target.value as Project['type'])}>
+            <select
+              value={type}
+              onChange={(event) => setType(event.target.value as Project['type'])}
+            >
               <option value="hero">Hero</option>
               <option value="build">Build</option>
               <option value="design">Design</option>

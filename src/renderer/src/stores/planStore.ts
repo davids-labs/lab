@@ -36,7 +36,10 @@ export const usePlanStore = create<PlanStore>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const [nodes, links] = await Promise.all([window.lab.plan.listNodes(), window.lab.plan.listLinks()])
+      const [nodes, links] = await Promise.all([
+        window.lab.plan.listNodes(),
+        window.lab.plan.listLinks()
+      ])
       set({ nodes, links, isLoading: false })
     } catch (error) {
       set({

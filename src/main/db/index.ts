@@ -6,7 +6,7 @@ import { schema } from './schema'
 let sqlite: Database.Database | null = null
 let db: BetterSQLite3Database<typeof schema> | null = null
 
-const SCHEMA_VERSION = 5
+const SCHEMA_VERSION = 6
 
 type Migration = {
   version: number
@@ -45,20 +45,22 @@ function ensureMetaTable(database: Database.Database): void {
 function getSchemaVersion(database: Database.Database): number {
   ensureMetaTable(database)
 
-  const row = database
-    .prepare(`SELECT value FROM app_meta WHERE key = 'schema_version'`)
-    .get() as { value?: string } | undefined
+  const row = database.prepare(`SELECT value FROM app_meta WHERE key = 'schema_version'`).get() as
+    | { value?: string }
+    | undefined
 
   return Number(row?.value ?? 0) || 0
 }
 
 function setSchemaVersion(database: Database.Database, version: number): void {
   database
-    .prepare(`
+    .prepare(
+      `
       INSERT INTO app_meta (key, value)
       VALUES ('schema_version', ?)
       ON CONFLICT(key) DO UPDATE SET value = excluded.value
-    `)
+    `
+    )
     .run(String(version))
 }
 
@@ -316,6 +318,287 @@ const migrations: Migration[] = [
             notes TEXT,
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+    }
+  },
+  {
+    version: 6,
+    description: 'Create LifeOS settings, pipeline, presence, library, and weekly review tables',
+    run(database) {
+      if (!hasTable(database, 'app_settings')) {
+        database.exec(`
+          CREATE TABLE app_settings (
+            key TEXT PRIMARY KEY,
+            value_json TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'weekly_priorities')) {
+        database.exec(`
+          CREATE TABLE weekly_priorities (
+            id TEXT PRIMARY KEY,
+            week_key TEXT NOT NULL,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'planned',
+            linked_plan_node_id TEXT,
+            linked_application_id TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_weekly_priorities_week ON weekly_priorities(week_key);
+        `)
+      }
+
+      if (!hasTable(database, 'weekly_reviews')) {
+        database.exec(`
+          CREATE TABLE weekly_reviews (
+            id TEXT PRIMARY KEY,
+            week_key TEXT NOT NULL UNIQUE,
+            wins TEXT,
+            friction TEXT,
+            focus_next TEXT,
+            proof_move TEXT,
+            pipeline_move TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'target_organizations')) {
+        database.exec(`
+          CREATE TABLE target_organizations (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'Company',
+            location TEXT,
+            priority TEXT NOT NULL DEFAULT 'medium',
+            why_fit TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'target_roles')) {
+        database.exec(`
+          CREATE TABLE target_roles (
+            id TEXT PRIMARY KEY,
+            organization_id TEXT,
+            title TEXT NOT NULL,
+            location TEXT,
+            role_type TEXT,
+            season TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_target_roles_org ON target_roles(organization_id);
+        `)
+      }
+
+      if (!hasTable(database, 'application_records')) {
+        database.exec(`
+          CREATE TABLE application_records (
+            id TEXT PRIMARY KEY,
+            organization_id TEXT,
+            target_role_id TEXT,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'target',
+            deadline_at INTEGER,
+            applied_at INTEGER,
+            follow_up_at INTEGER,
+            notes TEXT,
+            linked_project_id TEXT,
+            linked_skill_id TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_application_records_org ON application_records(organization_id);
+          CREATE INDEX idx_application_records_status ON application_records(status);
+        `)
+      }
+
+      if (!hasTable(database, 'contact_records')) {
+        database.exec(`
+          CREATE TABLE contact_records (
+            id TEXT PRIMARY KEY,
+            organization_id TEXT,
+            full_name TEXT NOT NULL,
+            role_title TEXT,
+            platform TEXT,
+            profile_url TEXT,
+            relationship_stage TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_contact_records_org ON contact_records(organization_id);
+        `)
+      }
+
+      if (!hasTable(database, 'interaction_records')) {
+        database.exec(`
+          CREATE TABLE interaction_records (
+            id TEXT PRIMARY KEY,
+            contact_id TEXT NOT NULL,
+            interaction_type TEXT NOT NULL,
+            happened_at INTEGER NOT NULL,
+            summary TEXT NOT NULL,
+            next_action_at INTEGER,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_interaction_records_contact ON interaction_records(contact_id);
+        `)
+      }
+
+      if (!hasTable(database, 'narrative_fragments')) {
+        database.exec(`
+          CREATE TABLE narrative_fragments (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            fragment_type TEXT NOT NULL DEFAULT 'story',
+            body TEXT NOT NULL DEFAULT '',
+            source_document_id TEXT,
+            source_excerpt_id TEXT,
+            linked_project_id TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'profile_assets')) {
+        database.exec(`
+          CREATE TABLE profile_assets (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            platform TEXT NOT NULL DEFAULT 'linkedin',
+            content TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'cv_variants')) {
+        database.exec(`
+          CREATE TABLE cv_variants (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            target_role TEXT,
+            summary TEXT,
+            content TEXT NOT NULL DEFAULT '',
+            is_default INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'content_ideas')) {
+        database.exec(`
+          CREATE TABLE content_ideas (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            angle TEXT,
+            status TEXT NOT NULL DEFAULT 'backlog',
+            linked_project_id TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'content_posts')) {
+        database.exec(`
+          CREATE TABLE content_posts (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            channel TEXT NOT NULL DEFAULT 'linkedin',
+            body TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'draft',
+            publish_date TEXT,
+            linked_idea_id TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'source_documents')) {
+        database.exec(`
+          CREATE TABLE source_documents (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            file_path TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'ready',
+            excerpt_count INTEGER NOT NULL DEFAULT 0,
+            imported_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'source_excerpts')) {
+        database.exec(`
+          CREATE TABLE source_excerpts (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES source_documents(id) ON DELETE CASCADE,
+            excerpt_index INTEGER NOT NULL,
+            heading TEXT,
+            content TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_source_excerpts_document ON source_excerpts(document_id);
+        `)
+      }
+
+      if (!hasTable(database, 'extraction_suggestions')) {
+        database.exec(`
+          CREATE TABLE extraction_suggestions (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES source_documents(id) ON DELETE CASCADE,
+            excerpt_id TEXT REFERENCES source_excerpts(id) ON DELETE SET NULL,
+            suggestion_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_extraction_suggestions_document ON extraction_suggestions(document_id);
+          CREATE INDEX idx_extraction_suggestions_status ON extraction_suggestions(status);
+        `)
+      }
+
+      if (!hasTable(database, 'suggestion_resolutions')) {
+        database.exec(`
+          CREATE TABLE suggestion_resolutions (
+            id TEXT PRIMARY KEY,
+            suggestion_id TEXT NOT NULL REFERENCES extraction_suggestions(id) ON DELETE CASCADE,
+            status TEXT NOT NULL,
+            target_record_id TEXT,
+            created_at INTEGER NOT NULL
           );
         `)
       }

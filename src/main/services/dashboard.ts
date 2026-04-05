@@ -1,8 +1,12 @@
 import type { DashboardCountdown, DashboardSummary, PlanNode, Project } from '../../preload/types'
 import { buildBlockingAlert, getBlockingReasonsForNode } from './insights'
+import { libraryQueries } from '../db/queries/library'
 import { osQueries } from '../db/queries/os'
+import { pipelineQueries } from '../db/queries/pipeline'
 import { planQueries } from '../db/queries/plan'
+import { presenceQueries } from '../db/queries/presence'
 import { projectQueries } from '../db/queries/projects'
+import { settingsQueries } from '../db/queries/settings'
 import { skillQueries } from '../db/queries/skills'
 
 function toIsoDate(value: Date): string {
@@ -17,6 +21,14 @@ function addDays(date: Date, delta: number): Date {
 
 function getTodayUtc(): string {
   return toIsoDate(new Date())
+}
+
+function getCurrentWeekKey(): string {
+  const date = new Date(`${getTodayUtc()}T00:00:00.000Z`)
+  const day = date.getUTCDay()
+  const delta = day === 0 ? -6 : 1 - day
+  date.setUTCDate(date.getUTCDate() + delta)
+  return toIsoDate(date)
 }
 
 function buildCountdowns(): DashboardCountdown[] {
@@ -164,6 +176,38 @@ export function getDashboardSummary(): DashboardSummary {
   const nodes = planQueries.listNodes()
   const { activePhase, children } = buildActivePhase(nodes)
   const projects = projectQueries.list()
+  const weekKey = getCurrentWeekKey()
+  const weeklyPriorities = osQueries.listWeeklyPriorities(weekKey)
+  const weeklyReview = osQueries.getWeeklyReview(weekKey)
+  const organizations = pipelineQueries.listOrganizations()
+  const applications = pipelineQueries.listApplications()
+  const profileAssets = presenceQueries.listProfileAssets()
+  const contentIdeas = presenceQueries.listContentIdeas()
+  const documents = libraryQueries.listDocuments()
+  const suggestions = libraryQueries.listSuggestions()
+  const settings = settingsQueries.getBundle()
+  const skillCoverage = skillQueries.getCoverageSummary()
+  const missing: string[] = []
+
+  if (!settings.user_profile.linkedin_url && !settings.integration_settings.linkedin_profile_url) {
+    missing.push('LinkedIn profile')
+  }
+
+  if (!settings.user_profile.github_url) {
+    missing.push('GitHub profile')
+  }
+
+  if (organizations.length === 0) {
+    missing.push('Target organizations')
+  }
+
+  if (documents.length === 0) {
+    missing.push('Source documents')
+  }
+
+  if (projects.length === 0) {
+    missing.push('Projects')
+  }
 
   return {
     counts: {
@@ -177,8 +221,47 @@ export function getDashboardSummary(): DashboardSummary {
     active_phase_children: children,
     countdowns: buildCountdowns(),
     blocking_alerts: buildBlockingAlerts(),
-    skill_coverage: skillQueries.getCoverageSummary(),
+    skill_coverage: skillCoverage,
     os: buildOsSummary(),
-    ecosystem: buildEcosystemSummary(projects)
+    ecosystem: buildEcosystemSummary(projects),
+    weekly_priorities: weeklyPriorities,
+    weekly_review: weeklyReview,
+    pipeline: {
+      organizations: organizations.length,
+      active_applications: applications.filter(
+        (entry) => entry.status !== 'rejected' && entry.status !== 'paused'
+      ).length,
+      next_actions: applications
+        .filter((entry) => entry.follow_up_at !== null || entry.deadline_at !== null)
+        .sort((left, right) => {
+          const leftDate = left.follow_up_at ?? left.deadline_at ?? Number.MAX_SAFE_INTEGER
+          const rightDate = right.follow_up_at ?? right.deadline_at ?? Number.MAX_SAFE_INTEGER
+          return leftDate - rightDate
+        })
+        .slice(0, 5)
+    },
+    presence: {
+      ready_assets: profileAssets.filter((entry) => entry.status === 'ready').length,
+      open_ideas: contentIdeas.filter((entry) => entry.status !== 'posted').length,
+      prompts: [
+        weeklyPriorities.length === 0
+          ? 'Set this week’s priorities so the dashboard has a clear operating horizon.'
+          : 'Review whether your weekly priorities still match the current phase.',
+        skillCoverage.unverified > 0
+          ? 'Promote one project move into proof or narrative this week.'
+          : 'You have verified skill coverage to turn into public narrative assets.',
+        profileAssets.length === 0
+          ? 'Create a LinkedIn or CV asset so Presence becomes a real output surface.'
+          : 'Refresh one public-facing asset with your latest proof.'
+      ].slice(0, 3)
+    },
+    library: {
+      documents: documents.length,
+      pending_suggestions: suggestions.filter((entry) => entry.status === 'pending').length
+    },
+    onboarding: {
+      needs_setup: settings.dashboard_preferences.show_onboarding || missing.length > 0,
+      missing
+    }
   }
 }

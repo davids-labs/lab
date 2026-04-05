@@ -5,14 +5,19 @@ import type {
   CreateCountdownInput,
   CreateOsHabitInput,
   CreateOsProfileInput,
+  CreateWeeklyPriorityInput,
   OsDailyLog,
   OsHabit,
   OsHabitLog,
   OsProfile,
   OsTimeBlock,
+  UpdateWeeklyPriorityInput,
   UpdateCountdownInput,
   UpdateOsHabitInput,
   UpdateOsProfileInput,
+  UpsertWeeklyReviewInput,
+  WeeklyPriority,
+  WeeklyReview,
   UpsertOsDailyLogInput,
   UpsertOsHabitLogInput,
   UpsertOsTimeBlockInput
@@ -36,12 +41,16 @@ import {
   osHabitsTable,
   osProfilesTable,
   osTimeBlocksTable,
+  weeklyPrioritiesTable,
+  weeklyReviewsTable,
   type CountdownItemRow,
   type OsDailyLogRow,
   type OsHabitLogRow,
   type OsHabitRow,
   type OsProfileRow,
-  type OsTimeBlockRow
+  type OsTimeBlockRow,
+  type WeeklyPriorityRow,
+  type WeeklyReviewRow
 } from '../schema'
 
 function deserializeProfile(row: OsProfileRow): OsProfile {
@@ -87,6 +96,28 @@ function deserializeCountdown(row: CountdownItemRow): CountdownItem {
   }
 }
 
+function deserializeWeeklyPriority(row: WeeklyPriorityRow): WeeklyPriority {
+  return {
+    ...row,
+    linked_plan_node_id: row.linked_plan_node_id ?? null,
+    linked_application_id: row.linked_application_id ?? null,
+    notes: row.notes ?? null,
+    status: row.status as WeeklyPriority['status']
+  }
+}
+
+function deserializeWeeklyReview(row: WeeklyReviewRow): WeeklyReview {
+  return {
+    ...row,
+    wins: row.wins ?? null,
+    friction: row.friction ?? null,
+    focus_next: row.focus_next ?? null,
+    proof_move: row.proof_move ?? null,
+    pipeline_move: row.pipeline_move ?? null,
+    notes: row.notes ?? null
+  }
+}
+
 function nextSortOrder(entries: Array<{ sort_order: number }>): number {
   if (entries.length === 0) {
     return 0
@@ -118,7 +149,12 @@ function clearDefaultProfiles(exceptId?: string): void {
 export const osQueries = {
   listProfiles(): OsProfile[] {
     const db = getDb()
-    return db.select().from(osProfilesTable).orderBy(desc(osProfilesTable.is_default), asc(osProfilesTable.name)).all().map(deserializeProfile)
+    return db
+      .select()
+      .from(osProfilesTable)
+      .orderBy(desc(osProfilesTable.is_default), asc(osProfilesTable.name))
+      .all()
+      .map(deserializeProfile)
   },
 
   getDefaultProfile(): OsProfile | null {
@@ -147,7 +183,9 @@ export const osQueries = {
       clearDefaultProfiles(id)
     }
 
-    return deserializeProfile(db.select().from(osProfilesTable).where(eq(osProfilesTable.id, id)).get()!)
+    return deserializeProfile(
+      db.select().from(osProfilesTable).where(eq(osProfilesTable.id, id)).get()!
+    )
   },
 
   updateProfile(input: UpdateOsProfileInput): OsProfile {
@@ -172,7 +210,9 @@ export const osQueries = {
       clearDefaultProfiles(parsed.id)
     }
 
-    return deserializeProfile(db.select().from(osProfilesTable).where(eq(osProfilesTable.id, parsed.id)).get()!)
+    return deserializeProfile(
+      db.select().from(osProfilesTable).where(eq(osProfilesTable.id, parsed.id)).get()!
+    )
   },
 
   deleteProfile(id: string): { ok: boolean } {
@@ -207,7 +247,11 @@ export const osQueries = {
     const now = Date.now()
 
     if (parsed.id) {
-      const current = db.select().from(osTimeBlocksTable).where(eq(osTimeBlocksTable.id, parsed.id)).get()
+      const current = db
+        .select()
+        .from(osTimeBlocksTable)
+        .where(eq(osTimeBlocksTable.id, parsed.id))
+        .get()
 
       if (!current) {
         throw new Error('Time block not found')
@@ -276,7 +320,11 @@ export const osQueries = {
     const db = getDb()
     const parsed = validateUpsertOsDailyLogInput(input)
     const now = Date.now()
-    const current = db.select().from(osDailyLogsTable).where(eq(osDailyLogsTable.date, parsed.date)).get()
+    const current = db
+      .select()
+      .from(osDailyLogsTable)
+      .where(eq(osDailyLogsTable.date, parsed.date))
+      .get()
 
     if (current) {
       db.update(osDailyLogsTable)
@@ -317,12 +365,19 @@ export const osQueries = {
       })
       .run()
 
-    return deserializeDailyLog(db.select().from(osDailyLogsTable).where(eq(osDailyLogsTable.id, id)).get()!)
+    return deserializeDailyLog(
+      db.select().from(osDailyLogsTable).where(eq(osDailyLogsTable.id, id)).get()!
+    )
   },
 
   listHabits(): OsHabit[] {
     const db = getDb()
-    return db.select().from(osHabitsTable).orderBy(asc(osHabitsTable.sort_order)).all().map(deserializeHabit)
+    return db
+      .select()
+      .from(osHabitsTable)
+      .orderBy(asc(osHabitsTable.sort_order))
+      .all()
+      .map(deserializeHabit)
   },
 
   createHabit(input: CreateOsHabitInput): OsHabit {
@@ -369,7 +424,9 @@ export const osQueries = {
       .where(eq(osHabitsTable.id, parsed.id))
       .run()
 
-    return deserializeHabit(db.select().from(osHabitsTable).where(eq(osHabitsTable.id, parsed.id)).get()!)
+    return deserializeHabit(
+      db.select().from(osHabitsTable).where(eq(osHabitsTable.id, parsed.id)).get()!
+    )
   },
 
   deleteHabit(id: string): { ok: boolean } {
@@ -468,7 +525,11 @@ export const osQueries = {
   updateCountdown(input: UpdateCountdownInput): CountdownItem {
     const db = getDb()
     const parsed = validateUpdateCountdownInput(input)
-    const current = db.select().from(countdownItemsTable).where(eq(countdownItemsTable.id, parsed.id)).get()
+    const current = db
+      .select()
+      .from(countdownItemsTable)
+      .where(eq(countdownItemsTable.id, parsed.id))
+      .get()
 
     if (!current) {
       throw new Error('Countdown not found')
@@ -494,5 +555,148 @@ export const osQueries = {
     const db = getDb()
     db.delete(countdownItemsTable).where(eq(countdownItemsTable.id, id)).run()
     return { ok: true }
+  },
+
+  listWeeklyPriorities(weekKey?: string): WeeklyPriority[] {
+    const db = getDb()
+    const rows = weekKey
+      ? db
+          .select()
+          .from(weeklyPrioritiesTable)
+          .where(eq(weeklyPrioritiesTable.week_key, weekKey))
+          .orderBy(asc(weeklyPrioritiesTable.created_at))
+          .all()
+      : db
+          .select()
+          .from(weeklyPrioritiesTable)
+          .orderBy(desc(weeklyPrioritiesTable.week_key), asc(weeklyPrioritiesTable.created_at))
+          .all()
+
+    return rows.map(deserializeWeeklyPriority)
+  },
+
+  createWeeklyPriority(input: CreateWeeklyPriorityInput): WeeklyPriority {
+    const db = getDb()
+    const now = Date.now()
+    const id = ulid()
+
+    db.insert(weeklyPrioritiesTable)
+      .values({
+        id,
+        week_key: input.week_key,
+        title: input.title.trim(),
+        status: input.status ?? 'planned',
+        linked_plan_node_id: input.linked_plan_node_id ?? null,
+        linked_application_id: input.linked_application_id ?? null,
+        notes: input.notes ?? null,
+        created_at: now,
+        updated_at: now
+      })
+      .run()
+
+    return deserializeWeeklyPriority(
+      db.select().from(weeklyPrioritiesTable).where(eq(weeklyPrioritiesTable.id, id)).get()!
+    )
+  },
+
+  updateWeeklyPriority(input: UpdateWeeklyPriorityInput): WeeklyPriority {
+    const db = getDb()
+    const current = db
+      .select()
+      .from(weeklyPrioritiesTable)
+      .where(eq(weeklyPrioritiesTable.id, input.id))
+      .get()
+
+    if (!current) {
+      throw new Error('Weekly priority not found')
+    }
+
+    db.update(weeklyPrioritiesTable)
+      .set({
+        title: input.title?.trim() || current.title,
+        status: input.status ?? current.status,
+        linked_plan_node_id:
+          input.linked_plan_node_id === undefined
+            ? current.linked_plan_node_id
+            : input.linked_plan_node_id,
+        linked_application_id:
+          input.linked_application_id === undefined
+            ? current.linked_application_id
+            : input.linked_application_id,
+        notes: input.notes === undefined ? current.notes : input.notes,
+        updated_at: Date.now()
+      })
+      .where(eq(weeklyPrioritiesTable.id, input.id))
+      .run()
+
+    return deserializeWeeklyPriority(
+      db.select().from(weeklyPrioritiesTable).where(eq(weeklyPrioritiesTable.id, input.id)).get()!
+    )
+  },
+
+  deleteWeeklyPriority(id: string): { ok: boolean } {
+    const db = getDb()
+    db.delete(weeklyPrioritiesTable).where(eq(weeklyPrioritiesTable.id, id)).run()
+    return { ok: true }
+  },
+
+  getWeeklyReview(weekKey: string): WeeklyReview | null {
+    const db = getDb()
+    const row = db
+      .select()
+      .from(weeklyReviewsTable)
+      .where(eq(weeklyReviewsTable.week_key, weekKey))
+      .get()
+    return row ? deserializeWeeklyReview(row) : null
+  },
+
+  upsertWeeklyReview(input: UpsertWeeklyReviewInput): WeeklyReview {
+    const db = getDb()
+    const now = Date.now()
+    const current = db
+      .select()
+      .from(weeklyReviewsTable)
+      .where(eq(weeklyReviewsTable.week_key, input.week_key))
+      .get()
+
+    if (current) {
+      db.update(weeklyReviewsTable)
+        .set({
+          wins: input.wins === undefined ? current.wins : input.wins,
+          friction: input.friction === undefined ? current.friction : input.friction,
+          focus_next: input.focus_next === undefined ? current.focus_next : input.focus_next,
+          proof_move: input.proof_move === undefined ? current.proof_move : input.proof_move,
+          pipeline_move:
+            input.pipeline_move === undefined ? current.pipeline_move : input.pipeline_move,
+          notes: input.notes === undefined ? current.notes : input.notes,
+          updated_at: now
+        })
+        .where(eq(weeklyReviewsTable.id, current.id))
+        .run()
+
+      return deserializeWeeklyReview(
+        db.select().from(weeklyReviewsTable).where(eq(weeklyReviewsTable.id, current.id)).get()!
+      )
+    }
+
+    const id = ulid()
+    db.insert(weeklyReviewsTable)
+      .values({
+        id,
+        week_key: input.week_key,
+        wins: input.wins ?? null,
+        friction: input.friction ?? null,
+        focus_next: input.focus_next ?? null,
+        proof_move: input.proof_move ?? null,
+        pipeline_move: input.pipeline_move ?? null,
+        notes: input.notes ?? null,
+        created_at: now,
+        updated_at: now
+      })
+      .run()
+
+    return deserializeWeeklyReview(
+      db.select().from(weeklyReviewsTable).where(eq(weeklyReviewsTable.id, id)).get()!
+    )
   }
 }

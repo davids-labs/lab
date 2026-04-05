@@ -50,7 +50,80 @@ const bridge: LabBridge = {
     listCountdowns: () => ipcRenderer.invoke('os:list-countdowns'),
     createCountdown: (input) => ipcRenderer.invoke('os:create-countdown', input),
     updateCountdown: (input) => ipcRenderer.invoke('os:update-countdown', input),
-    deleteCountdown: (id) => ipcRenderer.invoke('os:delete-countdown', id)
+    deleteCountdown: (id) => ipcRenderer.invoke('os:delete-countdown', id),
+    listWeeklyPriorities: (weekKey) => ipcRenderer.invoke('os:list-weekly-priorities', weekKey),
+    createWeeklyPriority: (input) => ipcRenderer.invoke('os:create-weekly-priority', input),
+    updateWeeklyPriority: (input) => ipcRenderer.invoke('os:update-weekly-priority', input),
+    deleteWeeklyPriority: (id) => ipcRenderer.invoke('os:delete-weekly-priority', id),
+    getWeeklyReview: (weekKey) => ipcRenderer.invoke('os:get-weekly-review', weekKey),
+    upsertWeeklyReview: (input) => ipcRenderer.invoke('os:upsert-weekly-review', input)
+  },
+  settings: {
+    getBundle: () => ipcRenderer.invoke('settings:get-bundle'),
+    updateUserProfile: (input) => ipcRenderer.invoke('settings:update-user-profile', input),
+    updateNarrativeProfile: (input) =>
+      ipcRenderer.invoke('settings:update-narrative-profile', input),
+    updateDashboardPreferences: (input) =>
+      ipcRenderer.invoke('settings:update-dashboard-preferences', input),
+    updateIntegrationSettings: (input) =>
+      ipcRenderer.invoke('settings:update-integration-settings', input),
+    updateThemeSettings: (input) => ipcRenderer.invoke('settings:update-theme-settings', input)
+  },
+  pipeline: {
+    listOrganizations: () => ipcRenderer.invoke('pipeline:list-organizations'),
+    createOrganization: (input) => ipcRenderer.invoke('pipeline:create-organization', input),
+    updateOrganization: (input) => ipcRenderer.invoke('pipeline:update-organization', input),
+    deleteOrganization: (id) => ipcRenderer.invoke('pipeline:delete-organization', id),
+    listRoles: () => ipcRenderer.invoke('pipeline:list-roles'),
+    createRole: (input) => ipcRenderer.invoke('pipeline:create-role', input),
+    updateRole: (input) => ipcRenderer.invoke('pipeline:update-role', input),
+    deleteRole: (id) => ipcRenderer.invoke('pipeline:delete-role', id),
+    listApplications: () => ipcRenderer.invoke('pipeline:list-applications'),
+    createApplication: (input) => ipcRenderer.invoke('pipeline:create-application', input),
+    updateApplication: (input) => ipcRenderer.invoke('pipeline:update-application', input),
+    deleteApplication: (id) => ipcRenderer.invoke('pipeline:delete-application', id),
+    listContacts: () => ipcRenderer.invoke('pipeline:list-contacts'),
+    createContact: (input) => ipcRenderer.invoke('pipeline:create-contact', input),
+    updateContact: (input) => ipcRenderer.invoke('pipeline:update-contact', input),
+    deleteContact: (id) => ipcRenderer.invoke('pipeline:delete-contact', id),
+    listInteractions: (contactId) => ipcRenderer.invoke('pipeline:list-interactions', contactId),
+    createInteraction: (input) => ipcRenderer.invoke('pipeline:create-interaction', input),
+    updateInteraction: (input) => ipcRenderer.invoke('pipeline:update-interaction', input),
+    deleteInteraction: (id) => ipcRenderer.invoke('pipeline:delete-interaction', id)
+  },
+  presence: {
+    listNarrativeFragments: () => ipcRenderer.invoke('presence:list-narrative-fragments'),
+    createNarrativeFragment: (input) =>
+      ipcRenderer.invoke('presence:create-narrative-fragment', input),
+    updateNarrativeFragment: (input) =>
+      ipcRenderer.invoke('presence:update-narrative-fragment', input),
+    deleteNarrativeFragment: (id) =>
+      ipcRenderer.invoke('presence:delete-narrative-fragment', id),
+    listProfileAssets: () => ipcRenderer.invoke('presence:list-profile-assets'),
+    createProfileAsset: (input) => ipcRenderer.invoke('presence:create-profile-asset', input),
+    updateProfileAsset: (input) => ipcRenderer.invoke('presence:update-profile-asset', input),
+    deleteProfileAsset: (id) => ipcRenderer.invoke('presence:delete-profile-asset', id),
+    listCvVariants: () => ipcRenderer.invoke('presence:list-cv-variants'),
+    createCvVariant: (input) => ipcRenderer.invoke('presence:create-cv-variant', input),
+    updateCvVariant: (input) => ipcRenderer.invoke('presence:update-cv-variant', input),
+    deleteCvVariant: (id) => ipcRenderer.invoke('presence:delete-cv-variant', id),
+    listContentIdeas: () => ipcRenderer.invoke('presence:list-content-ideas'),
+    createContentIdea: (input) => ipcRenderer.invoke('presence:create-content-idea', input),
+    updateContentIdea: (input) => ipcRenderer.invoke('presence:update-content-idea', input),
+    deleteContentIdea: (id) => ipcRenderer.invoke('presence:delete-content-idea', id),
+    listContentPosts: () => ipcRenderer.invoke('presence:list-content-posts'),
+    createContentPost: (input) => ipcRenderer.invoke('presence:create-content-post', input),
+    updateContentPost: (input) => ipcRenderer.invoke('presence:update-content-post', input),
+    deleteContentPost: (id) => ipcRenderer.invoke('presence:delete-content-post', id)
+  },
+  library: {
+    listDocuments: () => ipcRenderer.invoke('library:list-documents'),
+    importDocuments: (input) => ipcRenderer.invoke('library:import-documents', input),
+    deleteDocument: (id) => ipcRenderer.invoke('library:delete-document', id),
+    listExcerpts: (documentId) => ipcRenderer.invoke('library:list-excerpts', documentId),
+    listSuggestions: (documentId) => ipcRenderer.invoke('library:list-suggestions', documentId),
+    listResolutions: (suggestionId) => ipcRenderer.invoke('library:list-resolutions', suggestionId),
+    resolveSuggestion: (input) => ipcRenderer.invoke('library:resolve-suggestion', input)
   },
   project: {
     list: () => ipcRenderer.invoke('project:list'),

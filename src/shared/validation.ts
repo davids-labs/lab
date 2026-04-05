@@ -243,7 +243,7 @@ export const openFilesOptionsSchema = z.object({
       })
     )
     .optional(),
-  properties: z.array(z.enum(['openFile', 'multiSelections'])).optional()
+  properties: z.array(z.enum(['openFile', 'multiSelections', 'openDirectory'])).optional()
 })
 
 export const saveFileOptionsSchema = z.object({

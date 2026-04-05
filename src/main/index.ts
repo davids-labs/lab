@@ -8,10 +8,14 @@ import { registerAssetHandlers } from './ipc/asset'
 import { registerBlockHandlers } from './ipc/block'
 import { registerDashboardHandlers } from './ipc/dashboard'
 import { registerGitHandlers } from './ipc/git'
+import { registerLibraryHandlers } from './ipc/library'
 import { registerOsHandlers } from './ipc/os'
 import { registerPageHandlers } from './ipc/page'
 import { registerPlanHandlers } from './ipc/plan'
+import { registerPipelineHandlers } from './ipc/pipeline'
+import { registerPresenceHandlers } from './ipc/presence'
 import { registerProjectHandlers } from './ipc/project'
+import { registerSettingsHandlers } from './ipc/settings'
 import { registerSkillHandlers } from './ipc/skills'
 import { registerSystemHandlers } from './ipc/system'
 import { initializeAppPaths } from './services/appPaths'
@@ -63,6 +67,10 @@ app.whenReady().then(() => {
   registerPlanHandlers()
   registerSkillHandlers()
   registerOsHandlers()
+  registerSettingsHandlers()
+  registerPipelineHandlers()
+  registerPresenceHandlers()
+  registerLibraryHandlers()
   registerProjectHandlers()
   registerBlockHandlers()
   registerAssetHandlers()

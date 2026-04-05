@@ -4,14 +4,19 @@ import type {
   CreateCountdownInput,
   CreateOsHabitInput,
   CreateOsProfileInput,
+  CreateWeeklyPriorityInput,
   OsDailyLog,
   OsHabit,
   OsHabitLog,
   OsProfile,
   OsTimeBlock,
+  UpdateWeeklyPriorityInput,
   UpdateCountdownInput,
   UpdateOsHabitInput,
   UpdateOsProfileInput,
+  UpsertWeeklyReviewInput,
+  WeeklyPriority,
+  WeeklyReview,
   UpsertOsDailyLogInput,
   UpsertOsHabitLogInput,
   UpsertOsTimeBlockInput
@@ -25,6 +30,8 @@ interface OsStore {
   currentLog: OsDailyLog | null
   habits: OsHabit[]
   countdowns: CountdownItem[]
+  weeklyPriorities: WeeklyPriority[]
+  weeklyReview: WeeklyReview | null
   isLoading: boolean
   error: string | null
   loadProfiles: () => Promise<void>
@@ -47,6 +54,12 @@ interface OsStore {
   createCountdown: (input: CreateCountdownInput) => Promise<CountdownItem>
   updateCountdown: (input: UpdateCountdownInput) => Promise<CountdownItem>
   deleteCountdown: (id: string) => Promise<void>
+  loadWeeklyPriorities: (weekKey?: string) => Promise<void>
+  createWeeklyPriority: (input: CreateWeeklyPriorityInput) => Promise<WeeklyPriority>
+  updateWeeklyPriority: (input: UpdateWeeklyPriorityInput) => Promise<WeeklyPriority>
+  deleteWeeklyPriority: (id: string) => Promise<void>
+  loadWeeklyReview: (weekKey: string) => Promise<void>
+  upsertWeeklyReview: (input: UpsertWeeklyReviewInput) => Promise<WeeklyReview>
 }
 
 export const useOsStore = create<OsStore>((set, get) => ({
@@ -57,6 +70,8 @@ export const useOsStore = create<OsStore>((set, get) => ({
   currentLog: null,
   habits: [],
   countdowns: [],
+  weeklyPriorities: [],
+  weeklyReview: null,
   isLoading: false,
   error: null,
 
@@ -68,7 +83,7 @@ export const useOsStore = create<OsStore>((set, get) => ({
       const activeProfileId =
         get().activeProfileId && profiles.some((profile) => profile.id === get().activeProfileId)
           ? get().activeProfileId
-          : profiles.find((profile) => profile.is_default)?.id ?? profiles[0]?.id ?? null
+          : (profiles.find((profile) => profile.is_default)?.id ?? profiles[0]?.id ?? null)
 
       set({ profiles, activeProfileId, isLoading: false })
       await get().loadTimeBlocks(activeProfileId)
@@ -187,5 +202,38 @@ export const useOsStore = create<OsStore>((set, get) => ({
   async deleteCountdown(id) {
     await window.lab.os.deleteCountdown(id)
     await get().loadCountdowns()
+  },
+
+  async loadWeeklyPriorities(weekKey) {
+    const weeklyPriorities = await window.lab.os.listWeeklyPriorities(weekKey)
+    set({ weeklyPriorities })
+  },
+
+  async createWeeklyPriority(input) {
+    const priority = await window.lab.os.createWeeklyPriority(input)
+    await get().loadWeeklyPriorities(input.week_key)
+    return priority
+  },
+
+  async updateWeeklyPriority(input) {
+    const priority = await window.lab.os.updateWeeklyPriority(input)
+    await get().loadWeeklyPriorities(priority.week_key)
+    return priority
+  },
+
+  async deleteWeeklyPriority(id) {
+    await window.lab.os.deleteWeeklyPriority(id)
+    await get().loadWeeklyPriorities()
+  },
+
+  async loadWeeklyReview(weekKey) {
+    const weeklyReview = await window.lab.os.getWeeklyReview(weekKey)
+    set({ weeklyReview })
+  },
+
+  async upsertWeeklyReview(input) {
+    const weeklyReview = await window.lab.os.upsertWeeklyReview(input)
+    set({ weeklyReview })
+    return weeklyReview
   }
 }))

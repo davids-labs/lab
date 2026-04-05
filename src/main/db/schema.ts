@@ -186,6 +186,214 @@ export const countdownItemsTable = sqliteTable('countdown_items', {
   updated_at: integer('updated_at').notNull()
 })
 
+export const appSettingsTable = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value_json: text('value_json').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const weeklyPrioritiesTable = sqliteTable('weekly_priorities', {
+  id: text('id').primaryKey(),
+  week_key: text('week_key').notNull(),
+  title: text('title').notNull(),
+  status: text('status').notNull().default('planned'),
+  linked_plan_node_id: text('linked_plan_node_id'),
+  linked_application_id: text('linked_application_id'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const weeklyReviewsTable = sqliteTable('weekly_reviews', {
+  id: text('id').primaryKey(),
+  week_key: text('week_key').notNull().unique(),
+  wins: text('wins'),
+  friction: text('friction'),
+  focus_next: text('focus_next'),
+  proof_move: text('proof_move'),
+  pipeline_move: text('pipeline_move'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const targetOrganizationsTable = sqliteTable('target_organizations', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  category: text('category').notNull().default('Company'),
+  location: text('location'),
+  priority: text('priority').notNull().default('medium'),
+  why_fit: text('why_fit'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const targetRolesTable = sqliteTable('target_roles', {
+  id: text('id').primaryKey(),
+  organization_id: text('organization_id').references(() => targetOrganizationsTable.id, {
+    onDelete: 'set null'
+  }),
+  title: text('title').notNull(),
+  location: text('location'),
+  role_type: text('role_type'),
+  season: text('season'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const applicationRecordsTable = sqliteTable('application_records', {
+  id: text('id').primaryKey(),
+  organization_id: text('organization_id').references(() => targetOrganizationsTable.id, {
+    onDelete: 'set null'
+  }),
+  target_role_id: text('target_role_id').references(() => targetRolesTable.id, {
+    onDelete: 'set null'
+  }),
+  title: text('title').notNull(),
+  status: text('status').notNull().default('target'),
+  deadline_at: integer('deadline_at'),
+  applied_at: integer('applied_at'),
+  follow_up_at: integer('follow_up_at'),
+  notes: text('notes'),
+  linked_project_id: text('linked_project_id'),
+  linked_skill_id: text('linked_skill_id'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const contactRecordsTable = sqliteTable('contact_records', {
+  id: text('id').primaryKey(),
+  organization_id: text('organization_id').references(() => targetOrganizationsTable.id, {
+    onDelete: 'set null'
+  }),
+  full_name: text('full_name').notNull(),
+  role_title: text('role_title'),
+  platform: text('platform'),
+  profile_url: text('profile_url'),
+  relationship_stage: text('relationship_stage'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const interactionRecordsTable = sqliteTable('interaction_records', {
+  id: text('id').primaryKey(),
+  contact_id: text('contact_id')
+    .notNull()
+    .references(() => contactRecordsTable.id, { onDelete: 'cascade' }),
+  interaction_type: text('interaction_type').notNull(),
+  happened_at: integer('happened_at').notNull(),
+  summary: text('summary').notNull(),
+  next_action_at: integer('next_action_at'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const narrativeFragmentsTable = sqliteTable('narrative_fragments', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  fragment_type: text('fragment_type').notNull().default('story'),
+  body: text('body').notNull().default(''),
+  source_document_id: text('source_document_id'),
+  source_excerpt_id: text('source_excerpt_id'),
+  linked_project_id: text('linked_project_id'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const profileAssetsTable = sqliteTable('profile_assets', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  platform: text('platform').notNull().default('linkedin'),
+  content: text('content').notNull().default(''),
+  status: text('status').notNull().default('draft'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const cvVariantsTable = sqliteTable('cv_variants', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  target_role: text('target_role'),
+  summary: text('summary'),
+  content: text('content').notNull().default(''),
+  is_default: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const contentIdeasTable = sqliteTable('content_ideas', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  angle: text('angle'),
+  status: text('status').notNull().default('backlog'),
+  linked_project_id: text('linked_project_id'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const contentPostsTable = sqliteTable('content_posts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  channel: text('channel').notNull().default('linkedin'),
+  body: text('body').notNull().default(''),
+  status: text('status').notNull().default('draft'),
+  publish_date: text('publish_date'),
+  linked_idea_id: text('linked_idea_id'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const sourceDocumentsTable = sqliteTable('source_documents', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  file_path: text('file_path').notNull(),
+  mime_type: text('mime_type').notNull(),
+  kind: text('kind').notNull(),
+  status: text('status').notNull().default('ready'),
+  excerpt_count: integer('excerpt_count').notNull().default(0),
+  imported_at: integer('imported_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const sourceExcerptsTable = sqliteTable('source_excerpts', {
+  id: text('id').primaryKey(),
+  document_id: text('document_id')
+    .notNull()
+    .references(() => sourceDocumentsTable.id, { onDelete: 'cascade' }),
+  excerpt_index: integer('excerpt_index').notNull(),
+  heading: text('heading'),
+  content: text('content').notNull(),
+  created_at: integer('created_at').notNull()
+})
+
+export const extractionSuggestionsTable = sqliteTable('extraction_suggestions', {
+  id: text('id').primaryKey(),
+  document_id: text('document_id')
+    .notNull()
+    .references(() => sourceDocumentsTable.id, { onDelete: 'cascade' }),
+  excerpt_id: text('excerpt_id').references(() => sourceExcerptsTable.id, { onDelete: 'set null' }),
+  suggestion_type: text('suggestion_type').notNull(),
+  title: text('title').notNull(),
+  payload_json: text('payload_json').notNull(),
+  status: text('status').notNull().default('pending'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const suggestionResolutionsTable = sqliteTable('suggestion_resolutions', {
+  id: text('id').primaryKey(),
+  suggestion_id: text('suggestion_id')
+    .notNull()
+    .references(() => extractionSuggestionsTable.id, { onDelete: 'cascade' }),
+  status: text('status').notNull(),
+  target_record_id: text('target_record_id'),
+  created_at: integer('created_at').notNull()
+})
+
 export const schema = {
   appMetaTable,
   projectsTable,
@@ -201,7 +409,24 @@ export const schema = {
   osDailyLogsTable,
   osHabitsTable,
   osHabitLogsTable,
-  countdownItemsTable
+  countdownItemsTable,
+  appSettingsTable,
+  weeklyPrioritiesTable,
+  weeklyReviewsTable,
+  targetOrganizationsTable,
+  targetRolesTable,
+  applicationRecordsTable,
+  contactRecordsTable,
+  interactionRecordsTable,
+  narrativeFragmentsTable,
+  profileAssetsTable,
+  cvVariantsTable,
+  contentIdeasTable,
+  contentPostsTable,
+  sourceDocumentsTable,
+  sourceExcerptsTable,
+  extractionSuggestionsTable,
+  suggestionResolutionsTable
 }
 
 export type AppMetaRow = typeof appMetaTable.$inferSelect
@@ -219,3 +444,20 @@ export type OsDailyLogRow = typeof osDailyLogsTable.$inferSelect
 export type OsHabitRow = typeof osHabitsTable.$inferSelect
 export type OsHabitLogRow = typeof osHabitLogsTable.$inferSelect
 export type CountdownItemRow = typeof countdownItemsTable.$inferSelect
+export type AppSettingsRow = typeof appSettingsTable.$inferSelect
+export type WeeklyPriorityRow = typeof weeklyPrioritiesTable.$inferSelect
+export type WeeklyReviewRow = typeof weeklyReviewsTable.$inferSelect
+export type TargetOrganizationRow = typeof targetOrganizationsTable.$inferSelect
+export type TargetRoleRow = typeof targetRolesTable.$inferSelect
+export type ApplicationRecordRow = typeof applicationRecordsTable.$inferSelect
+export type ContactRecordRow = typeof contactRecordsTable.$inferSelect
+export type InteractionRecordRow = typeof interactionRecordsTable.$inferSelect
+export type NarrativeFragmentRow = typeof narrativeFragmentsTable.$inferSelect
+export type ProfileAssetRow = typeof profileAssetsTable.$inferSelect
+export type CvVariantRow = typeof cvVariantsTable.$inferSelect
+export type ContentIdeaRow = typeof contentIdeasTable.$inferSelect
+export type ContentPostRow = typeof contentPostsTable.$inferSelect
+export type SourceDocumentRow = typeof sourceDocumentsTable.$inferSelect
+export type SourceExcerptRow = typeof sourceExcerptsTable.$inferSelect
+export type ExtractionSuggestionRow = typeof extractionSuggestionsTable.$inferSelect
+export type SuggestionResolutionRow = typeof suggestionResolutionsTable.$inferSelect

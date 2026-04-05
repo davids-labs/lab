@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   PLAN_NODE_KINDS,
   PLAN_NODE_STATUSES,
@@ -9,8 +10,11 @@ import {
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useOsStore } from '@renderer/stores/osStore'
+import { usePipelineStore } from '@renderer/stores/pipelineStore'
 import { usePlanStore } from '@renderer/stores/planStore'
+import { usePresenceStore } from '@renderer/stores/presenceStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
@@ -51,6 +55,7 @@ function findPhaseForNode(
 }
 
 export function MasterPlan(): JSX.Element {
+  const navigate = useNavigate()
   const {
     createLink,
     createNode,
@@ -65,12 +70,18 @@ export function MasterPlan(): JSX.Element {
     selectNode,
     updateNode
   } = usePlanStore()
+  const bundle = useSettingsStore((state) => state.bundle)
+  const loadBundle = useSettingsStore((state) => state.loadBundle)
   const projects = useProjectStore((state) => state.projects)
   const loadProjects = useProjectStore((state) => state.loadProjects)
   const skillNodes = useSkillsStore((state) => state.nodes)
   const loadSkillNodes = useSkillsStore((state) => state.loadNodes)
   const countdowns = useOsStore((state) => state.countdowns)
+  const weeklyPriorities = useOsStore((state) => state.weeklyPriorities)
   const loadCountdowns = useOsStore((state) => state.loadCountdowns)
+  const loadWeeklyPriorities = useOsStore((state) => state.loadWeeklyPriorities)
+  const { organizations, applications, loadAll: loadPipeline } = usePipelineStore()
+  const { narrativeFragments, loadAll: loadPresence } = usePresenceStore()
   const pushToast = useToastStore((state) => state.push)
   const [phaseTitle, setPhaseTitle] = useState('')
   const [childTitle, setChildTitle] = useState('')
@@ -82,10 +93,23 @@ export function MasterPlan(): JSX.Element {
 
   useEffect(() => {
     void loadNodes()
+    void loadBundle()
     void loadProjects()
     void loadSkillNodes(null)
     void loadCountdowns()
-  }, [loadCountdowns, loadNodes, loadProjects, loadSkillNodes])
+    void loadWeeklyPriorities()
+    void loadPipeline()
+    void loadPresence()
+  }, [
+    loadBundle,
+    loadCountdowns,
+    loadNodes,
+    loadPipeline,
+    loadPresence,
+    loadProjects,
+    loadSkillNodes,
+    loadWeeklyPriorities
+  ])
 
   const phases = useMemo(
     () =>
@@ -117,22 +141,41 @@ export function MasterPlan(): JSX.Element {
   }, [phases, selectNode, selectedNodeId])
 
   const linkTargets = useMemo(() => {
-    if (linkType === 'project') {
-      return projects.map((project) => ({ id: project.id, label: project.name }))
+    switch (linkType) {
+      case 'project':
+        return projects.map((project) => ({ id: project.id, label: project.name }))
+      case 'skill_node':
+        return skillNodes.map((node) => ({ id: node.id, label: node.title }))
+      case 'countdown_item':
+        return countdowns.map((countdown) => ({ id: countdown.id, label: countdown.title }))
+      case 'target_organization':
+        return organizations.map((organization) => ({
+          id: organization.id,
+          label: organization.name
+        }))
+      case 'application_record':
+        return applications.map((application) => ({ id: application.id, label: application.title }))
+      case 'weekly_priority':
+        return weeklyPriorities.map((priority) => ({ id: priority.id, label: priority.title }))
+      case 'narrative_fragment':
+        return narrativeFragments.map((fragment) => ({ id: fragment.id, label: fragment.title }))
+      default:
+        return nodes
+          .filter((node) => node.id !== selectedNodeId)
+          .map((node) => ({ id: node.id, label: node.title }))
     }
-
-    if (linkType === 'skill_node') {
-      return skillNodes.map((node) => ({ id: node.id, label: node.title }))
-    }
-
-    if (linkType === 'countdown_item') {
-      return countdowns.map((countdown) => ({ id: countdown.id, label: countdown.title }))
-    }
-
-    return nodes
-      .filter((node) => node.id !== selectedNodeId)
-      .map((node) => ({ id: node.id, label: node.title }))
-  }, [countdowns, linkType, nodes, projects, selectedNodeId, skillNodes])
+  }, [
+    applications,
+    countdowns,
+    linkType,
+    narrativeFragments,
+    nodes,
+    organizations,
+    projects,
+    selectedNodeId,
+    skillNodes,
+    weeklyPriorities
+  ])
 
   const targetLabels = useMemo(
     () =>
@@ -140,9 +183,22 @@ export function MasterPlan(): JSX.Element {
         ...projects.map((project) => [project.id, project.name] as const),
         ...skillNodes.map((node) => [node.id, node.title] as const),
         ...countdowns.map((countdown) => [countdown.id, countdown.title] as const),
-        ...nodes.map((node) => [node.id, node.title] as const)
+        ...nodes.map((node) => [node.id, node.title] as const),
+        ...organizations.map((organization) => [organization.id, organization.name] as const),
+        ...applications.map((application) => [application.id, application.title] as const),
+        ...weeklyPriorities.map((priority) => [priority.id, priority.title] as const),
+        ...narrativeFragments.map((fragment) => [fragment.id, fragment.title] as const)
       ]),
-    [countdowns, nodes, projects, skillNodes]
+    [
+      applications,
+      countdowns,
+      narrativeFragments,
+      nodes,
+      organizations,
+      projects,
+      skillNodes,
+      weeklyPriorities
+    ]
   )
 
   useEffect(() => {
@@ -161,7 +217,7 @@ export function MasterPlan(): JSX.Element {
     })
     setPhaseTitle('')
     await selectNode(phase.id)
-    pushToast({ message: 'Added phase to the roadmap.', type: 'success' })
+    pushToast({ message: 'Added a new phase.', type: 'success' })
   }
 
   async function handleCreateChild(): Promise<void> {
@@ -177,7 +233,7 @@ export function MasterPlan(): JSX.Element {
     })
     setChildTitle('')
     await selectNode(node.id)
-    pushToast({ message: 'Added nested roadmap item.', type: 'success' })
+    pushToast({ message: 'Added a nested roadmap item.', type: 'success' })
   }
 
   async function handleSaveNode(): Promise<void> {
@@ -185,8 +241,7 @@ export function MasterPlan(): JSX.Element {
       return
     }
 
-    const form = selectedNodeDetail.node
-    await updateNode(form)
+    await updateNode(selectedNodeDetail.node)
     pushToast({ message: 'Roadmap item updated.', type: 'success' })
   }
 
@@ -201,23 +256,120 @@ export function MasterPlan(): JSX.Element {
       target_id: linkTargetId,
       required_stage: linkType === 'project' ? requiredStage : null
     })
-    pushToast({ message: 'Link added to roadmap item.', type: 'success' })
+    pushToast({ message: 'Linked roadmap item to supporting evidence.', type: 'success' })
   }
+
+  const topOrganizations = organizations.slice(0, 4)
 
   return (
     <div className={pageStyles.page}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.hero}>
-          <span className={pageStyles.eyebrow}>Master Plan</span>
-          <h1 className={pageStyles.title}>The Fractal Master Plan</h1>
+          <span className={pageStyles.eyebrow}>Direction</span>
+          <h1 className={pageStyles.title}>North Star, Narrative, and Roadmap</h1>
           <p className={pageStyles.description}>
-            Build the long-range trajectory as linked, editable milestones instead of static notes.
+            This workspace defines the long-range self: who you are building into, which phase you
+            are in, what the major epics are, and which proof or opportunity dependencies can block
+            the path.
           </p>
+        </section>
+
+        <section className={pageStyles.grid2}>
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Personal Profile</h2>
+              <span className={pageStyles.pill}>North star</span>
+            </div>
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>{bundle?.user_profile.full_name ?? 'Your profile'}</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.user_profile.location ?? 'Location not set'}
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Current education</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.user_profile.current_education ?? 'Add this in Settings'}
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>North star goal</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.user_profile.north_star_goal ?? 'Add this in Settings'}
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Degree path</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.user_profile.degree_track ?? 'Add this in Settings'}
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => navigate('/settings')}>
+              Edit in Settings
+            </Button>
+          </article>
+
+          <article className={pageStyles.card}>
+            <div className={pageStyles.sectionHeader}>
+              <h2 className={pageStyles.cardTitle}>Strategic Narrative</h2>
+              <span className={pageStyles.pill}>{organizations.length} target orgs</span>
+            </div>
+            <div className={pageStyles.list}>
+              <div className={pageStyles.listRow}>
+                <strong>Strategic narrative</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.narrative_profile.strategic_narrative ??
+                    'Capture the long-range narrative in Settings.'}
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Apple strategy</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.narrative_profile.apple_strategy ?? 'Add Apple strategy notes.'}
+                </span>
+              </div>
+              <div className={pageStyles.listRow}>
+                <strong>Columbia strategy</strong>
+                <span className={pageStyles.muted}>
+                  {bundle?.narrative_profile.columbia_strategy ?? 'Add Columbia strategy notes.'}
+                </span>
+              </div>
+            </div>
+            <div className={pageStyles.list}>
+              {topOrganizations.length > 0 ? (
+                topOrganizations.map((organization) => (
+                  <div key={organization.id} className={pageStyles.listRow}>
+                    <strong>{organization.name}</strong>
+                    <span className={pageStyles.muted}>
+                      {organization.priority.replace(/_/g, ' ')}
+                      {organization.why_fit ? ` · ${organization.why_fit}` : ''}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className={pageStyles.listRow}>
+                  <strong>No target organizations yet</strong>
+                  <span className={pageStyles.muted}>
+                    Add them in Pipeline so the roadmap can point at actual target landscapes.
+                  </span>
+                </div>
+              )}
+            </div>
+          </article>
         </section>
 
         <section className={pageStyles.card}>
           <div className={pageStyles.sectionHeader}>
-            <h2 className={pageStyles.cardTitle}>Timeline</h2>
+            <div>
+              <h2 className={pageStyles.cardTitle}>Fractal Timeline</h2>
+              <p className={pageStyles.description}>
+                Phases are the outer frame. Click a phase to move into its epics and then wire each
+                item to the proof, skills, organizations, applications, or weekly priorities it
+                depends on.
+              </p>
+            </div>
             <div className={pageStyles.inlineRow}>
               <InputField
                 placeholder="Add a new phase"
@@ -242,7 +394,7 @@ export function MasterPlan(): JSX.Element {
                 </span>
                 <h3 className={styles.timelineTitle}>{phase.title}</h3>
                 <p className={styles.timelineSummary}>
-                  {phase.summary ?? 'Add the phase-level summary and deadlines here.'}
+                  {phase.summary ?? 'Add the phase-level summary and key constraints here.'}
                 </p>
               </button>
             ))}
@@ -251,8 +403,7 @@ export function MasterPlan(): JSX.Element {
             <div className={styles.phaseSummary}>
               <strong>{activePhase.title}</strong>
               <span className={pageStyles.muted}>
-                {activePhase.summary ??
-                  'Select the phase card to edit its goals, dates, and notes.'}
+                {activePhase.summary ?? 'Select the phase to edit its summary, dates, and notes.'}
               </span>
               <div className={pageStyles.inlineRow}>
                 <span className={pageStyles.pill}>{activePhase.status.replace(/_/g, ' ')}</span>
@@ -291,8 +442,8 @@ export function MasterPlan(): JSX.Element {
             {selectedNodeDetail ? (
               <div className={pageStyles.formGrid}>
                 <InputField
-                  label="Add Child"
-                  placeholder="New nested item"
+                  label="Add child"
+                  placeholder="New roadmap item"
                   value={childTitle}
                   onChange={(event) => setChildTitle(event.target.value)}
                 />
@@ -417,7 +568,7 @@ export function MasterPlan(): JSX.Element {
                 </div>
                 <div className={pageStyles.grid2}>
                   <InputField
-                    label="Start Date"
+                    label="Start date"
                     type="date"
                     value={toDateInput(selectedNodeDetail.node.start_at)}
                     onChange={(event) =>
@@ -435,7 +586,7 @@ export function MasterPlan(): JSX.Element {
                     }
                   />
                   <InputField
-                    label="Due Date"
+                    label="Due date"
                     type="date"
                     value={toDateInput(selectedNodeDetail.node.due_at)}
                     onChange={(event) =>
@@ -490,19 +641,23 @@ export function MasterPlan(): JSX.Element {
 
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Dependencies & Links</h2>
+              <h2 className={pageStyles.cardTitle}>Dependencies and Links</h2>
               <span className={pageStyles.pill}>{selectedNodeDetail?.links.length ?? 0}</span>
             </div>
             {selectedNodeDetail ? (
               <div className={pageStyles.formGrid}>
                 <label className={pageStyles.formGrid}>
-                  <span className={pageStyles.eyebrow}>Link Type</span>
+                  <span className={pageStyles.eyebrow}>Link type</span>
                   <select
                     value={linkType}
                     onChange={(event) => setLinkType(event.target.value as PlanLinkTargetType)}
                   >
                     <option value="skill_node">Skill</option>
                     <option value="project">Project</option>
+                    <option value="target_organization">Target organization</option>
+                    <option value="application_record">Application</option>
+                    <option value="weekly_priority">Weekly priority</option>
+                    <option value="narrative_fragment">Narrative fragment</option>
                     <option value="countdown_item">Countdown</option>
                     <option value="plan_node">Dependency</option>
                   </select>
@@ -522,7 +677,7 @@ export function MasterPlan(): JSX.Element {
                 </label>
                 {linkType === 'project' ? (
                   <label className={pageStyles.formGrid}>
-                    <span className={pageStyles.eyebrow}>Required Stage</span>
+                    <span className={pageStyles.eyebrow}>Required stage</span>
                     <select
                       value={requiredStage}
                       onChange={(event) =>
@@ -560,7 +715,7 @@ export function MasterPlan(): JSX.Element {
               </div>
             ) : (
               <p className={pageStyles.description}>
-                Select a roadmap item to link it to evidence.
+                Select a roadmap item to link it to proof, pipeline, or weekly execution objects.
               </p>
             )}
           </article>

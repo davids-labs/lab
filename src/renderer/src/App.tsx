@@ -1,12 +1,17 @@
-import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { Navigate, createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { ToastStack } from '@renderer/components/ui/ToastStack'
 import { HomeDashboard } from '@renderer/routes/HomeDashboard'
 import { CommandCenterLayout } from '@renderer/routes/CommandCenterLayout'
+import { LibraryWorkspace } from '@renderer/routes/LibraryWorkspace'
 import { MasterPlan } from '@renderer/routes/MasterPlan'
 import { PageCustomiser } from '@renderer/routes/PageCustomiser'
 import { PersonalOs } from '@renderer/routes/PersonalOs'
+import { PipelineWorkspace } from '@renderer/routes/PipelineWorkspace'
+import { PresenceWorkspace } from '@renderer/routes/PresenceWorkspace'
 import { ProjectPreview } from '@renderer/routes/ProjectPreview'
 import { ProjectEcosystem } from '@renderer/routes/ProjectEcosystem'
+import { ProofWorkspace } from '@renderer/routes/ProofWorkspace'
+import { SettingsWorkspace } from '@renderer/routes/SettingsWorkspace'
 import { SkillMatrix } from '@renderer/routes/SkillMatrix'
 import { Workspace } from '@renderer/routes/Workspace'
 import './styles/app.css'
@@ -21,20 +26,60 @@ const router = createMemoryRouter([
         element: <HomeDashboard />
       },
       {
-        path: 'plan',
+        path: 'home',
+        element: <Navigate replace to="/" />
+      },
+      {
+        path: 'direction',
         element: <MasterPlan />
       },
       {
-        path: 'os',
+        path: 'execution',
         element: <PersonalOs />
       },
       {
-        path: 'ecosystem',
+        path: 'proof',
+        element: <ProofWorkspace />
+      },
+      {
+        path: 'proof/projects',
         element: <ProjectEcosystem />
       },
       {
-        path: 'skills',
+        path: 'proof/skills',
         element: <SkillMatrix />
+      },
+      {
+        path: 'pipeline',
+        element: <PipelineWorkspace />
+      },
+      {
+        path: 'presence',
+        element: <PresenceWorkspace />
+      },
+      {
+        path: 'library',
+        element: <LibraryWorkspace />
+      },
+      {
+        path: 'settings',
+        element: <SettingsWorkspace />
+      },
+      {
+        path: 'plan',
+        element: <Navigate replace to="/direction" />
+      },
+      {
+        path: 'os',
+        element: <Navigate replace to="/execution" />
+      },
+      {
+        path: 'ecosystem',
+        element: <Navigate replace to="/proof/projects" />
+      },
+      {
+        path: 'skills',
+        element: <Navigate replace to="/proof/skills" />
       },
       {
         path: 'project/:id',
@@ -75,9 +120,9 @@ export function App(): JSX.Element {
             style={{
               color: 'var(--lab-text-muted)',
               textTransform: 'uppercase',
-            letterSpacing: '0.08em'
-          }}
-        >
+              letterSpacing: '0.08em'
+            }}
+          >
             davids.lab
           </div>
           <h1 style={{ margin: 0, fontFamily: 'var(--lab-font-sans)' }}>App bridge unavailable</h1>
