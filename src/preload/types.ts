@@ -62,8 +62,11 @@ export const PLAN_LINK_TARGET_TYPES = [
   'countdown_item',
   'target_organization',
   'application_record',
+  'contact_record',
   'weekly_priority',
-  'narrative_fragment'
+  'narrative_fragment',
+  'action_item',
+  'note_page'
 ] as const
 export type PlanLinkTargetType = (typeof PLAN_LINK_TARGET_TYPES)[number]
 
@@ -114,7 +117,10 @@ export const SUGGESTION_TYPES = [
   'target_organization',
   'content_idea',
   'narrative_fragment',
-  'weekly_priority'
+  'weekly_priority',
+  'action_item',
+  'note_page',
+  'application_record'
 ] as const
 export type SuggestionType = (typeof SUGGESTION_TYPES)[number]
 
@@ -132,6 +138,107 @@ export type SidebarMode = (typeof SIDEBAR_MODES)[number]
 
 export const HOME_LAYOUTS = ['horizons', 'focused'] as const
 export type HomeLayout = (typeof HOME_LAYOUTS)[number]
+
+export const CAPTURE_KINDS = [
+  'note',
+  'link',
+  'idea',
+  'opportunity',
+  'reminder',
+  'doc_snippet',
+  'decision'
+] as const
+export type CaptureKind = (typeof CAPTURE_KINDS)[number]
+
+export const CAPTURE_SOURCES = [
+  'manual',
+  'library',
+  'watch_folder',
+  'github',
+  'calendar',
+  'import'
+] as const
+export type CaptureSource = (typeof CAPTURE_SOURCES)[number]
+
+export const CAPTURE_STATUSES = ['inbox', 'triaged', 'archived'] as const
+export type CaptureStatus = (typeof CAPTURE_STATUSES)[number]
+
+export const TRIAGE_TARGETS = [
+  'direction',
+  'execution',
+  'proof',
+  'pipeline',
+  'presence',
+  'library',
+  'notes'
+] as const
+export type TriageTarget = (typeof TRIAGE_TARGETS)[number]
+
+export const ACTION_STATUSES = [
+  'inbox',
+  'today',
+  'this_week',
+  'next',
+  'waiting',
+  'someday',
+  'done',
+  'cancelled'
+] as const
+export type ActionStatus = (typeof ACTION_STATUSES)[number]
+
+export const ACTION_PRIORITIES = ['low', 'medium', 'high', 'critical'] as const
+export type ActionPriority = (typeof ACTION_PRIORITIES)[number]
+
+export const ACTION_RECURRENCES = ['none', 'daily', 'weekly', 'monthly'] as const
+export type ActionRecurrence = (typeof ACTION_RECURRENCES)[number]
+
+export const NOTE_PAGE_TYPES = ['strategy', 'meeting', 'journal', 'brief', 'reference'] as const
+export type NotePageType = (typeof NOTE_PAGE_TYPES)[number]
+
+export const NOTE_LINK_TARGET_TYPES = [
+  'plan_node',
+  'project',
+  'application_record',
+  'skill_node',
+  'contact_record',
+  'source_document',
+  'source_excerpt',
+  'action_item',
+  'inbox_entry',
+  'narrative_fragment'
+] as const
+export type NoteLinkTargetType = (typeof NOTE_LINK_TARGET_TYPES)[number]
+
+export const CALENDAR_SOURCE_KINDS = ['ics', 'google'] as const
+export type CalendarSourceKind = (typeof CALENDAR_SOURCE_KINDS)[number]
+
+export const CALENDAR_SYNC_STATUSES = ['idle', 'syncing', 'ready', 'error'] as const
+export type CalendarSyncStatus = (typeof CALENDAR_SYNC_STATUSES)[number]
+
+export const REVIEW_SESSION_STATUSES = ['open', 'completed'] as const
+export type ReviewSessionStatus = (typeof REVIEW_SESSION_STATUSES)[number]
+
+export const EXPORT_FORMATS = ['json', 'markdown'] as const
+export type ExportFormat = (typeof EXPORT_FORMATS)[number]
+
+export const EXPORT_TARGETS = [
+  'weekly_review',
+  'application',
+  'interview_prep',
+  'project_proof',
+  'narrative_signal',
+  'workspace_dump'
+] as const
+export type ExportTarget = (typeof EXPORT_TARGETS)[number]
+
+export const INTEGRATION_TYPES = ['google_calendar', 'github', 'watch_folder'] as const
+export type IntegrationType = (typeof INTEGRATION_TYPES)[number]
+
+export const SYNC_JOB_STATUSES = ['queued', 'running', 'success', 'error'] as const
+export type SyncJobStatus = (typeof SYNC_JOB_STATUSES)[number]
+
+export const WATCH_FOLDER_MODES = ['library_documents', 'project_assets'] as const
+export type WatchFolderMode = (typeof WATCH_FOLDER_MODES)[number]
 
 export interface PublicPageConfig {
   theme: {
@@ -428,6 +535,8 @@ export interface IntegrationSettings {
   linkedin_profile_url: string
   default_document_directory: string
   use_gh_cli: boolean
+  github_monitor_orgs: string[]
+  google_calendar_email: string
 }
 
 export interface ThemeSettings {
@@ -605,6 +714,200 @@ export interface SuggestionResolution {
   created_at: number
 }
 
+export interface InboxEntry {
+  id: string
+  title: string
+  body: string | null
+  kind: CaptureKind
+  source: CaptureSource
+  status: CaptureStatus
+  triage_target: TriageTarget | null
+  linked_source_document_id: string | null
+  linked_excerpt_id: string | null
+  linked_project_id: string | null
+  linked_application_id: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface ActionItem {
+  id: string
+  title: string
+  details: string | null
+  status: ActionStatus
+  priority: ActionPriority
+  recurrence: ActionRecurrence
+  due_at: number | null
+  scheduled_for: string | null
+  linked_plan_node_id: string | null
+  linked_project_id: string | null
+  linked_application_id: string | null
+  linked_contact_id: string | null
+  linked_note_id: string | null
+  source_inbox_entry_id: string | null
+  completed_at: number | null
+  created_at: number
+  updated_at: number
+}
+
+export interface NotePage {
+  id: string
+  title: string
+  body: string
+  type: NotePageType
+  summary: string | null
+  archived: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface NoteLink {
+  id: string
+  note_id: string
+  target_type: NoteLinkTargetType
+  target_id: string
+  created_at: number
+}
+
+export interface CalendarSource {
+  id: string
+  label: string
+  kind: CalendarSourceKind
+  source_value: string
+  sync_status: CalendarSyncStatus
+  last_synced_at: number | null
+  last_error: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface CalendarEvent {
+  id: string
+  source_id: string
+  external_id: string
+  title: string
+  starts_at: number
+  ends_at: number | null
+  location: string | null
+  notes: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface ReviewPrompt {
+  id: string
+  title: string
+  body: string
+  priority: 'normal' | 'high'
+}
+
+export interface ReviewArtifact {
+  id: string
+  label: string
+  body: string
+  entity_type: string | null
+  entity_id: string | null
+}
+
+export interface ReviewSession {
+  id: string
+  week_key: string
+  status: ReviewSessionStatus
+  summary: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface WeeklyReset {
+  week_key: string
+  prompts: ReviewPrompt[]
+  artifacts: ReviewArtifact[]
+  review: WeeklyReview | null
+  priorities: WeeklyPriority[]
+  actions: ActionItem[]
+}
+
+export interface ContextPack {
+  id: string
+  target: ExportTarget
+  format: ExportFormat
+  title: string
+  summary: string
+  markdown: string
+  payload_json: string
+  prompt_bundle: string
+  created_at: number
+}
+
+export interface ExportBundle {
+  id: string
+  target: ExportTarget
+  format: ExportFormat
+  title: string
+  summary: string | null
+  file_path: string | null
+  prompt_bundle: string | null
+  created_at: number
+}
+
+export interface IntegrationAccount {
+  id: string
+  type: IntegrationType
+  label: string
+  config_json: string
+  created_at: number
+  updated_at: number
+}
+
+export interface SyncJob {
+  id: string
+  integration_type: IntegrationType
+  status: SyncJobStatus
+  label: string
+  summary: string | null
+  metadata_json: string | null
+  started_at: number
+  finished_at: number | null
+}
+
+export interface WatchFolder {
+  id: string
+  label: string
+  folder_path: string
+  mode: WatchFolderMode
+  project_id: string | null
+  enabled: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface DriftAlert {
+  id: string
+  title: string
+  body: string
+  severity: 'info' | 'warning' | 'critical'
+  entity_type: string
+  entity_id: string
+}
+
+export interface ProofGap {
+  id: string
+  title: string
+  body: string
+  target_role_id: string | null
+  target_organization_id: string | null
+  related_skill_id: string | null
+  related_project_id: string | null
+  severity: 'info' | 'warning' | 'critical'
+}
+
+export interface Recommendation {
+  id: string
+  title: string
+  body: string
+  target_route: string
+}
+
 export interface DashboardCountdown {
   id: string
   title: string
@@ -669,6 +972,22 @@ export interface EcosystemSummary {
   recently_updated: Project[]
 }
 
+export interface InboxSummary {
+  open: number
+  recent: InboxEntry[]
+}
+
+export interface ActionSummary {
+  by_status: Record<ActionStatus, number>
+  focus: ActionItem[]
+  overdue: ActionItem[]
+}
+
+export interface NoteSummary {
+  count: number
+  recent: NotePage[]
+}
+
 export interface DashboardSummary {
   counts: {
     plan_nodes: number
@@ -676,6 +995,9 @@ export interface DashboardSummary {
     projects: number
     countdowns: number
     os_logs: number
+    inbox_entries: number
+    actions: number
+    notes: number
   }
   active_phase: PlanNode | null
   active_phase_children: PlanNode[]
@@ -699,6 +1021,21 @@ export interface DashboardSummary {
   library: {
     documents: number
     pending_suggestions: number
+  }
+  inbox: InboxSummary
+  actions: ActionSummary
+  notes: NoteSummary
+  calendar: {
+    sources: number
+    upcoming: CalendarEvent[]
+  }
+  insights: {
+    drift_alerts: DriftAlert[]
+    proof_gaps: ProofGap[]
+    recommendations: Recommendation[]
+  }
+  exports: {
+    recent: ExportBundle[]
   }
   onboarding: {
     needs_setup: boolean
@@ -1097,6 +1434,8 @@ export interface UpdateIntegrationSettingsInput {
   linkedin_profile_url?: string
   default_document_directory?: string
   use_gh_cli?: boolean
+  github_monitor_orgs?: string[]
+  google_calendar_email?: string
 }
 
 export interface UpdateThemeSettingsInput {
@@ -1303,6 +1642,163 @@ export interface ResolveSuggestionInput {
   action: Exclude<SuggestionStatus, 'pending'>
 }
 
+export interface CreateInboxEntryInput {
+  title: string
+  body?: string | null
+  kind?: CaptureKind
+  source?: CaptureSource
+  linked_source_document_id?: string | null
+  linked_excerpt_id?: string | null
+  linked_project_id?: string | null
+  linked_application_id?: string | null
+}
+
+export interface UpdateInboxEntryInput {
+  id: string
+  title?: string
+  body?: string | null
+  kind?: CaptureKind
+  status?: CaptureStatus
+  triage_target?: TriageTarget | null
+  linked_project_id?: string | null
+  linked_application_id?: string | null
+}
+
+export interface TriageInboxEntryInput {
+  id: string
+  target: TriageTarget
+  create_follow_up?: 'action' | 'note' | 'application' | 'narrative_fragment' | 'weekly_priority' | null
+}
+
+export interface CreateActionItemInput {
+  title: string
+  details?: string | null
+  status?: ActionStatus
+  priority?: ActionPriority
+  recurrence?: ActionRecurrence
+  due_at?: number | null
+  scheduled_for?: string | null
+  linked_plan_node_id?: string | null
+  linked_project_id?: string | null
+  linked_application_id?: string | null
+  linked_contact_id?: string | null
+  linked_note_id?: string | null
+  source_inbox_entry_id?: string | null
+}
+
+export interface UpdateActionItemInput {
+  id: string
+  title?: string
+  details?: string | null
+  status?: ActionStatus
+  priority?: ActionPriority
+  recurrence?: ActionRecurrence
+  due_at?: number | null
+  scheduled_for?: string | null
+  linked_plan_node_id?: string | null
+  linked_project_id?: string | null
+  linked_application_id?: string | null
+  linked_contact_id?: string | null
+  linked_note_id?: string | null
+  completed_at?: number | null
+}
+
+export interface CreateNotePageInput {
+  title: string
+  body?: string
+  type?: NotePageType
+  summary?: string | null
+}
+
+export interface UpdateNotePageInput {
+  id: string
+  title?: string
+  body?: string
+  type?: NotePageType
+  summary?: string | null
+  archived?: boolean
+}
+
+export interface CreateNoteLinkInput {
+  note_id: string
+  target_type: NoteLinkTargetType
+  target_id: string
+}
+
+export interface CreateCalendarSourceInput {
+  label: string
+  kind?: CalendarSourceKind
+  source_value: string
+}
+
+export interface UpdateCalendarSourceInput {
+  id: string
+  label?: string
+  kind?: CalendarSourceKind
+  source_value?: string
+  sync_status?: CalendarSyncStatus
+  last_error?: string | null
+}
+
+export interface ImportCalendarSourceInput {
+  file_path: string
+  label?: string
+}
+
+export interface CreateReviewSessionInput {
+  week_key: string
+  summary?: string | null
+}
+
+export interface UpdateReviewSessionInput {
+  id: string
+  summary?: string | null
+  status?: ReviewSessionStatus
+}
+
+export interface GenerateContextPackInput {
+  target: ExportTarget
+  format?: ExportFormat
+  project_id?: string | null
+  application_id?: string | null
+  note_id?: string | null
+  target_role_id?: string | null
+  target_organization_id?: string | null
+}
+
+export interface SaveContextPackInput extends GenerateContextPackInput {
+  output_path?: string | null
+}
+
+export interface CreateIntegrationAccountInput {
+  type: IntegrationType
+  label: string
+  config_json?: string
+}
+
+export interface UpdateIntegrationAccountInput {
+  id: string
+  label?: string
+  config_json?: string
+}
+
+export interface CreateWatchFolderInput {
+  label: string
+  folder_path: string
+  mode?: WatchFolderMode
+  project_id?: string | null
+  enabled?: boolean
+}
+
+export interface UpdateWatchFolderInput {
+  id: string
+  label?: string
+  folder_path?: string
+  mode?: WatchFolderMode
+  project_id?: string | null
+  enabled?: boolean
+}
+
 export interface FileFilter {
   name: string
   extensions: string[]
@@ -1351,6 +1847,60 @@ export interface LabBridge {
   dashboard: {
     summary: () => Promise<DashboardSummary>
     importStarterTemplate: () => Promise<{ ok: boolean }>
+  }
+  capture: {
+    list: (status?: CaptureStatus) => Promise<InboxEntry[]>
+    create: (input: CreateInboxEntryInput) => Promise<InboxEntry>
+    update: (input: UpdateInboxEntryInput) => Promise<InboxEntry>
+    triage: (input: TriageInboxEntryInput) => Promise<InboxEntry>
+    delete: (id: string) => Promise<{ ok: boolean }>
+  }
+  actions: {
+    list: (status?: ActionStatus) => Promise<ActionItem[]>
+    create: (input: CreateActionItemInput) => Promise<ActionItem>
+    update: (input: UpdateActionItemInput) => Promise<ActionItem>
+    delete: (id: string) => Promise<{ ok: boolean }>
+  }
+  notes: {
+    list: () => Promise<NotePage[]>
+    get: (id: string) => Promise<NotePage>
+    create: (input: CreateNotePageInput) => Promise<NotePage>
+    update: (input: UpdateNotePageInput) => Promise<NotePage>
+    delete: (id: string) => Promise<{ ok: boolean }>
+    listLinks: (noteId?: string) => Promise<NoteLink[]>
+    createLink: (input: CreateNoteLinkInput) => Promise<NoteLink>
+    deleteLink: (id: string) => Promise<{ ok: boolean }>
+  }
+  calendar: {
+    listSources: () => Promise<CalendarSource[]>
+    createSource: (input: CreateCalendarSourceInput) => Promise<CalendarSource>
+    updateSource: (input: UpdateCalendarSourceInput) => Promise<CalendarSource>
+    deleteSource: (id: string) => Promise<{ ok: boolean }>
+    importIcs: (input: ImportCalendarSourceInput) => Promise<CalendarSource>
+    listEvents: (sourceId?: string) => Promise<CalendarEvent[]>
+  }
+  review: {
+    listSessions: () => Promise<ReviewSession[]>
+    createSession: (input: CreateReviewSessionInput) => Promise<ReviewSession>
+    updateSession: (input: UpdateReviewSessionInput) => Promise<ReviewSession>
+    getWeeklyReset: (weekKey: string) => Promise<WeeklyReset>
+  }
+  exports: {
+    listBundles: () => Promise<ExportBundle[]>
+    generateContextPack: (input: GenerateContextPackInput) => Promise<ContextPack>
+    saveContextPack: (input: SaveContextPackInput) => Promise<{ ok: boolean; path?: string }>
+  }
+  integrations: {
+    listAccounts: () => Promise<IntegrationAccount[]>
+    createAccount: (input: CreateIntegrationAccountInput) => Promise<IntegrationAccount>
+    updateAccount: (input: UpdateIntegrationAccountInput) => Promise<IntegrationAccount>
+    deleteAccount: (id: string) => Promise<{ ok: boolean }>
+    listWatchFolders: () => Promise<WatchFolder[]>
+    createWatchFolder: (input: CreateWatchFolderInput) => Promise<WatchFolder>
+    updateWatchFolder: (input: UpdateWatchFolderInput) => Promise<WatchFolder>
+    deleteWatchFolder: (id: string) => Promise<{ ok: boolean }>
+    listSyncJobs: () => Promise<SyncJob[]>
+    syncWatchFolder: (id: string) => Promise<SyncJob>
   }
   plan: {
     listNodes: () => Promise<PlanNode[]>

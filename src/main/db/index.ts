@@ -6,7 +6,7 @@ import { schema } from './schema'
 let sqlite: Database.Database | null = null
 let db: BetterSQLite3Database<typeof schema> | null = null
 
-const SCHEMA_VERSION = 6
+const SCHEMA_VERSION = 7
 
 type Migration = {
   version: number
@@ -599,6 +599,202 @@ const migrations: Migration[] = [
             status TEXT NOT NULL,
             target_record_id TEXT,
             created_at INTEGER NOT NULL
+          );
+        `)
+      }
+    }
+  },
+  {
+    version: 7,
+    description: 'Create V4 capture, actions, notes, calendar, exports, and integration tables',
+    run(database) {
+      if (!hasTable(database, 'inbox_entries')) {
+        database.exec(`
+          CREATE TABLE inbox_entries (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT,
+            kind TEXT NOT NULL DEFAULT 'note',
+            source TEXT NOT NULL DEFAULT 'manual',
+            status TEXT NOT NULL DEFAULT 'inbox',
+            triage_target TEXT,
+            linked_source_document_id TEXT,
+            linked_excerpt_id TEXT,
+            linked_project_id TEXT,
+            linked_application_id TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_inbox_entries_status ON inbox_entries(status);
+          CREATE INDEX idx_inbox_entries_updated ON inbox_entries(updated_at);
+        `)
+      }
+
+      if (!hasTable(database, 'note_pages')) {
+        database.exec(`
+          CREATE TABLE note_pages (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL DEFAULT '',
+            type TEXT NOT NULL DEFAULT 'strategy',
+            summary TEXT,
+            archived INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'note_links')) {
+        database.exec(`
+          CREATE TABLE note_links (
+            id TEXT PRIMARY KEY,
+            note_id TEXT NOT NULL REFERENCES note_pages(id) ON DELETE CASCADE,
+            target_type TEXT NOT NULL,
+            target_id TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_note_links_note ON note_links(note_id);
+        `)
+      }
+
+      if (!hasTable(database, 'action_items')) {
+        database.exec(`
+          CREATE TABLE action_items (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            details TEXT,
+            status TEXT NOT NULL DEFAULT 'inbox',
+            priority TEXT NOT NULL DEFAULT 'medium',
+            recurrence TEXT NOT NULL DEFAULT 'none',
+            due_at INTEGER,
+            scheduled_for TEXT,
+            linked_plan_node_id TEXT,
+            linked_project_id TEXT,
+            linked_application_id TEXT,
+            linked_contact_id TEXT,
+            linked_note_id TEXT,
+            source_inbox_entry_id TEXT,
+            completed_at INTEGER,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_action_items_status ON action_items(status);
+          CREATE INDEX idx_action_items_due ON action_items(due_at);
+          CREATE INDEX idx_action_items_scheduled ON action_items(scheduled_for);
+        `)
+      }
+
+      if (!hasTable(database, 'calendar_sources')) {
+        database.exec(`
+          CREATE TABLE calendar_sources (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'ics',
+            source_value TEXT NOT NULL,
+            sync_status TEXT NOT NULL DEFAULT 'idle',
+            last_synced_at INTEGER,
+            last_error TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'calendar_events')) {
+        database.exec(`
+          CREATE TABLE calendar_events (
+            id TEXT PRIMARY KEY,
+            source_id TEXT NOT NULL REFERENCES calendar_sources(id) ON DELETE CASCADE,
+            external_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            starts_at INTEGER NOT NULL,
+            ends_at INTEGER,
+            location TEXT,
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_calendar_events_source ON calendar_events(source_id);
+          CREATE INDEX idx_calendar_events_starts ON calendar_events(starts_at);
+        `)
+      }
+
+      if (!hasTable(database, 'review_sessions')) {
+        database.exec(`
+          CREATE TABLE review_sessions (
+            id TEXT PRIMARY KEY,
+            week_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'open',
+            summary TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'export_bundles')) {
+        database.exec(`
+          CREATE TABLE export_bundles (
+            id TEXT PRIMARY KEY,
+            target TEXT NOT NULL,
+            format TEXT NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT,
+            file_path TEXT,
+            prompt_bundle TEXT,
+            created_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_export_bundles_created ON export_bundles(created_at);
+        `)
+      }
+
+      if (!hasTable(database, 'integration_accounts')) {
+        database.exec(`
+          CREATE TABLE integration_accounts (
+            id TEXT PRIMARY KEY,
+            type TEXT NOT NULL,
+            label TEXT NOT NULL,
+            config_json TEXT NOT NULL DEFAULT '{}',
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+        `)
+      }
+
+      if (!hasTable(database, 'sync_jobs')) {
+        database.exec(`
+          CREATE TABLE sync_jobs (
+            id TEXT PRIMARY KEY,
+            integration_type TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued',
+            label TEXT NOT NULL,
+            summary TEXT,
+            metadata_json TEXT,
+            started_at INTEGER NOT NULL,
+            finished_at INTEGER
+          );
+
+          CREATE INDEX idx_sync_jobs_started ON sync_jobs(started_at);
+        `)
+      }
+
+      if (!hasTable(database, 'watch_folders')) {
+        database.exec(`
+          CREATE TABLE watch_folders (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            folder_path TEXT NOT NULL,
+            mode TEXT NOT NULL DEFAULT 'library_documents',
+            project_id TEXT,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
           );
         `)
       }

@@ -394,6 +394,141 @@ export const suggestionResolutionsTable = sqliteTable('suggestion_resolutions', 
   created_at: integer('created_at').notNull()
 })
 
+export const inboxEntriesTable = sqliteTable('inbox_entries', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body'),
+  kind: text('kind').notNull().default('note'),
+  source: text('source').notNull().default('manual'),
+  status: text('status').notNull().default('inbox'),
+  triage_target: text('triage_target'),
+  linked_source_document_id: text('linked_source_document_id'),
+  linked_excerpt_id: text('linked_excerpt_id'),
+  linked_project_id: text('linked_project_id'),
+  linked_application_id: text('linked_application_id'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const notePagesTable = sqliteTable('note_pages', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body').notNull().default(''),
+  type: text('type').notNull().default('strategy'),
+  summary: text('summary'),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const noteLinksTable = sqliteTable('note_links', {
+  id: text('id').primaryKey(),
+  note_id: text('note_id')
+    .notNull()
+    .references(() => notePagesTable.id, { onDelete: 'cascade' }),
+  target_type: text('target_type').notNull(),
+  target_id: text('target_id').notNull(),
+  created_at: integer('created_at').notNull()
+})
+
+export const actionItemsTable = sqliteTable('action_items', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  details: text('details'),
+  status: text('status').notNull().default('inbox'),
+  priority: text('priority').notNull().default('medium'),
+  recurrence: text('recurrence').notNull().default('none'),
+  due_at: integer('due_at'),
+  scheduled_for: text('scheduled_for'),
+  linked_plan_node_id: text('linked_plan_node_id'),
+  linked_project_id: text('linked_project_id'),
+  linked_application_id: text('linked_application_id'),
+  linked_contact_id: text('linked_contact_id'),
+  linked_note_id: text('linked_note_id'),
+  source_inbox_entry_id: text('source_inbox_entry_id'),
+  completed_at: integer('completed_at'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const calendarSourcesTable = sqliteTable('calendar_sources', {
+  id: text('id').primaryKey(),
+  label: text('label').notNull(),
+  kind: text('kind').notNull().default('ics'),
+  source_value: text('source_value').notNull(),
+  sync_status: text('sync_status').notNull().default('idle'),
+  last_synced_at: integer('last_synced_at'),
+  last_error: text('last_error'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const calendarEventsTable = sqliteTable('calendar_events', {
+  id: text('id').primaryKey(),
+  source_id: text('source_id')
+    .notNull()
+    .references(() => calendarSourcesTable.id, { onDelete: 'cascade' }),
+  external_id: text('external_id').notNull(),
+  title: text('title').notNull(),
+  starts_at: integer('starts_at').notNull(),
+  ends_at: integer('ends_at'),
+  location: text('location'),
+  notes: text('notes'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const reviewSessionsTable = sqliteTable('review_sessions', {
+  id: text('id').primaryKey(),
+  week_key: text('week_key').notNull().unique(),
+  status: text('status').notNull().default('open'),
+  summary: text('summary'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const exportBundlesTable = sqliteTable('export_bundles', {
+  id: text('id').primaryKey(),
+  target: text('target').notNull(),
+  format: text('format').notNull(),
+  title: text('title').notNull(),
+  summary: text('summary'),
+  file_path: text('file_path'),
+  prompt_bundle: text('prompt_bundle'),
+  created_at: integer('created_at').notNull()
+})
+
+export const integrationAccountsTable = sqliteTable('integration_accounts', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  label: text('label').notNull(),
+  config_json: text('config_json').notNull().default('{}'),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const syncJobsTable = sqliteTable('sync_jobs', {
+  id: text('id').primaryKey(),
+  integration_type: text('integration_type').notNull(),
+  status: text('status').notNull().default('queued'),
+  label: text('label').notNull(),
+  summary: text('summary'),
+  metadata_json: text('metadata_json'),
+  started_at: integer('started_at').notNull(),
+  finished_at: integer('finished_at')
+})
+
+export const watchFoldersTable = sqliteTable('watch_folders', {
+  id: text('id').primaryKey(),
+  label: text('label').notNull(),
+  folder_path: text('folder_path').notNull(),
+  mode: text('mode').notNull().default('library_documents'),
+  project_id: text('project_id'),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
 export const schema = {
   appMetaTable,
   projectsTable,
@@ -426,7 +561,18 @@ export const schema = {
   sourceDocumentsTable,
   sourceExcerptsTable,
   extractionSuggestionsTable,
-  suggestionResolutionsTable
+  suggestionResolutionsTable,
+  inboxEntriesTable,
+  notePagesTable,
+  noteLinksTable,
+  actionItemsTable,
+  calendarSourcesTable,
+  calendarEventsTable,
+  reviewSessionsTable,
+  exportBundlesTable,
+  integrationAccountsTable,
+  syncJobsTable,
+  watchFoldersTable
 }
 
 export type AppMetaRow = typeof appMetaTable.$inferSelect
@@ -461,3 +607,14 @@ export type SourceDocumentRow = typeof sourceDocumentsTable.$inferSelect
 export type SourceExcerptRow = typeof sourceExcerptsTable.$inferSelect
 export type ExtractionSuggestionRow = typeof extractionSuggestionsTable.$inferSelect
 export type SuggestionResolutionRow = typeof suggestionResolutionsTable.$inferSelect
+export type InboxEntryRow = typeof inboxEntriesTable.$inferSelect
+export type NotePageRow = typeof notePagesTable.$inferSelect
+export type NoteLinkRow = typeof noteLinksTable.$inferSelect
+export type ActionItemRow = typeof actionItemsTable.$inferSelect
+export type CalendarSourceRow = typeof calendarSourcesTable.$inferSelect
+export type CalendarEventRow = typeof calendarEventsTable.$inferSelect
+export type ReviewSessionRow = typeof reviewSessionsTable.$inferSelect
+export type ExportBundleRow = typeof exportBundlesTable.$inferSelect
+export type IntegrationAccountRow = typeof integrationAccountsTable.$inferSelect
+export type SyncJobRow = typeof syncJobsTable.$inferSelect
+export type WatchFolderRow = typeof watchFoldersTable.$inferSelect
