@@ -7,9 +7,14 @@ interface UiStore {
   insertAfterBlockId: string | null
   saveState: SaveState
   workspaceSidebarWidth: number
+  workspacePreviewVisible: boolean
+  workspacePreviewWidth: number
   pageCustomiserSidebarWidth: number
   setSidebarTab: (tab: SidebarTab) => void
   setWorkspaceSidebarWidth: (width: number) => void
+  setWorkspacePreviewWidth: (width: number) => void
+  setWorkspacePreviewVisible: (visible: boolean) => void
+  toggleWorkspacePreview: () => void
   setPageCustomiserSidebarWidth: (width: number) => void
   openBlockPicker: (afterBlockId?: string | null) => void
   closeBlockPicker: () => void
@@ -22,6 +27,8 @@ export const useUiStore = create<UiStore>((set) => ({
   insertAfterBlockId: null,
   saveState: 'idle',
   workspaceSidebarWidth: 300,
+  workspacePreviewVisible: false,
+  workspacePreviewWidth: 420,
   pageCustomiserSidebarWidth: 360,
 
   setSidebarTab(sidebarTab) {
@@ -30,6 +37,18 @@ export const useUiStore = create<UiStore>((set) => ({
 
   setWorkspaceSidebarWidth(workspaceSidebarWidth) {
     set({ workspaceSidebarWidth })
+  },
+
+  setWorkspacePreviewWidth(workspacePreviewWidth) {
+    set({ workspacePreviewWidth })
+  },
+
+  setWorkspacePreviewVisible(workspacePreviewVisible) {
+    set({ workspacePreviewVisible })
+  },
+
+  toggleWorkspacePreview() {
+    set((state) => ({ workspacePreviewVisible: !state.workspacePreviewVisible }))
   },
 
   setPageCustomiserSidebarWidth(pageCustomiserSidebarWidth) {

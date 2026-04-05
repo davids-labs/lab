@@ -3,7 +3,7 @@
   align-items: center;
   gap: var(--lab-space-1);
   padding: 6px 10px;
-  border-radius: 10px;
+  border-radius: 6px;
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -11,21 +11,21 @@
 }
 
 .hero {
-  background: rgba(255, 42, 109, 0.14);
-  border-color: rgba(255, 42, 109, 0.34);
+  background: rgba(142, 117, 104, 0.16);
+  border-color: rgba(142, 117, 104, 0.34);
 }
 
 .build {
-  background: rgba(5, 213, 255, 0.14);
-  border-color: rgba(5, 213, 255, 0.34);
+  background: rgba(141, 148, 127, 0.16);
+  border-color: rgba(141, 148, 127, 0.34);
 }
 
 .design {
-  background: rgba(255, 180, 0, 0.14);
-  border-color: rgba(255, 180, 0, 0.34);
+  background: rgba(155, 139, 107, 0.16);
+  border-color: rgba(155, 139, 107, 0.34);
 }
 
 .concept {
-  background: rgba(0, 255, 136, 0.14);
-  border-color: rgba(0, 255, 136, 0.34);
+  background: rgba(126, 146, 134, 0.16);
+  border-color: rgba(126, 146, 134, 0.34);
 }

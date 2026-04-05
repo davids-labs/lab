@@ -1,12 +1,21 @@
 .panel {
   width: 100%;
+  height: 100%;
+  flex: 1;
   min-width: 0;
-  border-left: 1px solid var(--lab-border-2);
+  min-height: 0;
   background: rgba(13, 15, 18, 0.98);
   display: flex;
   flex-direction: column;
-  min-height: 0;
   overflow: hidden;
+}
+
+.bordered {
+  border-left: 1px solid var(--lab-border-2);
+}
+
+.flush {
+  border-left: 0;
 }
 
 .header {
@@ -18,15 +27,23 @@
   border-bottom: 1px solid var(--lab-border-2);
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lab-space-2);
+}
+
 .body {
   flex: 1;
   min-height: 0;
+  display: flex;
 }
 
 .frame {
   display: block;
+  flex: 1;
   width: 100%;
-  height: 100%;
+  min-height: 0;
   border: 0;
   background: white;
 }

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { safeStorage } from 'electron'
@@ -118,6 +119,45 @@ function getStoredGitHubToken(): string | null {
   }
 
   return stored
+}
+
+function getGitHubCliToken(): string | null {
+  try {
+    const output = execFileSync('gh', ['auth', 'token'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true
+    }).trim()
+
+    return output || null
+  } catch {
+    return null
+  }
+}
+
+function getGitHubAuth(): { source: 'gh-cli' | 'saved-token' | 'none'; token: string | null } {
+  const savedToken = getStoredGitHubToken()
+  if (savedToken) {
+    return { source: 'saved-token', token: savedToken }
+  }
+
+  const cliToken = getGitHubCliToken()
+  if (cliToken) {
+    return { source: 'gh-cli', token: cliToken }
+  }
+
+  return { source: 'none', token: null }
+}
+
+function normalizeRemoteUrl(url: string): string {
+  const trimmed = url.trim().replace(/\/+$/, '')
+
+  const githubHttpsMatch = trimmed.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i)
+  if (githubHttpsMatch && !trimmed.endsWith('.git')) {
+    return `${trimmed}.git`
+  }
+
+  return trimmed
 }
 
 export function setGitHubToken(token: string | null): { ok: boolean } {
@@ -394,15 +434,17 @@ function readSnapshotJson(blob: Uint8Array): unknown {
 
 async function pushProjectToRemote(projectId: string): Promise<void> {
   const project = ensureGitEnabled(projectId)
-  const token = getStoredGitHubToken()
+  const auth = getGitHubAuth()
 
   if (!project.git_remote) {
     throw new Error('Add a remote URL before pushing.')
   }
 
-  if (!token) {
-    throw new Error('Add a GitHub token before pushing.')
+  if (!auth.token) {
+    throw new Error('Add a GitHub token or sign in with GitHub CLI before pushing.')
   }
+
+  const token = auth.token
 
   const result = await git.push({
     fs,
@@ -424,12 +466,14 @@ async function pushProjectToRemote(projectId: string): Promise<void> {
 
 export async function getGitStatus(projectId: string): Promise<GitStatus> {
   const project = projectQueries.get(projectId)
+  const auth = getGitHubAuth()
 
   return {
     enabled: project.git_enabled,
     hasRepository: hasRepository(projectId),
     remoteUrl: project.git_remote,
-    hasToken: Boolean(getStoredGitHubToken()),
+    hasToken: Boolean(auth.token),
+    authSource: auth.source,
     pagesUrl: project.git_pages_url,
     autoCommitPending: pendingCommits.has(projectId)
   }
@@ -510,7 +554,7 @@ export async function restoreProjectFromCommit(
 
 export async function setProjectRemote(projectId: string, url: string): Promise<{ ok: boolean }> {
   ensureGitEnabled(projectId)
-  const trimmed = url.trim()
+  const trimmed = normalizeRemoteUrl(url)
   if (!trimmed) {
     throw new Error('Remote URL is required.')
   }

@@ -6,14 +6,18 @@ import styles from './PublicPagePreview.module.css'
 
 interface PublicPagePreviewProps {
   blocks: Block[]
+  onClose?: () => void
   onFocusBlock: (id: string) => void
   project: Project
+  showBorder?: boolean
 }
 
 export function PublicPagePreview({
   blocks,
+  onClose,
   onFocusBlock,
-  project
+  project,
+  showBorder = true
 }: PublicPagePreviewProps): JSX.Element {
   const [html, setHtml] = useState('')
   const pushToast = useToastStore((state) => state.push)
@@ -48,7 +52,7 @@ export function PublicPagePreview({
             })
           }
         })
-    }, 500)
+    }, 300)
 
     return () => {
       cancelled = true
@@ -68,12 +72,19 @@ export function PublicPagePreview({
   }, [onFocusBlock])
 
   return (
-    <aside className={styles.panel}>
+    <aside className={`${styles.panel} ${showBorder ? styles.bordered : styles.flush}`}>
       <div className={styles.header}>
         <strong>Public Page</strong>
-        <Button size="sm" variant="outline" onClick={() => void refreshPreview()}>
-          Refresh
-        </Button>
+        <div className={styles.actions}>
+          <Button size="sm" variant="outline" onClick={() => void refreshPreview()}>
+            Refresh
+          </Button>
+          {onClose ? (
+            <Button size="sm" variant="ghost" onClick={onClose}>
+              Hide
+            </Button>
+          ) : null}
+        </div>
       </div>
       <div className={styles.body}>
         <iframe

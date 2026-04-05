@@ -17,7 +17,7 @@
 .tableWrap {
   overflow: auto;
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .table {
@@ -84,7 +84,7 @@
 
 .card {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface-2);
   padding: 14px;
   display: grid;
@@ -129,7 +129,7 @@
 
 .pillActive,
 .choiceActive {
-  border-color: rgba(79, 140, 255, 0.44);
+  border-color: rgba(141, 148, 127, 0.4);
   background: var(--lab-primary-dim);
 }
 
@@ -147,7 +147,7 @@
 
 .statCard {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface);
   padding: 10px 12px;
   display: grid;
@@ -175,7 +175,7 @@
   width: 100%;
   min-height: 320px;
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface-2);
   padding: 14px;
   overflow: auto;
@@ -206,7 +206,7 @@ textarea.previewSurface {
 
 .metaItem {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface);
   padding: 10px 12px;
   display: grid;
@@ -222,7 +222,7 @@ textarea.previewSurface {
 .assetCard,
 .selectedCard {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface);
   padding: 12px;
   display: grid;
@@ -258,7 +258,7 @@ textarea.previewSurface {
 
 .emptyState {
   border: 1px dashed var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.02);
   padding: 14px;
   color: var(--lab-text-muted);

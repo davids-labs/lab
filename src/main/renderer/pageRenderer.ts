@@ -40,12 +40,12 @@ const purifier = createDOMPurify(jsdomWindow as unknown as Parameters<typeof cre
 
 const BASE_CSS = `
   :root {
-    --accent: #4f8cff;
-    --bg: #0f1318;
-    --surface: #171c23;
-    --surface-2: #1e252e;
-    --text: #e5e7eb;
-    --muted: #98a2b3;
+    --accent: #8d947f;
+    --bg: #111315;
+    --surface: #171a1d;
+    --surface-2: #1d2126;
+    --text: #e2e5e8;
+    --muted: #99a0a8;
     --border: rgba(152, 162, 179, 0.24);
     --heading-font: 'IBM Plex Sans', sans-serif;
     --body-font: 'IBM Plex Mono', monospace;
@@ -72,7 +72,7 @@ const BASE_CSS = `
     gap: 12px;
     padding: 24px;
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 8px;
     background: var(--surface);
   }
   .heroMeta {
@@ -108,7 +108,7 @@ const BASE_CSS = `
   }
   .section {
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 20px;
     background: var(--surface);
     overflow: hidden;
@@ -132,7 +132,7 @@ const BASE_CSS = `
   .sectionTag {
     color: var(--muted);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 4px 8px;
     font-size: 0.72rem;
     line-height: 1.2;
@@ -193,7 +193,7 @@ const BASE_CSS = `
   }
   .tableTotals span {
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 6px 10px;
     background: var(--surface-2);
   }
@@ -223,7 +223,7 @@ const BASE_CSS = `
     width: 100%;
     aspect-ratio: 16 / 10;
     object-fit: cover;
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--surface-2);
     cursor: pointer;
@@ -243,7 +243,7 @@ const BASE_CSS = `
   .steps { display: grid; gap: 12px; }
   .step {
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--surface-2);
   }
   .stepButton {
@@ -276,7 +276,7 @@ const BASE_CSS = `
     display: grid;
     gap: 8px;
     padding: 18px;
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--surface-2);
     text-decoration: none;
     border: 1px solid var(--border);
@@ -290,14 +290,14 @@ const BASE_CSS = `
     width: 100%;
     min-height: 360px;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--surface-2);
   }
   .codeBlock {
     margin: 0;
     padding: 16px;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--surface-2);
     overflow: auto;
     white-space: pre-wrap;
@@ -324,7 +324,7 @@ const BASE_CSS = `
   .footer a {
     padding: 8px 10px;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 6px;
     background: var(--surface);
   }
   .lightbox {
@@ -341,11 +341,11 @@ const BASE_CSS = `
   .lightbox img {
     max-width: min(92vw, 1280px);
     max-height: 88vh;
-    border-radius: 12px;
+    border-radius: 8px;
   }
   .empty {
     border: 1px dashed var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 14px;
     color: var(--muted);
   }

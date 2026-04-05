@@ -5,7 +5,7 @@
 
 .section {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface-2);
   padding: 14px;
   display: grid;
@@ -27,11 +27,30 @@
 
 .metaCard {
   border: 1px solid var(--lab-border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--lab-surface);
   padding: 10px 12px;
   display: grid;
   gap: 4px;
+}
+
+.setupCard {
+  border: 1px solid var(--lab-border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.checklist {
+  display: grid;
+  gap: 6px;
+}
+
+.checkItem {
+  color: var(--lab-text-muted);
+  font-size: 0.82rem;
 }
 
 .label {
@@ -59,7 +78,7 @@
 
 .historyRow {
   border: 1px solid var(--lab-border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--lab-surface);
   padding: 10px 12px;
   display: grid;

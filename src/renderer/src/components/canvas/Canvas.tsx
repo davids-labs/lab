@@ -139,7 +139,7 @@ function SortableBlock({
         </div>
         <div className={styles.toolbarGroup}>
           <Button size="sm" variant="ghost" onClick={onToggleVisibility}>
-            {block.visible_on_page ? 'Hide' : 'Show'}
+            {block.visible_on_page ? 'Public' : 'Private'}
           </Button>
           <Button size="sm" variant="ghost" onClick={onToggleSpan}>
             {block.grid_col_span === 2 ? 'Half' : 'Full'}

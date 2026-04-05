@@ -6,18 +6,25 @@ interface UseResizableWidthOptions {
   min: number
   max: number
   onChange: (width: number) => void
+  side?: 'left' | 'right'
 }
 
-export function useResizableWidth({ value, min, max, onChange }: UseResizableWidthOptions): {
+export function useResizableWidth({
+  value,
+  min,
+  max,
+  onChange,
+  side = 'left'
+}: UseResizableWidthOptions): {
   isResizing: boolean
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
 } {
-  const latest = useRef({ value, min, max, onChange })
+  const latest = useRef({ value, min, max, onChange, side })
   const [isResizing, setIsResizing] = useState(false)
 
   useEffect(() => {
-    latest.current = { value, min, max, onChange }
-  }, [max, min, onChange, value])
+    latest.current = { value, min, max, onChange, side }
+  }, [max, min, onChange, side, value])
 
   const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault()
@@ -32,9 +39,11 @@ export function useResizableWidth({ value, min, max, onChange }: UseResizableWid
     document.body.style.userSelect = 'none'
 
     const handlePointerMove = (moveEvent: PointerEvent): void => {
+      const delta =
+        latest.current.side === 'right' ? startX - moveEvent.clientX : moveEvent.clientX - startX
       const nextWidth = Math.max(
         latest.current.min,
-        Math.min(latest.current.max, startWidth + moveEvent.clientX - startX)
+        Math.min(latest.current.max, startWidth + delta)
       )
 
       latest.current.onChange(nextWidth)

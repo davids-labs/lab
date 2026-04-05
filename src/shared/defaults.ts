@@ -37,9 +37,9 @@ export const BLOCK_GROUPS: Array<{ title: string; types: BlockType[] }> = [
 
 const DEFAULT_PAGE_CONFIG: PublicPageConfig = {
   theme: {
-    accent: '#4f8cff',
-    bg: '#0f1318',
-    surface: '#171c23',
+    accent: '#8d947f',
+    bg: '#111315',
+    surface: '#171a1d',
     fontHeading: 'IBM Plex Sans',
     fontBody: 'IBM Plex Mono',
     layoutVariant: 'default'

@@ -19,6 +19,8 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const loadProject = useProjectStore((state) => state.loadProject)
   const updateProject = useProjectStore((state) => state.updateProject)
   const saveState = useUiStore((state) => state.saveState)
+  const workspacePreviewVisible = useUiStore((state) => state.workspacePreviewVisible)
+  const toggleWorkspacePreview = useUiStore((state) => state.toggleWorkspacePreview)
   const pushToast = useToastStore((state) => state.push)
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState(project.name)
@@ -142,6 +144,15 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
         >
           Public Page
         </Button>
+        {view === 'workspace' ? (
+          <Button
+            variant={workspacePreviewVisible ? 'primary' : 'outline'}
+            size="sm"
+            onClick={toggleWorkspacePreview}
+          >
+            {workspacePreviewVisible ? 'Hide Preview' : 'Show Preview'}
+          </Button>
+        ) : null}
         <Button
           variant={project.git_enabled ? 'outline' : 'ghost'}
           size="sm"

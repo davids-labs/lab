@@ -24,6 +24,16 @@ export function GitPanelModal({ onClose, project }: GitPanelModalProps): JSX.Ele
   const [tokenDraft, setTokenDraft] = useState('')
   const [isBusy, setIsBusy] = useState<string | null>(null)
   const [historyVisible, setHistoryVisible] = useState(false)
+  const pushReady =
+    Boolean(status?.enabled) &&
+    Boolean(status?.hasRepository) &&
+    Boolean(status?.remoteUrl) &&
+    Boolean(status?.hasToken)
+  const setupSteps = [
+    !status?.enabled ? 'Enable Git for this project.' : null,
+    !status?.remoteUrl ? 'Save the GitHub repository URL as the remote.' : null,
+    !status?.hasToken ? 'Save a GitHub token with Contents read/write access.' : null
+  ].filter((step): step is string => Boolean(step))
 
   useEffect(() => {
     setRemoteUrl(project.git_remote ?? '')
@@ -110,19 +120,49 @@ export function GitPanelModal({ onClose, project }: GitPanelModalProps): JSX.Ele
             </div>
             <div className={styles.metaCard}>
               <span className={styles.label}>Token</span>
-              <strong>{status?.hasToken ? 'Configured' : 'Not configured'}</strong>
+              <strong>
+                {status?.authSource === 'saved-token'
+                  ? 'Local token'
+                  : status?.authSource === 'gh-cli'
+                    ? 'GitHub CLI'
+                    : 'Not configured'}
+              </strong>
             </div>
             <div className={styles.metaCard}>
               <span className={styles.label}>Auto Commit</span>
               <strong>{status?.autoCommitPending ? 'Pending' : 'Idle'}</strong>
             </div>
           </div>
+
+          <div className={styles.setupCard}>
+            <strong>Push setup</strong>
+            <div className={styles.helper}>
+              You do not need to create the GitHub repository first if it already exists. LAB just
+              needs a local repo, a saved remote URL, and a token before push or publish can work.
+            </div>
+            {setupSteps.length > 0 ? (
+              <div className={styles.checklist}>
+                {setupSteps.map((step) => (
+                  <span key={step} className={styles.checkItem}>
+                    {step}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.helper}>
+                Push prerequisites are satisfied for this project.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className={styles.section}>
           <div>
             <strong>Remote</strong>
-            <div className={styles.helper}>GitHub repository URL for backup and publish flows.</div>
+            <div className={styles.helper}>
+              GitHub repository URL for backup and publish flows. Existing repos are fine; LAB does
+              not need to create a new one first.
+            </div>
           </div>
           <InputField
             label="Remote URL"
@@ -155,7 +195,8 @@ export function GitPanelModal({ onClose, project }: GitPanelModalProps): JSX.Ele
           <div>
             <strong>GitHub Token</strong>
             <div className={styles.helper}>
-              Stored locally for push and publish. Leave blank and save to clear it.
+              Stored locally for push and publish. Leave blank and save to clear it. If GitHub CLI
+              is already signed in on this machine, LAB can use that as a fallback.
             </div>
           </div>
           <InputField
@@ -197,7 +238,7 @@ export function GitPanelModal({ onClose, project }: GitPanelModalProps): JSX.Ele
           </div>
           <div className={styles.actions}>
             <Button
-              disabled={!status?.enabled || isBusy !== null}
+              disabled={!pushReady || isBusy !== null}
               size="sm"
               variant="outline"
               onClick={() =>
@@ -232,7 +273,7 @@ export function GitPanelModal({ onClose, project }: GitPanelModalProps): JSX.Ele
               {isBusy === 'push' ? 'Pushing…' : 'Push'}
             </Button>
             <Button
-              disabled={!status?.enabled || isBusy !== null}
+              disabled={!pushReady || isBusy !== null}
               size="sm"
               onClick={() =>
                 void runAction(

@@ -96,7 +96,7 @@ export function Dashboard(): JSX.Element {
         <div
           style={{
             padding: 16,
-            borderRadius: 12,
+            borderRadius: 8,
             border: '1px solid rgba(201, 108, 92, 0.3)',
             background: 'rgba(201, 108, 92, 0.1)',
             color: '#ffd5d5'
@@ -119,7 +119,7 @@ export function Dashboard(): JSX.Element {
             onClick={() => navigate(`/project/${project.id}`)}
             role="presentation"
             style={{
-              borderRadius: 14,
+              borderRadius: 8,
               border: '1px solid var(--lab-border)',
               background: 'var(--lab-surface)',
               padding: 20,
@@ -130,10 +130,9 @@ export function Dashboard(): JSX.Element {
             <div
               style={{
                 minHeight: 180,
-                borderRadius: 10,
+                borderRadius: 8,
                 border: '1px solid var(--lab-border)',
-                background:
-                  'linear-gradient(135deg, rgba(79,140,255,0.12), rgba(255,255,255,0.02) 48%, rgba(79,140,255,0.04))'
+                background: 'var(--lab-surface-2)'
               }}
             />
             <div style={{ display: 'grid', gap: 12 }}>

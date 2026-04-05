@@ -50,14 +50,14 @@
 }
 
 .filterButtonActive {
-  border-color: rgba(79, 140, 255, 0.38);
-  background: rgba(79, 140, 255, 0.12);
+  border-color: rgba(141, 148, 127, 0.36);
+  background: rgba(141, 148, 127, 0.12);
 }
 
 .assetCard,
 .navItem {
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface);
   padding: 12px;
   display: grid;
@@ -123,8 +123,8 @@
 }
 
 .navItemActive {
-  border-color: rgba(79, 140, 255, 0.4);
-  background: rgba(79, 140, 255, 0.08);
+  border-color: rgba(141, 148, 127, 0.36);
+  background: rgba(141, 148, 127, 0.08);
 }
 
 .muted {

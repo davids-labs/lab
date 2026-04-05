@@ -296,6 +296,7 @@ export interface GitStatus {
   hasRepository: boolean
   remoteUrl: string | null
   hasToken: boolean
+  authSource: 'gh-cli' | 'saved-token' | 'none'
   pagesUrl: string | null
   autoCommitPending: boolean
 }

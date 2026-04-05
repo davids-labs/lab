@@ -10,10 +10,14 @@
 
 .modal {
   width: min(560px, 100%);
-  border-radius: 14px;
+  max-height: min(840px, calc(100vh - 48px));
+  border-radius: 8px;
   border: 1px solid var(--lab-border);
   background: var(--lab-surface);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.34);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .header {
@@ -27,4 +31,6 @@
   padding: 20px 24px 24px;
   display: grid;
   gap: 16px;
+  min-height: 0;
+  overflow: auto;
 }

@@ -26,9 +26,9 @@ const footerLinkSchema = z.object({
 
 export const pageConfigSchema = z.object({
   theme: z.object({
-    accent: z.string().trim().default('#4f8cff'),
-    bg: z.string().trim().default('#0f1318'),
-    surface: z.string().trim().default('#171c23'),
+    accent: z.string().trim().default('#8d947f'),
+    bg: z.string().trim().default('#111315'),
+    surface: z.string().trim().default('#171a1d'),
     fontHeading: z.string().trim().default('IBM Plex Sans'),
     fontBody: z.string().trim().default('IBM Plex Mono'),
     layoutVariant: z.enum(PAGE_LAYOUT_VARIANTS).default('default')
@@ -261,7 +261,25 @@ export function parsePageConfig(value: unknown): PublicPageConfig {
   const result = pageConfigSchema.safeParse(value)
 
   if (result.success) {
-    return result.data
+    const next = result.data
+
+    if (
+      next.theme.accent === '#4f8cff' &&
+      next.theme.bg === '#0f1318' &&
+      next.theme.surface === '#171c23'
+    ) {
+      return {
+        ...next,
+        theme: {
+          ...next.theme,
+          accent: '#8d947f',
+          bg: '#111315',
+          surface: '#171a1d'
+        }
+      }
+    }
+
+    return next
   }
 
   return cloneDefaultPageConfig()

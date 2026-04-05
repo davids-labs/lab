@@ -20,13 +20,13 @@
 
 .active {
   background: var(--lab-primary-dim);
-  border-color: rgba(79, 140, 255, 0.42);
+  border-color: rgba(141, 148, 127, 0.4);
 }
 
 .surface {
   min-height: 160px;
   border: 1px solid var(--lab-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--lab-surface-2);
   padding: 12px 14px;
 }

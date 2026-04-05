@@ -41,7 +41,12 @@ export function ProjectPreview(): JSX.Element {
     <div className="routeShell">
       <TitleBar project={project} view="preview" />
       <div className={styles.shell}>
-        <PublicPagePreview blocks={blocks} onFocusBlock={handleFocusBlock} project={project} />
+        <PublicPagePreview
+          blocks={blocks}
+          onFocusBlock={handleFocusBlock}
+          project={project}
+          showBorder={false}
+        />
       </div>
     </div>
   )

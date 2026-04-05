@@ -14,7 +14,7 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #121821 0%, var(--lab-bg) 120px);
+  background: var(--lab-bg);
   color: var(--lab-text);
   font-family: var(--lab-font-mono);
   line-height: 1.5;
@@ -42,7 +42,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid rgba(79, 140, 255, 0.55);
+  outline: 2px solid rgba(141, 148, 127, 0.45);
   outline-offset: 1px;
 }
 
