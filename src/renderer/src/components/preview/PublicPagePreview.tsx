@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Block, Project } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { useToastStore } from '@renderer/stores/toastStore'
@@ -21,10 +21,18 @@ export function PublicPagePreview({
 }: PublicPagePreviewProps): JSX.Element {
   const [html, setHtml] = useState('')
   const pushToast = useToastStore((state) => state.push)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const requestIdRef = useRef(0)
 
   async function refreshPreview(): Promise<void> {
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+
     try {
-      setHtml(await window.lab.page.render(project.id))
+      const nextHtml = await window.lab.page.render(project.id)
+      if (requestId === requestIdRef.current) {
+        setHtml(nextHtml)
+      }
     } catch (error) {
       pushToast({
         message: error instanceof Error ? error.message : 'Failed to refresh preview.',
@@ -35,12 +43,14 @@ export function PublicPagePreview({
 
   useEffect(() => {
     let cancelled = false
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
 
     const timer = window.setTimeout(() => {
       void window.lab.page
         .render(project.id)
         .then((nextHtml) => {
-          if (!cancelled) {
+          if (!cancelled && requestId === requestIdRef.current) {
             setHtml(nextHtml)
           }
         })
@@ -62,7 +72,12 @@ export function PublicPagePreview({
 
   useEffect(() => {
     const handler = (event: MessageEvent): void => {
-      if (event.data?.type === 'LAB_FOCUS_BLOCK' && typeof event.data.blockId === 'string') {
+      if (
+        event.source === iframeRef.current?.contentWindow &&
+        event.origin === window.location.origin &&
+        event.data?.type === 'LAB_FOCUS_BLOCK' &&
+        typeof event.data.blockId === 'string'
+      ) {
         onFocusBlock(event.data.blockId)
       }
     }
@@ -88,6 +103,7 @@ export function PublicPagePreview({
       </div>
       <div className={styles.body}>
         <iframe
+          ref={iframeRef}
           className={styles.frame}
           srcDoc={html}
           sandbox="allow-scripts allow-same-origin"

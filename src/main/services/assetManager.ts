@@ -7,6 +7,9 @@ import type { Asset } from '../../preload/types'
 import { getAssetKind, shouldLocallyProcessImage } from '@shared/assets'
 import { assertPathInsideProjects, ensureProjectDirectories, getProjectAssetsDir } from './appPaths'
 
+const MAX_ASSET_BYTES = 75 * 1024 * 1024
+const MAX_IMAGE_EDGE = 8_000
+
 function sanitiseFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, '-')
 }
@@ -35,6 +38,10 @@ function writeProcessedImage(
   }
 
   const size = image.getSize()
+  if (size.width > MAX_IMAGE_EDGE || size.height > MAX_IMAGE_EDGE) {
+    throw new Error('This image is too large to import safely.')
+  }
+
   const largestEdge = Math.max(size.width, size.height)
   const scale = largestEdge > 2400 ? 2400 / largestEdge : 1
   const targetWidth = Math.max(1, Math.round(size.width * scale))
@@ -56,6 +63,15 @@ function writeProcessedImage(
 
 export function importAssetFile(projectId: string, srcPath: string, tags: string[] = []): Asset {
   ensureProjectDirectories(projectId)
+  const sourceStat = fs.statSync(srcPath)
+
+  if (!sourceStat.isFile()) {
+    throw new Error('Only files can be imported as assets.')
+  }
+
+  if (sourceStat.size > MAX_ASSET_BYTES) {
+    throw new Error('This asset is larger than the current import limit of 75 MB.')
+  }
 
   const filename = path.basename(srcPath)
   const safeFilename = sanitiseFilename(filename)

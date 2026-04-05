@@ -234,11 +234,13 @@ export function HomeDashboard(): JSX.Element {
         <section className={pageStyles.grid2}>
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Deadlines and Blockers</h2>
-              <span className={pageStyles.pill}>{summary.blocking_alerts.length} blockers</span>
+              <h2 className={pageStyles.cardTitle}>Pressure Points</h2>
+              <span className={pageStyles.pill}>
+                {summary.countdowns.length} deadlines · {summary.blocking_alerts.length} blockers
+              </span>
             </div>
             <div className={pageStyles.list}>
-              {summary.countdowns.slice(0, 4).map((countdown) => (
+              {summary.countdowns.slice(0, 3).map((countdown) => (
                 <div key={countdown.id} className={pageStyles.listRow}>
                   <strong>{countdown.title}</strong>
                   <span className={pageStyles.muted}>
@@ -246,10 +248,18 @@ export function HomeDashboard(): JSX.Element {
                   </span>
                 </div>
               ))}
+              {summary.countdowns.length === 0 ? (
+                <div className={pageStyles.listRow}>
+                  <strong>No countdowns yet</strong>
+                  <span className={pageStyles.muted}>
+                    Add runway trackers in Execution so the week can feel time-bound.
+                  </span>
+                </div>
+              ) : null}
             </div>
             <div className={pageStyles.list}>
               {summary.blocking_alerts.length > 0 ? (
-                summary.blocking_alerts.slice(0, 4).map((alert) => (
+                summary.blocking_alerts.slice(0, 3).map((alert) => (
                   <div key={alert.id} className={pageStyles.listRow}>
                     <strong>{alert.node_title}</strong>
                     <span className={pageStyles.muted}>{alert.reason}</span>
@@ -259,34 +269,43 @@ export function HomeDashboard(): JSX.Element {
                 <div className={pageStyles.listRow}>
                   <strong>No active blockers</strong>
                   <span className={pageStyles.muted}>
-                    As phases gain dependencies, projects, skills, and target links, blockers will
-                    show up here automatically.
+                    Blockers will appear here once phases, skills, and projects are wired together.
                   </span>
                 </div>
               )}
             </div>
+            <Button variant="outline" onClick={() => navigate('/execution')}>
+              Review Execution
+            </Button>
           </article>
 
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Pipeline Next Actions</h2>
+              <h2 className={pageStyles.cardTitle}>Proof and Pipeline</h2>
               <span className={pageStyles.pill}>
-                {summary.pipeline.active_applications} active applications
+                {summary.ecosystem.total_projects} projects · {summary.pipeline.active_applications}{' '}
+                active applications
               </span>
             </div>
             <div className={pageStyles.metricGrid}>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Organizations</span>
-                <div className={pageStyles.metricValue}>{summary.pipeline.organizations}</div>
+                <span className={pageStyles.muted}>Verified Skills</span>
+                <div className={pageStyles.metricValue}>{summary.skill_coverage.verified}</div>
               </div>
               <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Active</span>
-                <div className={pageStyles.metricValue}>{summary.pipeline.active_applications}</div>
+                <span className={pageStyles.muted}>Completed Projects</span>
+                <div className={pageStyles.metricValue}>
+                  {summary.ecosystem.by_execution_stage.completed}
+                </div>
+              </div>
+              <div className={pageStyles.metricCard}>
+                <span className={pageStyles.muted}>Ready Assets</span>
+                <div className={pageStyles.metricValue}>{summary.presence.ready_assets}</div>
               </div>
             </div>
             <div className={pageStyles.list}>
               {summary.pipeline.next_actions.length > 0 ? (
-                summary.pipeline.next_actions.map((application) => (
+                summary.pipeline.next_actions.slice(0, 3).map((application) => (
                   <div key={application.id} className={pageStyles.listRow}>
                     <strong>{application.title}</strong>
                     <span className={pageStyles.muted}>
@@ -299,163 +318,21 @@ export function HomeDashboard(): JSX.Element {
                     </span>
                   </div>
                 ))
-              ) : (
-                <div className={pageStyles.listRow}>
-                  <strong>No pipeline deadlines yet</strong>
-                  <span className={pageStyles.muted}>
-                    Add target orgs, applications, and follow-up dates so opportunity management has
-                    real structure.
-                  </span>
-                </div>
-              )}
+              ) : summary.ecosystem.recently_updated.slice(0, 3).map((project) => (
+                  <div key={project.id} className={pageStyles.listRow}>
+                    <strong>{project.name}</strong>
+                    <span className={pageStyles.muted}>
+                      {project.type} · {project.execution_stage.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                ))}
             </div>
-            <Button variant="outline" onClick={() => navigate('/pipeline')}>
-              Open Pipeline
-            </Button>
+            <Button onClick={() => navigate('/proof/projects')}>Open Proof</Button>
           </article>
-        </section>
-
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Proof and Readiness</h2>
-              <span className={pageStyles.pill}>{summary.ecosystem.total_projects} projects</span>
-            </div>
-            <div className={pageStyles.metricGrid}>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Verified Skills</span>
-                <div className={pageStyles.metricValue}>{summary.skill_coverage.verified}</div>
-              </div>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Unverified</span>
-                <div className={pageStyles.metricValue}>{summary.skill_coverage.unverified}</div>
-              </div>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Completed</span>
-                <div className={pageStyles.metricValue}>
-                  {summary.ecosystem.by_execution_stage.completed}
-                </div>
-              </div>
-            </div>
-            <div className={pageStyles.list}>
-              {summary.ecosystem.recently_updated.slice(0, 4).map((project) => (
-                <div key={project.id} className={pageStyles.listRow}>
-                  <strong>{project.name}</strong>
-                  <span className={pageStyles.muted}>
-                    {project.type} · {project.execution_stage.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <Button onClick={() => navigate('/proof/projects')}>Projects</Button>
-              <Button variant="outline" onClick={() => navigate('/proof/skills')}>
-                Skills
-              </Button>
-            </div>
-          </article>
-
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Presence and Library</h2>
-              <span className={pageStyles.pill}>{summary.library.documents} docs imported</span>
-            </div>
-            <div className={pageStyles.metricGrid}>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Ready Assets</span>
-                <div className={pageStyles.metricValue}>{summary.presence.ready_assets}</div>
-              </div>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Open Ideas</span>
-                <div className={pageStyles.metricValue}>{summary.presence.open_ideas}</div>
-              </div>
-              <div className={pageStyles.metricCard}>
-                <span className={pageStyles.muted}>Pending Suggestions</span>
-                <div className={pageStyles.metricValue}>{summary.library.pending_suggestions}</div>
-              </div>
-            </div>
-            <div className={pageStyles.list}>
-              {summary.presence.prompts.map((prompt) => (
-                <div key={prompt} className={pageStyles.listRow}>
-                  <strong>Prompt</strong>
-                  <span className={pageStyles.muted}>{prompt}</span>
-                </div>
-              ))}
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <Button variant="outline" onClick={() => navigate('/presence')}>
-                Presence
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/library')}>
-                Library
-              </Button>
-            </div>
-          </article>
-        </section>
-
-        <section className={pageStyles.card}>
-          <div className={pageStyles.sectionHeader}>
-            <div>
-              <h2 className={pageStyles.cardTitle}>Operating Notes</h2>
-              <p className={pageStyles.description}>
-                davids.lab works best when it becomes the weekly review surface, not a place you
-                only visit during big planning sessions.
-              </p>
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <Button variant="outline" onClick={() => navigate('/execution')}>
-                Add weekly priority
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/pipeline')}>
-                Add application
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/library')}>
-                Import document
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/settings')}>
-                Open settings
-              </Button>
-            </div>
-          </div>
-          <div className={pageStyles.grid2}>
-            <div className={pageStyles.list}>
-              <div className={pageStyles.listRow}>
-                <strong>Direction</strong>
-                <span className={pageStyles.muted}>
-                  Keep the long-range plan current, then use it to constrain the week instead of
-                  letting the week drift.
-                </span>
-              </div>
-              <div className={pageStyles.listRow}>
-                <strong>Execution</strong>
-                <span className={pageStyles.muted}>
-                  Capture daily telemetry lightly, but take the weekly priorities and review
-                  seriously.
-                </span>
-              </div>
-            </div>
-            <div className={pageStyles.list}>
-              <div className={pageStyles.listRow}>
-                <strong>Proof → Presence</strong>
-                <span className={pageStyles.muted}>
-                  Promote finished work into verified skills, then turn that proof into public
-                  narrative assets.
-                </span>
-              </div>
-              <div className={pageStyles.listRow}>
-                <strong>Settings</strong>
-                <span className={pageStyles.muted}>
-                  {bundle?.user_profile.full_name
-                    ? `Identity defaults are loaded for ${bundle.user_profile.full_name}.`
-                    : 'Use Settings to define your identity, defaults, and source paths.'}
-                </span>
-              </div>
-            </div>
-          </div>
         </section>
 
         {bundle?.dashboard_preferences.show_onboarding && summary.onboarding.needs_setup ? (
-          <section className={pageStyles.card}>
+          <section className={`${pageStyles.card} ${pageStyles.cardTight}`}>
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Onboarding Signals</h2>
               <span className={pageStyles.pill}>{summary.onboarding.missing.length} missing</span>

@@ -1,11 +1,10 @@
 .layout {
   --shell-accent: var(--lab-primary);
   display: grid;
-  grid-template-columns: 276px minmax(0, 1fr);
+  grid-template-columns: 228px minmax(0, 1fr);
   min-height: 100%;
   height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 26%), var(--lab-bg);
+  background: var(--lab-bg);
 }
 
 .projectLayout {
@@ -14,11 +13,11 @@
 }
 
 .focusMode {
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 208px minmax(0, 1fr);
 }
 
 .densityCompact {
-  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-columns: 208px minmax(0, 1fr);
 }
 
 .fontScaleSm {
@@ -33,12 +32,11 @@
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 22px;
-  padding: 22px 18px;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  padding: 18px 14px;
   border-right: 1px solid rgba(29, 29, 31, 0.08);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(18px);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .focusMode .sidebar {
@@ -47,7 +45,7 @@
 
 .brandBlock {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 
 .brandRow {
@@ -75,31 +73,18 @@
   font-size: 0.84rem;
 }
 
-.brandBlurb {
-  margin: 0;
-  color: var(--lab-text-muted);
-  font-size: 0.87rem;
-  line-height: 1.55;
-}
-
-.focusMode .brandBlurb,
-.focusMode .helpCard,
-.focusMode .sidebarFooterText {
-  display: none;
-}
-
 .nav {
   min-height: 0;
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 6px;
 }
 
 .navLink {
   display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 12px;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
   border: 1px solid transparent;
   color: var(--lab-text-muted);
   text-decoration: none;
@@ -128,59 +113,7 @@
 }
 
 .navCopy {
-  color: var(--lab-text-muted);
-  font-size: 0.8rem;
-  line-height: 1.45;
-}
-
-.focusMode .navCopy {
   display: none;
-}
-
-.sidebarFooter {
-  display: grid;
-  gap: 14px;
-}
-
-.helpCard {
-  display: grid;
-  gap: 8px;
-  padding: 14px;
-  border: 1px solid var(--lab-border);
-  border-radius: 14px;
-  background: var(--lab-surface);
-  box-shadow: var(--lab-shadow-card);
-}
-
-.helpTitle {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--lab-text);
-}
-
-.helpBody {
-  margin: 0;
-  color: var(--lab-text-muted);
-  font-size: 0.84rem;
-  line-height: 1.55;
-}
-
-.quickLinks {
-  display: grid;
-  gap: 10px;
-}
-
-.quickLinkRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.sidebarFooterText {
-  color: var(--lab-text-faint);
-  font-size: 0.78rem;
-  line-height: 1.45;
 }
 
 .main {
@@ -194,11 +127,10 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  padding: 20px 28px 18px;
+  gap: 14px;
+  padding: 18px 24px 16px;
   border-bottom: 1px solid rgba(29, 29, 31, 0.08);
-  background: rgba(246, 246, 243, 0.92);
-  backdrop-filter: blur(16px);
+  background: rgba(251, 251, 249, 0.96);
 }
 
 .focusMode .contextBar {
@@ -207,7 +139,7 @@
 
 .context {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -222,7 +154,7 @@
 .contextTitle {
   margin: 0;
   font-family: var(--lab-font-display);
-  font-size: 1.85rem;
+  font-size: 1.65rem;
   font-weight: 700;
   letter-spacing: -0.04em;
   color: var(--lab-text);
@@ -230,14 +162,14 @@
 
 .contextBody {
   margin: 0;
-  max-width: 860px;
+  max-width: 720px;
   color: var(--lab-text-muted);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .contextRight {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   justify-items: end;
 }
 
@@ -252,8 +184,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 11px;
   border-radius: 999px;
   border: 1px solid rgba(29, 29, 31, 0.1);
   background: rgba(255, 255, 255, 0.84);
@@ -271,7 +203,7 @@
 
 .contextActions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 8px;
 }

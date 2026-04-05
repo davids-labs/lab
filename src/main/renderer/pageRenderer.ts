@@ -409,6 +409,10 @@ function renderMarkdown(raw: string): string {
   return purifier.sanitize(html)
 }
 
+function sanitizeHtmlFragment(raw: string | null | undefined): string {
+  return purifier.sanitize(raw ?? '')
+}
+
 function buildSectionTitle(block: Block, project: Project): string {
   const customTitle = project.page_config.sections.find(
     (section) => section.blockId === block.id
@@ -461,18 +465,20 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
       return renderSectionShell(
         block,
         project,
-        `<div class="prose">${data.html ?? data.body ?? ''}</div>`
+        `<div class="prose">${sanitizeHtmlFragment(data.html ?? data.body ?? '')}</div>`
       )
     }
     case 'case_study': {
       const data = block.data as CaseStudyData
       const content =
         data.mode === 'free'
-          ? (data.paragraphs ?? []).map((paragraph) => `<div>${paragraph}</div>`).join('')
+          ? (data.paragraphs ?? [])
+              .map((paragraph) => `<div>${sanitizeHtmlFragment(paragraph)}</div>`)
+              .join('')
           : `
-              <h3>Challenge</h3>${data.challenge ?? '<p></p>'}
-              <h3>Approach</h3>${data.approach ?? '<p></p>'}
-              <h3>Outcome</h3>${data.outcome ?? '<p></p>'}
+              <h3>Challenge</h3>${sanitizeHtmlFragment(data.challenge ?? '<p></p>')}
+              <h3>Approach</h3>${sanitizeHtmlFragment(data.approach ?? '<p></p>')}
+              <h3>Outcome</h3>${sanitizeHtmlFragment(data.outcome ?? '<p></p>')}
             `
       return renderSectionShell(block, project, `<div class="prose">${content}</div>`)
     }
@@ -568,7 +574,7 @@ function renderBlock(block: Block, project: Project, assets: Map<string, string>
                   <span class="stepIndex">Step ${index + 1}</span>
                 </button>
                 <div class="stepBody">
-                  <div class="prose">${step.body}</div>
+                  <div class="prose">${sanitizeHtmlFragment(step.body)}</div>
                   ${image ? `<img src="${image}" alt="${escapeHtml(step.title || `Step ${index + 1}`)}" />` : ''}
                 </div>
               </div>`
@@ -698,7 +704,10 @@ function buildPreviewScript(mode: RenderMode): string {
       const section = event.target.closest('[data-block-id]');
       if (section) {
         event.preventDefault();
-        window.parent.postMessage({ type: 'LAB_FOCUS_BLOCK', blockId: section.dataset.blockId }, '*');
+        window.parent.postMessage(
+          { type: 'LAB_FOCUS_BLOCK', blockId: section.dataset.blockId },
+          window.location.origin
+        );
       }
     });
   `

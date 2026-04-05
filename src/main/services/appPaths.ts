@@ -48,11 +48,16 @@ export function ensureProjectDirectories(projectId: string): void {
   fs.mkdirSync(getProjectPublicDir(projectId), { recursive: true })
 }
 
-export function assertPathInsideProjects(targetPath: string): void {
-  const projectsDir = path.resolve(getProjectsDir())
-  const resolved = path.resolve(targetPath)
+export function isPathInsideDirectory(rootDir: string, targetPath: string): boolean {
+  const root = path.resolve(rootDir)
+  const target = path.resolve(targetPath)
+  const relative = path.relative(root, target)
 
-  if (!resolved.startsWith(projectsDir)) {
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
+}
+
+export function assertPathInsideProjects(targetPath: string): void {
+  if (!isPathInsideDirectory(getProjectsDir(), targetPath)) {
     throw new Error('Refusing to access a path outside the LAB projects directory')
   }
 }

@@ -39,9 +39,16 @@ interface LabSettings {
 }
 
 let settingsCache: LabSettings | null = null
+const GIT_HASH_PATTERN = /^[0-9a-f]{40}$/i
 
 function getSettingsPath(): string {
   return path.join(getAppDataDir(), 'lab-settings.json')
+}
+
+function writeFileAtomic(filePath: string, content: string): void {
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`
+  fs.writeFileSync(tempPath, content, 'utf8')
+  fs.renameSync(tempPath, filePath)
 }
 
 function readSettings(): LabSettings {
@@ -73,7 +80,7 @@ function writeSettings(next: LabSettings): void {
     return
   }
 
-  fs.writeFileSync(getSettingsPath(), JSON.stringify(next, null, 2), 'utf8')
+  writeFileAtomic(getSettingsPath(), JSON.stringify(next, null, 2))
 }
 
 const LAB_AUTHOR = {
@@ -121,7 +128,7 @@ function getStoredGitHubToken(): string | null {
   }
 
   if (stored.startsWith('plain:')) {
-    return stored.slice(6)
+    return null
   }
 
   return stored
@@ -156,14 +163,53 @@ function getGitHubAuth(): { source: 'gh-cli' | 'saved-token' | 'none'; token: st
 }
 
 function normalizeRemoteUrl(url: string): string {
-  const trimmed = url.trim().replace(/\/+$/, '')
-
-  const githubHttpsMatch = trimmed.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)$/i)
-  if (githubHttpsMatch && !trimmed.endsWith('.git')) {
-    return `${trimmed}.git`
+  const trimmed = url.trim()
+  if (!trimmed) {
+    return ''
   }
 
-  return trimmed
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    throw new Error('Remote must be a valid GitHub HTTPS URL.')
+  }
+
+  if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() !== 'github.com') {
+    throw new Error('Only HTTPS GitHub remotes are supported right now.')
+  }
+
+  if (parsed.username || parsed.password) {
+    throw new Error('Remote URLs must not contain embedded credentials.')
+  }
+
+  const parts = parsed.pathname
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length !== 2) {
+    throw new Error('Remote must look like https://github.com/owner/repo(.git).')
+  }
+
+  const [owner, repoPart] = parts
+  const repo = repoPart.replace(/\.git$/i, '')
+
+  if (!owner || !repo) {
+    throw new Error('Remote must look like https://github.com/owner/repo(.git).')
+  }
+
+  return `https://github.com/${owner}/${repo}.git`
+}
+
+function validateCommitHash(hash: string): string {
+  const trimmed = hash.trim()
+
+  if (!GIT_HASH_PATTERN.test(trimmed)) {
+    throw new Error('Invalid commit hash.')
+  }
+
+  return trimmed.toLowerCase()
 }
 
 export function setGitHubToken(token: string | null): { ok: boolean } {
@@ -185,11 +231,7 @@ export function setGitHubToken(token: string | null): { ok: boolean } {
     return { ok: true }
   }
 
-  writeSettings({
-    ...readSettings(),
-    githubPat: `plain:${trimmed}`
-  })
-  return { ok: true }
+  throw new Error('Secure token storage is unavailable on this machine, so LAB will not save a PAT.')
 }
 
 function ensureGitEnabled(projectId: string): Project {
@@ -263,14 +305,10 @@ async function writeProjectSnapshot(projectId: string): Promise<void> {
   const publicDir = path.join(dir, 'public')
 
   fs.mkdirSync(publicDir, { recursive: true })
-  fs.writeFileSync(path.join(dir, '.gitignore'), GIT_IGNORE, 'utf8')
-  fs.writeFileSync(path.join(dir, 'project.json'), JSON.stringify(project, null, 2), 'utf8')
-  fs.writeFileSync(path.join(dir, 'blocks.json'), JSON.stringify(blocks, null, 2), 'utf8')
-  fs.writeFileSync(
-    path.join(publicDir, 'index.html'),
-    renderProjectHtml(projectId, 'export'),
-    'utf8'
-  )
+  writeFileAtomic(path.join(dir, '.gitignore'), GIT_IGNORE)
+  writeFileAtomic(path.join(dir, 'project.json'), JSON.stringify(project, null, 2))
+  writeFileAtomic(path.join(dir, 'blocks.json'), JSON.stringify(blocks, null, 2))
+  writeFileAtomic(path.join(publicDir, 'index.html'), renderProjectHtml(projectId, 'export'))
 }
 
 async function stageProjectFiles(projectId: string): Promise<boolean> {
@@ -547,9 +585,20 @@ export async function restoreProjectFromCommit(
 ): Promise<{ ok: boolean }> {
   ensureGitEnabled(projectId)
   const dir = getRepoDir(projectId)
+  const validatedHash = validateCommitHash(hash)
+  const history = await git.log({
+    fs,
+    dir,
+    depth: 200
+  })
+
+  if (!history.some((entry) => entry.oid === validatedHash)) {
+    throw new Error('That commit is not available in this project history.')
+  }
+
   const [projectBlob, blocksBlob] = await Promise.all([
-    git.readBlob({ fs, dir, oid: hash, filepath: 'project.json' }),
-    git.readBlob({ fs, dir, oid: hash, filepath: 'blocks.json' })
+    git.readBlob({ fs, dir, oid: validatedHash, filepath: 'project.json' }),
+    git.readBlob({ fs, dir, oid: validatedHash, filepath: 'blocks.json' })
   ])
 
   const projectSnapshot = readSnapshotJson(projectBlob.blob)
@@ -562,7 +611,7 @@ export async function restoreProjectFromCommit(
       : {}
   )
   replaceProjectBlocks(projectId, Array.isArray(blocksSnapshot) ? blocksSnapshot : [])
-  await commitSnapshot(projectId, `restore: ${hash.slice(0, 7)}`)
+  await commitSnapshot(projectId, `restore: ${validatedHash.slice(0, 7)}`)
 
   return { ok: true }
 }

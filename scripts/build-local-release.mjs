@@ -23,11 +23,18 @@ const appDir = path.join(unpackedDir, 'resources', 'app')
 const portableZip = path.join(releaseDir, portableZipName)
 const runtimeNodeModules = path.join(appDir, 'node_modules')
 
+function isPathInsideDirectory(rootDir, targetPath) {
+  const root = path.resolve(rootDir)
+  const target = path.resolve(targetPath)
+  const relative = path.relative(root, target)
+
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
+}
+
 function safeRm(target) {
   const resolved = path.resolve(target)
-  const allowedRoot = path.resolve(releaseDir)
 
-  if (!resolved.startsWith(allowedRoot)) {
+  if (!isPathInsideDirectory(releaseDir, resolved)) {
     throw new Error(`Refusing to remove path outside release dir: ${resolved}`)
   }
 

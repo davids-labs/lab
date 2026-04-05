@@ -1,7 +1,29 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { OpenFilesOptions, SaveFileOptions } from '../../preload/types'
 import { validateOpenFilesOptions, validateSaveFileOptions } from '@shared/validation'
+import { getProjectsDir, isPathInsideDirectory } from '../services/appPaths'
+
+const allowedTextReads = new Set<string>()
+
+function rememberReadablePaths(filePaths: string[]): void {
+  for (const filePath of filePaths) {
+    if (filePath) {
+      allowedTextReads.add(path.resolve(filePath))
+    }
+  }
+
+  if (allowedTextReads.size > 256) {
+    const overflow = [...allowedTextReads].slice(0, allowedTextReads.size - 256)
+    overflow.forEach((entry) => allowedTextReads.delete(entry))
+  }
+}
+
+function canReadTextFile(filePath: string): boolean {
+  const resolved = path.resolve(filePath)
+  return allowedTextReads.has(resolved) || isPathInsideDirectory(getProjectsDir(), resolved)
+}
 
 export function registerSystemHandlers(): void {
   ipcMain.handle(
@@ -14,7 +36,12 @@ export function registerSystemHandlers(): void {
         filters: options.filters
       })
 
-      return result.canceled ? [] : result.filePaths
+      if (result.canceled) {
+        return []
+      }
+
+      rememberReadablePaths(result.filePaths)
+      return result.filePaths
     }
   )
 
@@ -34,7 +61,21 @@ export function registerSystemHandlers(): void {
 
   ipcMain.handle(
     'system:read-text-file',
-    async (_event, filePath: string): Promise<string> => fs.readFileSync(filePath, 'utf8')
+    async (_event, filePath: string): Promise<string> => {
+      if (!canReadTextFile(filePath)) {
+        throw new Error(
+          'Refusing to read an arbitrary local file. Open the file through the picker first.'
+        )
+      }
+
+      const resolved = path.resolve(filePath)
+      const stat = fs.statSync(resolved)
+      if (!stat.isFile()) {
+        throw new Error('Selected path is not a file.')
+      }
+
+      return fs.readFileSync(resolved, 'utf8')
+    }
   )
 
   ipcMain.handle('system:toggle-fullscreen', async (event): Promise<boolean> => {

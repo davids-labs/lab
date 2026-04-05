@@ -65,7 +65,7 @@
   padding: var(--command-card-padding);
   display: grid;
   gap: 16px;
-  box-shadow: var(--lab-shadow-card);
+  box-shadow: none;
 }
 
 .cardTight {
@@ -91,10 +91,10 @@
 }
 
 .pill {
-  padding: 6px 10px;
+  padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid var(--lab-border);
-  background: var(--lab-surface-muted);
+  background: rgba(255, 255, 255, 0.56);
   color: var(--lab-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -113,7 +113,7 @@
   padding: 14px;
   border: 1px solid var(--lab-border);
   border-radius: var(--lab-radius-lg);
-  background: var(--lab-surface-muted);
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .metricValue {
@@ -142,7 +142,7 @@
   padding: 14px;
   border: 1px solid var(--lab-border);
   border-radius: var(--lab-radius-lg);
-  background: var(--lab-surface-muted);
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .sectionHeader {

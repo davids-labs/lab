@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/Button'
@@ -131,9 +131,13 @@ export function CommandCenterLayout(): JSX.Element {
   const loadSummary = useDashboardStore((state) => state.loadSummary)
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
+  const updateDashboardPreferences = useSettingsStore((state) => state.updateDashboardPreferences)
   const focusMode = useUiStore((state) => state.commandCenterFocusMode)
+  const setFocusMode = useUiStore((state) => state.setCommandCenterFocusMode)
   const toggleFocusMode = useUiStore((state) => state.toggleCommandCenterFocusMode)
   const startWorkspaceApplied = useRef(false)
+  const focusPreferenceApplied = useRef(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     void loadSummary()
@@ -160,6 +164,40 @@ export function CommandCenterLayout(): JSX.Element {
     navigate(`/${startWorkspace}`, { replace: true })
   }, [bundle, location.pathname, navigate])
 
+  useEffect(() => {
+    if (!bundle || focusPreferenceApplied.current) {
+      return
+    }
+
+    focusPreferenceApplied.current = true
+    setFocusMode(bundle.dashboard_preferences.compact_mode)
+  }, [bundle, setFocusMode])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const syncFullscreen = async (): Promise<void> => {
+      try {
+        const next = await window.lab.system.isFullscreen()
+        if (!cancelled) {
+          setIsFullscreen(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setIsFullscreen(false)
+        }
+      }
+    }
+
+    void syncFullscreen()
+    window.addEventListener('focus', syncFullscreen)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', syncFullscreen)
+    }
+  }, [])
+
   const layoutClassName = [
     styles.layout,
     bundle?.theme_settings.shell_density === 'compact' ? styles.densityCompact : '',
@@ -178,9 +216,25 @@ export function CommandCenterLayout(): JSX.Element {
     '--shell-accent': bundle?.theme_settings.accent_color ?? 'var(--lab-primary)'
   } as CSSProperties
 
-  const nextAction = summary?.pipeline.next_actions[0] ?? null
   const activePhase = summary?.active_phase ?? null
-  const onboardingCount = summary?.onboarding.missing.length ?? 0
+  const primaryAction = location.pathname.startsWith('/library')
+    ? { label: 'Import Docs', onClick: () => navigate('/library') }
+    : location.pathname.startsWith('/proof')
+      ? { label: 'Open Projects', onClick: () => navigate('/proof/projects') }
+      : location.pathname.startsWith('/pipeline')
+        ? { label: 'Review Pipeline', onClick: () => navigate('/pipeline') }
+        : { label: 'Plan the Week', onClick: () => navigate('/execution') }
+
+  async function handleToggleFocusMode(): Promise<void> {
+    const next = !focusMode
+    toggleFocusMode()
+    await updateDashboardPreferences({ compact_mode: next })
+  }
+
+  async function handleToggleFullscreen(): Promise<void> {
+    const next = await window.lab.system.toggleFullscreen()
+    setIsFullscreen(next)
+  }
 
   if (isProjectRoute) {
     return (
@@ -201,14 +255,10 @@ export function CommandCenterLayout(): JSX.Element {
               <span className={styles.brandName}>davids.lab</span>
               <span className={styles.brandSub}>LifeOS</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={toggleFocusMode}>
+            <Button variant="ghost" size="sm" onClick={() => void handleToggleFocusMode()}>
               {focusMode ? 'Wide' : 'Focus'}
             </Button>
           </div>
-          <p className={styles.brandBlurb}>
-            A local-first command center for direction, execution, proof, opportunities, and public
-            signal.
-          </p>
         </div>
 
         <nav className={styles.nav} aria-label="Primary navigation">
@@ -222,43 +272,9 @@ export function CommandCenterLayout(): JSX.Element {
               }
             >
               <span className={styles.navLabel}>{item.label}</span>
-              <span className={styles.navCopy}>{item.copy}</span>
             </NavLink>
           ))}
         </nav>
-
-        <div className={styles.sidebarFooter}>
-          <div className={styles.helpCard}>
-            <h2 className={styles.helpTitle}>Weekly rhythm</h2>
-            <p className={styles.helpBody}>
-              Use Home for orientation, Direction for phase drift, Execution for the week, Proof for
-              evidence movement, Pipeline for follow-ups, and Presence for recruiter output.
-            </p>
-            <div className={styles.quickLinks}>
-              <div className={styles.quickLinkRow}>
-                <Button size="sm" variant="outline" onClick={() => navigate('/execution')}>
-                  Weekly review
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/library')}>
-                  Import docs
-                </Button>
-              </div>
-              <div className={styles.quickLinkRow}>
-                <Button size="sm" variant="outline" onClick={() => navigate('/proof/projects')}>
-                  Open projects
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => navigate('/settings')}>
-                  Settings
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className={styles.sidebarFooterText}>
-            {onboardingCount > 0
-              ? `${onboardingCount} setup items still missing from the system.`
-              : 'System foundations are in place. Use the week to turn strategy into evidence.'}
-          </div>
-        </div>
       </aside>
 
       <main className={styles.main}>
@@ -291,26 +307,17 @@ export function CommandCenterLayout(): JSX.Element {
                   <span>{visibleCountdowns[0].days_remaining} days</span>
                 </button>
               ) : null}
-              {nextAction ? (
-                <button className={styles.chip} onClick={() => navigate('/pipeline')} type="button">
-                  <span>Pipeline</span>
-                  <strong>{nextAction.title}</strong>
-                </button>
-              ) : null}
             </div>
             <div className={styles.contextActions}>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/execution')}>
-                Add weekly move
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/library')}>
-                Quick import
+              <Button size="sm" onClick={primaryAction.onClick}>
+                {primaryAction.label}
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                onClick={() => void window.lab.system.toggleFullscreen()}
+                onClick={() => void handleToggleFullscreen()}
               >
-                Fullscreen
+                {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
               </Button>
             </div>
           </div>

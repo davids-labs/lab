@@ -188,6 +188,16 @@ export function SettingsWorkspace(): JSX.Element {
             </label>
             <label className={pageStyles.inlineRow}>
               <input
+                defaultChecked={bundle.dashboard_preferences.compact_mode}
+                type="checkbox"
+                onChange={(event) =>
+                  void updateDashboardPreferences({ compact_mode: event.target.checked })
+                }
+              />
+              <span className={pageStyles.muted}>Launch the shell in focus mode</span>
+            </label>
+            <label className={pageStyles.inlineRow}>
+              <input
                 defaultChecked={bundle.dashboard_preferences.show_onboarding}
                 type="checkbox"
                 onChange={(event) =>

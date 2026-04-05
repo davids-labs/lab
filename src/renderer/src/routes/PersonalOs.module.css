@@ -1,3 +1,25 @@
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabButton {
+  padding: 9px 14px;
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: var(--lab-surface-muted);
+  color: var(--lab-text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.tabButtonActive {
+  background: var(--lab-text);
+  border-color: var(--lab-text);
+  color: #fff;
+}
+
 .chartWrap {
   height: 290px;
 }

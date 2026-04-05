@@ -117,8 +117,19 @@ export const blockQueries = {
   reorder(input: unknown): { ok: boolean } {
     const db = getDb()
     const parsed = validateReorderBlocksInput(input)
+    const projectBlocks = this.list(parsed.projectId)
+    const projectIds = projectBlocks.map((block) => block.id)
+    const orderedIds = parsed.orderedIds
 
-    parsed.orderedIds.forEach((id, index) => {
+    if (
+      orderedIds.length !== projectIds.length ||
+      new Set(orderedIds).size !== orderedIds.length ||
+      projectIds.some((id) => !orderedIds.includes(id))
+    ) {
+      throw new Error('Block reorder request does not match the blocks owned by this project.')
+    }
+
+    orderedIds.forEach((id, index) => {
       db.update(blocksTable)
         .set({
           sort_order: index + 1,

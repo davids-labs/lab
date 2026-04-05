@@ -54,3 +54,44 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+
+.moreMenu {
+  position: relative;
+}
+
+.moreMenu summary {
+  list-style: none;
+}
+
+.moreMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreSummary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius);
+  background: var(--lab-surface-muted);
+  color: var(--lab-text);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moreActions {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 3;
+  min-width: 176px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--lab-shadow-card);
+}

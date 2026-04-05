@@ -3,6 +3,28 @@
   gap: 16px;
 }
 
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabButton {
+  padding: 8px 12px;
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: var(--lab-surface);
+  color: var(--lab-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tabButtonActive {
+  background: var(--lab-text);
+  border-color: var(--lab-text);
+  color: #fff;
+}
+
 .section {
   border: 1px solid var(--lab-border);
   border-radius: 8px;

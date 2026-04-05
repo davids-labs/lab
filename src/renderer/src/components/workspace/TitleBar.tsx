@@ -27,8 +27,33 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const [exporting, setExporting] = useState<'html' | 'zip' | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [gitOpen, setGitOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => setDraftName(project.name), [project.name])
+  useEffect(() => {
+    let cancelled = false
+
+    const syncFullscreen = async (): Promise<void> => {
+      try {
+        const next = await window.lab.system.isFullscreen()
+        if (!cancelled) {
+          setIsFullscreen(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setIsFullscreen(false)
+        }
+      }
+    }
+
+    void syncFullscreen()
+    window.addEventListener('focus', syncFullscreen)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', syncFullscreen)
+    }
+  }, [])
 
   async function handleRename(): Promise<void> {
     if (!draftName.trim() || draftName.trim() === project.name) {
@@ -92,10 +117,15 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
     }
   }
 
+  async function handleToggleFullscreen(): Promise<void> {
+    const next = await window.lab.system.toggleFullscreen()
+    setIsFullscreen(next)
+  }
+
   return (
     <header className={styles.bar}>
       <div className={styles.left}>
-        <Button variant="ghost" size="sm" onClick={() => navigate('/ecosystem')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/proof/projects')}>
           Back
         </Button>
         <div className={styles.title}>
@@ -154,21 +184,6 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
           </Button>
         ) : null}
         <Button
-          variant={project.git_enabled ? 'outline' : 'ghost'}
-          size="sm"
-          onClick={() => setGitOpen(true)}
-        >
-          Git
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => void window.lab.system.toggleFullscreen()}>
-          Fullscreen
-        </Button>
-        {view === 'customise' && project.git_enabled ? (
-          <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
-            {publishing ? 'Publishing…' : 'Publish'}
-          </Button>
-        ) : null}
-        <Button
           variant="outline"
           size="sm"
           disabled={exporting !== null}
@@ -176,14 +191,34 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
         >
           {exporting === 'html' ? 'Exporting HTML…' : 'Export HTML'}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={exporting !== null}
-          onClick={() => void handleExport('zip')}
-        >
-          {exporting === 'zip' ? 'Exporting ZIP…' : 'Export ZIP'}
-        </Button>
+        <details className={styles.menu}>
+          <summary className={styles.menuTrigger}>More</summary>
+          <div className={styles.menuPanel}>
+            <Button
+              variant={project.git_enabled ? 'outline' : 'ghost'}
+              size="sm"
+              onClick={() => setGitOpen(true)}
+            >
+              Git
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void handleToggleFullscreen()}>
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            </Button>
+            {view === 'customise' && project.git_enabled ? (
+              <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
+                {publishing ? 'Publishing…' : 'Publish'}
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exporting !== null}
+              onClick={() => void handleExport('zip')}
+            >
+              {exporting === 'zip' ? 'Exporting ZIP…' : 'Export ZIP'}
+            </Button>
+          </div>
+        </details>
         <span className={styles.status}>
           {saveState === 'saved'
             ? 'Saved'

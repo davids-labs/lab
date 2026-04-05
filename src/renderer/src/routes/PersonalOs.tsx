@@ -13,6 +13,8 @@ import styles from './PersonalOs.module.css'
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
 
+type ExecutionTab = 'today' | 'week' | 'rituals' | 'schedule' | 'review'
+
 function getTodayDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -97,6 +99,7 @@ export function PersonalOs(): JSX.Element {
     pipeline_move: '',
     notes: ''
   })
+  const [activeTab, setActiveTab] = useState<ExecutionTab>('today')
 
   useEffect(() => {
     void loadSummary()
@@ -244,250 +247,285 @@ export function PersonalOs(): JSX.Element {
           <span className={pageStyles.eyebrow}>Execution</span>
           <h1 className={pageStyles.title}>Weekly Operating System</h1>
           <p className={pageStyles.description}>
-            Keep the day light, but make the week explicit through priorities, rituals, review, and
-            schedule constraints.
+            Run one lane at a time: log today, shape the week, keep rituals honest, and review the
+            system without carrying every control at once.
           </p>
         </section>
 
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <div>
-                <h2 className={pageStyles.cardTitle}>This Week</h2>
-                <p className={pageStyles.description}>Define the few moves that matter.</p>
-              </div>
-              <span className={pageStyles.pill}>{weekKey}</span>
-            </div>
-            <div className={styles.priorityDraft}>
-              <InputField
-                placeholder="Add weekly priority"
-                value={priorityDraft.title}
-                onChange={(event) =>
-                  setPriorityDraft((current) => ({ ...current, title: event.target.value }))
-                }
-              />
-              <label className={pageStyles.formGrid}>
-                <span className={pageStyles.eyebrow}>Plan item</span>
-                <select
-                  value={priorityDraft.linked_plan_node_id}
-                  onChange={(event) =>
-                    setPriorityDraft((current) => ({
-                      ...current,
-                      linked_plan_node_id: event.target.value
-                    }))
-                  }
-                >
-                  <option value="">No roadmap link</option>
-                  {nodes.map((node) => (
-                    <option key={node.id} value={node.id}>
-                      {node.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={pageStyles.formGrid}>
-                <span className={pageStyles.eyebrow}>Application</span>
-                <select
-                  value={priorityDraft.linked_application_id}
-                  onChange={(event) =>
-                    setPriorityDraft((current) => ({
-                      ...current,
-                      linked_application_id: event.target.value
-                    }))
-                  }
-                >
-                  <option value="">No pipeline link</option>
-                  {applications.map((application) => (
-                    <option key={application.id} value={application.id}>
-                      {application.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button
-                onClick={() =>
-                  void createWeeklyPriority({
-                    week_key: weekKey,
-                    title: priorityDraft.title.trim(),
-                    linked_plan_node_id: priorityDraft.linked_plan_node_id || null,
-                    linked_application_id: priorityDraft.linked_application_id || null
-                  }).then(async () => {
-                    setPriorityDraft({
-                      title: '',
-                      linked_plan_node_id: '',
-                      linked_application_id: ''
-                    })
-                    await refresh()
-                  })
-                }
+        <section className={`${pageStyles.card} ${pageStyles.cardTight}`}>
+          <div className={styles.tabBar} role="tablist" aria-label="Execution sections">
+            {([
+              ['today', 'Today'],
+              ['week', 'Week'],
+              ['rituals', 'Rituals'],
+              ['schedule', 'Schedule'],
+              ['review', 'Review']
+            ] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={`${styles.tabButton} ${activeTab === tab ? styles.tabButtonActive : ''}`}
+                onClick={() => setActiveTab(tab)}
               >
-                Add Priority
-              </Button>
-            </div>
-            <div className={styles.priorityList}>
-              {weeklyPriorities.length > 0 ? (
-                weeklyPriorities.map((priority) => (
-                  <div key={priority.id} className={styles.priorityRow}>
-                    <div className={styles.priorityHeader}>
-                      <strong>{priority.title}</strong>
-                      <span className={pageStyles.muted}>
-                        {priority.linked_plan_node_id
-                          ? (planNodeLabels.get(priority.linked_plan_node_id) ?? 'Plan-linked')
-                          : priority.linked_application_id
-                            ? (applicationLabels.get(priority.linked_application_id) ??
-                              'Pipeline-linked')
-                            : 'Standalone priority'}
-                      </span>
-                    </div>
-                    <div className={styles.priorityFields}>
-                      <InputField
-                        defaultValue={priority.title}
-                        onBlur={(event) =>
-                          void updateWeeklyPriority({
-                            id: priority.id,
-                            title: event.target.value.trim() || priority.title
-                          }).then(() => refresh())
-                        }
-                      />
-                      <label className={pageStyles.formGrid}>
-                        <span className={pageStyles.eyebrow}>Status</span>
-                        <select
-                          value={priority.status}
-                          onChange={(event) =>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {activeTab === 'week' ? (
+          <section className={pageStyles.grid2}>
+            <article className={pageStyles.card}>
+              <div className={pageStyles.sectionHeader}>
+                <div>
+                  <h2 className={pageStyles.cardTitle}>This Week</h2>
+                  <p className={pageStyles.description}>Define the few moves that matter.</p>
+                </div>
+                <span className={pageStyles.pill}>{weekKey}</span>
+              </div>
+              <div className={styles.priorityDraft}>
+                <InputField
+                  placeholder="Add weekly priority"
+                  value={priorityDraft.title}
+                  onChange={(event) =>
+                    setPriorityDraft((current) => ({ ...current, title: event.target.value }))
+                  }
+                />
+                <label className={pageStyles.formGrid}>
+                  <span className={pageStyles.eyebrow}>Plan item</span>
+                  <select
+                    value={priorityDraft.linked_plan_node_id}
+                    onChange={(event) =>
+                      setPriorityDraft((current) => ({
+                        ...current,
+                        linked_plan_node_id: event.target.value
+                      }))
+                    }
+                  >
+                    <option value="">No roadmap link</option>
+                    {nodes.map((node) => (
+                      <option key={node.id} value={node.id}>
+                        {node.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={pageStyles.formGrid}>
+                  <span className={pageStyles.eyebrow}>Application</span>
+                  <select
+                    value={priorityDraft.linked_application_id}
+                    onChange={(event) =>
+                      setPriorityDraft((current) => ({
+                        ...current,
+                        linked_application_id: event.target.value
+                      }))
+                    }
+                  >
+                    <option value="">No pipeline link</option>
+                    {applications.map((application) => (
+                      <option key={application.id} value={application.id}>
+                        {application.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button
+                  onClick={() =>
+                    void createWeeklyPriority({
+                      week_key: weekKey,
+                      title: priorityDraft.title.trim(),
+                      linked_plan_node_id: priorityDraft.linked_plan_node_id || null,
+                      linked_application_id: priorityDraft.linked_application_id || null
+                    }).then(async () => {
+                      setPriorityDraft({
+                        title: '',
+                        linked_plan_node_id: '',
+                        linked_application_id: ''
+                      })
+                      await refresh()
+                    })
+                  }
+                >
+                  Add Priority
+                </Button>
+              </div>
+              <div className={styles.priorityList}>
+                {weeklyPriorities.length > 0 ? (
+                  weeklyPriorities.map((priority) => (
+                    <div key={priority.id} className={styles.priorityRow}>
+                      <div className={styles.priorityHeader}>
+                        <strong>{priority.title}</strong>
+                        <span className={pageStyles.muted}>
+                          {priority.linked_plan_node_id
+                            ? (planNodeLabels.get(priority.linked_plan_node_id) ?? 'Plan-linked')
+                            : priority.linked_application_id
+                              ? (applicationLabels.get(priority.linked_application_id) ??
+                                'Pipeline-linked')
+                              : 'Standalone priority'}
+                        </span>
+                      </div>
+                      <div className={styles.priorityFields}>
+                        <InputField
+                          defaultValue={priority.title}
+                          onBlur={(event) =>
                             void updateWeeklyPriority({
                               id: priority.id,
-                              status: event.target
-                                .value as (typeof WEEKLY_PRIORITY_STATUSES)[number]
+                              title: event.target.value.trim() || priority.title
                             }).then(() => refresh())
                           }
+                        />
+                        <label className={pageStyles.formGrid}>
+                          <span className={pageStyles.eyebrow}>Status</span>
+                          <select
+                            value={priority.status}
+                            onChange={(event) =>
+                              void updateWeeklyPriority({
+                                id: priority.id,
+                                status: event.target
+                                  .value as (typeof WEEKLY_PRIORITY_STATUSES)[number]
+                              }).then(() => refresh())
+                            }
+                          >
+                            {WEEKLY_PRIORITY_STATUSES.map((status) => (
+                              <option key={status} value={status}>
+                                {status.replace(/_/g, ' ')}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            void deleteWeeklyPriority(priority.id).then(() => refresh())
+                          }
                         >
-                          {WEEKLY_PRIORITY_STATUSES.map((status) => (
-                            <option key={status} value={status}>
-                              {status.replace(/_/g, ' ')}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => void deleteWeeklyPriority(priority.id).then(() => refresh())}
-                      >
-                        Remove
-                      </Button>
+                          Remove
+                        </Button>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className={pageStyles.listRow}>
+                    <strong>No weekly priorities yet</strong>
+                    <span className={pageStyles.muted}>
+                      Add the 3–5 moves that define the week before it starts drifting.
+                    </span>
                   </div>
-                ))
-              ) : (
-                <div className={pageStyles.listRow}>
-                  <strong>No weekly priorities yet</strong>
-                  <span className={pageStyles.muted}>
-                    Add the 3–5 moves that define the week before it starts drifting.
-                  </span>
-                </div>
-              )}
-            </div>
-          </article>
+                )}
+              </div>
+            </article>
+          </section>
+        ) : null}
 
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <div>
-                <h2 className={pageStyles.cardTitle}>Today</h2>
-                <p className={pageStyles.description}>
-                  Fast manual telemetry for the operating day.
-                </p>
+        {activeTab === 'today' ? (
+          <section className={pageStyles.grid2}>
+            <article className={pageStyles.card}>
+              <div className={pageStyles.sectionHeader}>
+                <div>
+                  <h2 className={pageStyles.cardTitle}>Today</h2>
+                  <p className={pageStyles.description}>
+                    Fast manual telemetry for the operating day.
+                  </p>
+                </div>
+                <span className={pageStyles.pill}>{today}</span>
               </div>
-              <span className={pageStyles.pill}>{today}</span>
-            </div>
-            <div className={styles.summaryStrip}>
-              <div className={styles.miniMetric}>
-                <span className={pageStyles.muted}>Days logged</span>
-                <div className={styles.miniMetricValue}>{weekSummary?.days_logged ?? 0}</div>
-              </div>
-              <div className={styles.miniMetric}>
-                <span className={pageStyles.muted}>Avg sleep</span>
-                <div className={styles.miniMetricValue}>
-                  {(weekSummary?.average_sleep_hours ?? 0).toFixed(1)}
+              <div className={styles.summaryStrip}>
+                <div className={styles.miniMetric}>
+                  <span className={pageStyles.muted}>Days logged</span>
+                  <div className={styles.miniMetricValue}>{weekSummary?.days_logged ?? 0}</div>
+                </div>
+                <div className={styles.miniMetric}>
+                  <span className={pageStyles.muted}>Avg sleep</span>
+                  <div className={styles.miniMetricValue}>
+                    {(weekSummary?.average_sleep_hours ?? 0).toFixed(1)}
+                  </div>
+                </div>
+                <div className={styles.miniMetric}>
+                  <span className={pageStyles.muted}>Avg deep work</span>
+                  <div className={styles.miniMetricValue}>
+                    {Math.round(weekSummary?.average_deep_work_minutes ?? 0)}
+                  </div>
                 </div>
               </div>
-              <div className={styles.miniMetric}>
-                <span className={pageStyles.muted}>Avg deep work</span>
-                <div className={styles.miniMetricValue}>
-                  {Math.round(weekSummary?.average_deep_work_minutes ?? 0)}
-                </div>
-              </div>
-            </div>
-            <div className={styles.logGrid}>
-              <InputField
-                label="Sleep hours"
-                type="number"
-                value={logDraft.sleep_hours}
-                onChange={(event) =>
-                  setLogDraft((current) => ({ ...current, sleep_hours: event.target.value }))
-                }
-              />
-              <InputField
-                label="Calories"
-                type="number"
-                value={logDraft.calories}
-                onChange={(event) =>
-                  setLogDraft((current) => ({ ...current, calories: event.target.value }))
-                }
-              />
-              <InputField
-                label="Protein (g)"
-                type="number"
-                value={logDraft.protein_grams}
-                onChange={(event) =>
-                  setLogDraft((current) => ({ ...current, protein_grams: event.target.value }))
-                }
-              />
-              <InputField
-                label="Water (L)"
-                type="number"
-                value={logDraft.water_litres}
-                onChange={(event) =>
-                  setLogDraft((current) => ({ ...current, water_litres: event.target.value }))
-                }
-              />
-              <InputField
-                label="Deep work (min)"
-                type="number"
-                value={logDraft.deep_work_minutes}
-                onChange={(event) =>
-                  setLogDraft((current) => ({ ...current, deep_work_minutes: event.target.value }))
-                }
-              />
-              <label className={pageStyles.formGrid}>
-                <span className={pageStyles.eyebrow}>Training</span>
-                <select
-                  value={logDraft.gym_done ? 'yes' : 'no'}
+              <div className={styles.logGrid}>
+                <InputField
+                  label="Sleep hours"
+                  type="number"
+                  value={logDraft.sleep_hours}
+                  onChange={(event) =>
+                    setLogDraft((current) => ({ ...current, sleep_hours: event.target.value }))
+                  }
+                />
+                <InputField
+                  label="Calories"
+                  type="number"
+                  value={logDraft.calories}
+                  onChange={(event) =>
+                    setLogDraft((current) => ({ ...current, calories: event.target.value }))
+                  }
+                />
+                <InputField
+                  label="Protein (g)"
+                  type="number"
+                  value={logDraft.protein_grams}
+                  onChange={(event) =>
+                    setLogDraft((current) => ({ ...current, protein_grams: event.target.value }))
+                  }
+                />
+                <InputField
+                  label="Water (L)"
+                  type="number"
+                  value={logDraft.water_litres}
+                  onChange={(event) =>
+                    setLogDraft((current) => ({ ...current, water_litres: event.target.value }))
+                  }
+                />
+                <InputField
+                  label="Deep work (min)"
+                  type="number"
+                  value={logDraft.deep_work_minutes}
                   onChange={(event) =>
                     setLogDraft((current) => ({
                       ...current,
-                      gym_done: event.target.value === 'yes'
+                      deep_work_minutes: event.target.value
                     }))
                   }
-                >
-                  <option value="yes">Done</option>
-                  <option value="no">Missed</option>
-                </select>
-              </label>
-            </div>
-            <TextareaField
-              label="Notes"
-              rows={4}
-              value={logDraft.notes}
-              onChange={(event) =>
-                setLogDraft((current) => ({ ...current, notes: event.target.value }))
-              }
-            />
-            <Button onClick={() => void saveLog()}>Save Today&apos;s Log</Button>
-          </article>
-        </section>
+                />
+                <label className={pageStyles.formGrid}>
+                  <span className={pageStyles.eyebrow}>Training</span>
+                  <select
+                    value={logDraft.gym_done ? 'yes' : 'no'}
+                    onChange={(event) =>
+                      setLogDraft((current) => ({
+                        ...current,
+                        gym_done: event.target.value === 'yes'
+                      }))
+                    }
+                  >
+                    <option value="yes">Done</option>
+                    <option value="no">Missed</option>
+                  </select>
+                </label>
+              </div>
+              <TextareaField
+                label="Notes"
+                rows={4}
+                value={logDraft.notes}
+                onChange={(event) =>
+                  setLogDraft((current) => ({ ...current, notes: event.target.value }))
+                }
+              />
+              <Button onClick={() => void saveLog()}>Save Today&apos;s Log</Button>
+            </article>
+          </section>
+        ) : null}
 
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
+        {activeTab === 'review' ? (
+          <section className={pageStyles.grid2}>
+            <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Weekly Review</h2>
               <span className={pageStyles.pill}>Review loop</span>
@@ -558,8 +596,12 @@ export function PersonalOs(): JSX.Element {
               Save Weekly Review
             </Button>
           </article>
+          </section>
+        ) : null}
 
-          <article className={pageStyles.card}>
+        {activeTab === 'rituals' ? (
+          <section className={pageStyles.grid2}>
+            <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Rituals and Runway</h2>
               <span className={pageStyles.pill}>{countdowns.length} countdowns</span>
@@ -677,10 +719,12 @@ export function PersonalOs(): JSX.Element {
               ))}
             </div>
           </article>
-        </section>
+          </section>
+        ) : null}
 
-        <section className={pageStyles.grid2}>
-          <article className={pageStyles.card}>
+        {activeTab === 'schedule' ? (
+          <section className={pageStyles.grid2}>
+            <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Schedule Profile</h2>
               <span className={pageStyles.pill}>{activeProfile?.name ?? 'No profile'}</span>
@@ -831,7 +875,8 @@ export function PersonalOs(): JSX.Element {
               </div>
             </div>
           </article>
-        </section>
+          </section>
+        ) : null}
       </div>
     </div>
   )

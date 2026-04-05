@@ -133,23 +133,28 @@ function SortableBlock({
       <div className={styles.toolbar}>
         <div className={styles.toolbarGroup}>
           <span className={styles.label}>{BLOCK_LABELS[block.type]}</span>
-          <Button size="sm" variant="ghost" {...attributes} {...listeners}>
-            Drag
-          </Button>
         </div>
         <div className={styles.toolbarGroup}>
-          <Button size="sm" variant="ghost" onClick={onToggleVisibility}>
+          <Button size="sm" variant={block.visible_on_page ? 'outline' : 'ghost'} onClick={onToggleVisibility}>
             {block.visible_on_page ? 'Public' : 'Private'}
           </Button>
-          <Button size="sm" variant="ghost" onClick={onToggleSpan}>
-            {block.grid_col_span === 2 ? 'Half' : 'Full'}
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onInsertAfter}>
-            Add After
-          </Button>
-          <Button size="sm" variant="danger" onClick={onDelete}>
-            Delete
-          </Button>
+          <details className={styles.moreMenu}>
+            <summary className={styles.moreSummary}>More</summary>
+            <div className={styles.moreActions}>
+              <Button size="sm" variant="ghost" {...attributes} {...listeners}>
+                Drag
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onToggleSpan}>
+                {block.grid_col_span === 2 ? 'Half Width' : 'Full Width'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onInsertAfter}>
+                Add After
+              </Button>
+              <Button size="sm" variant="danger" onClick={onDelete}>
+                Delete
+              </Button>
+            </div>
+          </details>
         </div>
       </div>
       <BlockEditorRouter block={block} />

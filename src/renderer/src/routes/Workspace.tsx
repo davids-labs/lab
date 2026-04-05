@@ -83,7 +83,29 @@ export function Workspace(): JSX.Element {
   const handleImportAssets = useCallback(async () => {
     const filePaths = await window.lab.system.openFiles({
       title: 'Import Assets',
-      properties: ['openFile', 'multiSelections']
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        {
+          name: 'Supported assets',
+          extensions: [
+            'png',
+            'jpg',
+            'jpeg',
+            'webp',
+            'gif',
+            'avif',
+            'svg',
+            'stl',
+            'step',
+            'stp',
+            'obj',
+            'pdf',
+            'md',
+            'txt',
+            'csv'
+          ]
+        }
+      ]
     })
 
     const results = await Promise.allSettled(
