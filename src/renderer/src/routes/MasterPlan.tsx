@@ -3,6 +3,7 @@ import {
   PLAN_NODE_KINDS,
   PLAN_NODE_STATUSES,
   PROJECT_EXECUTION_STAGES,
+  type PlanNode,
   type PlanLinkTargetType
 } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
@@ -13,6 +14,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
+import styles from './MasterPlan.module.css'
 
 function toDateInput(value: number | null): string {
   if (!value) {
@@ -24,6 +26,28 @@ function toDateInput(value: number | null): string {
 
 function toTimestamp(value: string): number | null {
   return value ? new Date(`${value}T00:00:00.000Z`).getTime() : null
+}
+
+function findPhaseForNode(
+  nodeId: string | null,
+  nodeMap: Map<string, PlanNode>,
+  phases: PlanNode[]
+): PlanNode | null {
+  if (!nodeId) {
+    return phases[0] ?? null
+  }
+
+  let current = nodeMap.get(nodeId) ?? null
+
+  while (current?.parent_id) {
+    current = nodeMap.get(current.parent_id) ?? null
+  }
+
+  if (current?.kind === 'phase') {
+    return current
+  }
+
+  return phases.find((phase) => phase.id === nodeId) ?? phases[0] ?? null
 }
 
 export function MasterPlan(): JSX.Element {
@@ -53,9 +77,8 @@ export function MasterPlan(): JSX.Element {
   const [childKind, setChildKind] = useState<(typeof PLAN_NODE_KINDS)[number]>('pillar')
   const [linkType, setLinkType] = useState<PlanLinkTargetType>('skill_node')
   const [linkTargetId, setLinkTargetId] = useState('')
-  const [requiredStage, setRequiredStage] = useState<(typeof PROJECT_EXECUTION_STAGES)[number]>(
-    'validation'
-  )
+  const [requiredStage, setRequiredStage] =
+    useState<(typeof PROJECT_EXECUTION_STAGES)[number]>('validation')
 
   useEffect(() => {
     void loadNodes()
@@ -70,6 +93,21 @@ export function MasterPlan(): JSX.Element {
         .filter((node) => node.kind === 'phase')
         .sort((left, right) => left.sort_order - right.sort_order),
     [nodes]
+  )
+  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
+  const activePhase = useMemo(
+    () => findPhaseForNode(selectedNodeId, nodeMap, phases),
+    [nodeMap, phases, selectedNodeId]
+  )
+  const phaseChildCounts = useMemo(
+    () =>
+      new Map(
+        phases.map((phase) => [
+          phase.id,
+          nodes.filter((node) => node.parent_id === phase.id).length
+        ])
+      ),
+    [nodes, phases]
   )
 
   useEffect(() => {
@@ -189,25 +227,43 @@ export function MasterPlan(): JSX.Element {
               <Button onClick={() => void handleCreatePhase()}>Add Phase</Button>
             </div>
           </div>
-          <div className={pageStyles.pillRow}>
+          <div className={styles.timelineGrid}>
             {phases.map((phase) => (
               <button
                 key={phase.id}
-                className={pageStyles.pill}
+                className={`${styles.timelineCard} ${
+                  phase.id === activePhase?.id ? styles.timelineCardActive : ''
+                }`}
                 onClick={() => void selectNode(phase.id)}
                 type="button"
-                style={{
-                  background:
-                    phase.id === selectedNodeId ? 'rgba(0, 113, 227, 0.1)' : 'var(--lab-surface-muted)',
-                  borderColor:
-                    phase.id === selectedNodeId ? 'rgba(0, 113, 227, 0.28)' : 'var(--lab-border)',
-                  color: phase.id === selectedNodeId ? 'var(--lab-text)' : 'var(--lab-text-muted)'
-                }}
               >
-                {phase.title}
+                <span className={styles.timelineKicker}>
+                  {phase.status.replace(/_/g, ' ')} · {phaseChildCounts.get(phase.id) ?? 0} items
+                </span>
+                <h3 className={styles.timelineTitle}>{phase.title}</h3>
+                <p className={styles.timelineSummary}>
+                  {phase.summary ?? 'Add the phase-level summary and deadlines here.'}
+                </p>
               </button>
             ))}
           </div>
+          {activePhase ? (
+            <div className={styles.phaseSummary}>
+              <strong>{activePhase.title}</strong>
+              <span className={pageStyles.muted}>
+                {activePhase.summary ??
+                  'Select the phase card to edit its goals, dates, and notes.'}
+              </span>
+              <div className={pageStyles.inlineRow}>
+                <span className={pageStyles.pill}>{activePhase.status.replace(/_/g, ' ')}</span>
+                {activePhase.due_at ? (
+                  <span className={pageStyles.pill}>
+                    Due {new Date(activePhase.due_at).toLocaleDateString('en-IE')}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section className={pageStyles.split}>
@@ -264,7 +320,11 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Selected Item</h2>
               {selectedNodeDetail ? (
-                <Button variant="danger" size="sm" onClick={() => void deleteNode(selectedNodeDetail.node.id)}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => void deleteNode(selectedNodeDetail.node.id)}
+                >
                   Delete
                 </Button>
               ) : null}
@@ -449,7 +509,10 @@ export function MasterPlan(): JSX.Element {
                 </label>
                 <label className={pageStyles.formGrid}>
                   <span className={pageStyles.eyebrow}>Target</span>
-                  <select value={linkTargetId} onChange={(event) => setLinkTargetId(event.target.value)}>
+                  <select
+                    value={linkTargetId}
+                    onChange={(event) => setLinkTargetId(event.target.value)}
+                  >
                     {linkTargets.map((target) => (
                       <option key={target.id} value={target.id}>
                         {target.label}
@@ -478,24 +541,27 @@ export function MasterPlan(): JSX.Element {
                 ) : null}
                 <Button onClick={() => void handleCreateLink()}>Add Link</Button>
                 <div className={pageStyles.list}>
-                  {(selectedNodeDetail.links.length > 0 ? selectedNodeDetail.links : links.filter((link) => link.node_id === selectedNodeDetail.node.id)).map(
-                    (link) => (
-                      <div key={link.id} className={pageStyles.listRow}>
-                        <strong>{link.target_type.replace(/_/g, ' ')}</strong>
-                        <span className={pageStyles.muted}>
-                          {targetLabels.get(link.target_id) ?? link.target_id}
-                          {link.required_stage ? ` · requires ${link.required_stage}` : ''}
-                        </span>
-                        <Button size="sm" variant="ghost" onClick={() => void deleteLink(link.id)}>
-                          Remove
-                        </Button>
-                      </div>
-                    )
-                  )}
+                  {(selectedNodeDetail.links.length > 0
+                    ? selectedNodeDetail.links
+                    : links.filter((link) => link.node_id === selectedNodeDetail.node.id)
+                  ).map((link) => (
+                    <div key={link.id} className={pageStyles.listRow}>
+                      <strong>{link.target_type.replace(/_/g, ' ')}</strong>
+                      <span className={pageStyles.muted}>
+                        {targetLabels.get(link.target_id) ?? link.target_id}
+                        {link.required_stage ? ` · requires ${link.required_stage}` : ''}
+                      </span>
+                      <Button size="sm" variant="ghost" onClick={() => void deleteLink(link.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
-              <p className={pageStyles.description}>Select a roadmap item to link it to evidence.</p>
+              <p className={pageStyles.description}>
+                Select a roadmap item to link it to evidence.
+              </p>
             )}
           </article>
         </section>

@@ -6,6 +6,7 @@ import { useDashboardStore } from '@renderer/stores/dashboardStore'
 import { useOsStore } from '@renderer/stores/osStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
+import styles from './PersonalOs.module.css'
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend)
 
@@ -35,6 +36,7 @@ export function PersonalOs(): JSX.Element {
     profiles,
     setActiveProfileId,
     timeBlocks,
+    updateCountdown,
     upsertDailyLog,
     upsertHabitLog,
     upsertTimeBlock
@@ -101,8 +103,11 @@ export function PersonalOs(): JSX.Element {
     () => profiles.find((profile) => profile.id === activeProfileId) ?? null,
     [activeProfileId, profiles]
   )
-
   const chartBlocks = summary?.os.time_blocks ?? timeBlocks
+  const weekSummary = summary?.os.week
+  const habitStatuses = new Map(
+    (summary?.os.habits ?? []).map((habit) => [habit.id, habit.today_completed])
+  )
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -110,6 +115,11 @@ export function PersonalOs(): JSX.Element {
     }
 
     chartRef.current?.destroy()
+
+    if (chartBlocks.length === 0) {
+      return
+    }
+
     chartRef.current = new Chart(canvasRef.current, {
       type: 'doughnut',
       data: {
@@ -126,7 +136,7 @@ export function PersonalOs(): JSX.Element {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '70%',
+        cutout: '72%',
         plugins: {
           legend: {
             position: 'bottom',
@@ -134,7 +144,7 @@ export function PersonalOs(): JSX.Element {
               boxWidth: 12,
               color: '#515154',
               font: {
-                family: 'Inter, Segoe UI, sans-serif',
+                family: 'Segoe UI Variable Text, Segoe UI, sans-serif',
                 size: 11
               }
             }
@@ -145,6 +155,10 @@ export function PersonalOs(): JSX.Element {
 
     return () => chartRef.current?.destroy()
   }, [chartBlocks])
+
+  async function refreshDashboardSummary(): Promise<void> {
+    await loadSummary()
+  }
 
   async function handleSaveLog(): Promise<void> {
     await upsertDailyLog({
@@ -158,8 +172,8 @@ export function PersonalOs(): JSX.Element {
       gym_done: logDraft.gym_done,
       notes: logDraft.notes || null
     })
-    await loadSummary()
-    pushToast({ message: 'Today’s Personal OS log saved.', type: 'success' })
+    await refreshDashboardSummary()
+    pushToast({ message: "Today's Personal OS log saved.", type: 'success' })
   }
 
   async function handleCreateProfile(): Promise<void> {
@@ -170,7 +184,8 @@ export function PersonalOs(): JSX.Element {
     const profile = await createProfile({ name: profileName.trim() })
     setProfileName('')
     await setActiveProfileId(profile.id)
-    await loadSummary()
+    await refreshDashboardSummary()
+    pushToast({ message: 'Added schedule profile.', type: 'success' })
   }
 
   async function handleAddTimeBlock(): Promise<void> {
@@ -185,7 +200,8 @@ export function PersonalOs(): JSX.Element {
       color: timeBlockDraft.color
     })
     setTimeBlockDraft({ label: '', hours: '1', color: '#8e8e93' })
-    await loadSummary()
+    await refreshDashboardSummary()
+    pushToast({ message: 'Added schedule block.', type: 'success' })
   }
 
   async function handleCreateHabit(): Promise<void> {
@@ -195,7 +211,8 @@ export function PersonalOs(): JSX.Element {
 
     await createHabit({ name: habitName.trim() })
     setHabitName('')
-    await loadSummary()
+    await refreshDashboardSummary()
+    pushToast({ message: 'Added habit tracker.', type: 'success' })
   }
 
   async function handleCreateCountdown(): Promise<void> {
@@ -206,13 +223,12 @@ export function PersonalOs(): JSX.Element {
     await createCountdown({
       title: countdownDraft.title.trim(),
       target_date: countdownDraft.target_date,
-      category: countdownDraft.category
+      category: countdownDraft.category.trim() || 'General'
     })
     setCountdownDraft({ title: '', target_date: '', category: 'General' })
-    await loadSummary()
+    await refreshDashboardSummary()
+    pushToast({ message: 'Added countdown tracker.', type: 'success' })
   }
-
-  const habitStatuses = new Map((summary?.os.habits ?? []).map((habit) => [habit.id, habit.today_completed]))
 
   return (
     <div className={pageStyles.page}>
@@ -221,38 +237,42 @@ export function PersonalOs(): JSX.Element {
           <span className={pageStyles.eyebrow}>Personal OS</span>
           <h1 className={pageStyles.title}>Daily Execution</h1>
           <p className={pageStyles.description}>
-            Track the operating constraints that make the long-range plan executable.
+            Add and edit your schedule profiles, daily telemetry, habits, and countdown trackers
+            here.
           </p>
         </section>
 
-        <section className={pageStyles.grid2}>
+        <section className={styles.topGrid}>
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Schedule Profile</h2>
+              <div>
+                <h2 className={pageStyles.cardTitle}>Schedule Profiles</h2>
+                <p className={pageStyles.description}>
+                  Shape the operating week here. The chart and home dashboard pull from this data.
+                </p>
+              </div>
               <span className={pageStyles.pill}>{activeProfile?.name ?? 'No profile'}</span>
             </div>
-            <div style={{ height: 320 }}>
+            <div className={styles.chartWrap}>
               <canvas ref={canvasRef} />
             </div>
-            <div className={pageStyles.pillRow}>
+            <div className={styles.profileBar}>
               {profiles.map((profile) => (
                 <button
                   key={profile.id}
-                  className={pageStyles.pill}
+                  className={`${styles.profileChip} ${
+                    profile.id === activeProfileId ? styles.profileChipActive : ''
+                  }`}
                   onClick={() => void setActiveProfileId(profile.id)}
                   type="button"
-                  style={{
-                    background:
-                      profile.id === activeProfileId ? 'rgba(0, 113, 227, 0.08)' : 'var(--lab-surface-muted)'
-                  }}
                 >
                   {profile.name}
                 </button>
               ))}
             </div>
-            <div className={pageStyles.inlineRow}>
+            <div className={styles.toolbar}>
               <InputField
-                placeholder="New profile"
+                placeholder="New schedule profile"
                 value={profileName}
                 onChange={(event) => setProfileName(event.target.value)}
               />
@@ -262,10 +282,33 @@ export function PersonalOs(): JSX.Element {
 
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Today</h2>
+              <div>
+                <h2 className={pageStyles.cardTitle}>Today</h2>
+                <p className={pageStyles.description}>
+                  Manual daily logging, local-first and fast enough to keep up with real life.
+                </p>
+              </div>
               <span className={pageStyles.pill}>{today}</span>
             </div>
-            <div className={pageStyles.grid2}>
+            <div className={styles.summaryStrip}>
+              <div className={styles.miniMetric}>
+                <span className={pageStyles.muted}>Days Logged</span>
+                <div className={styles.miniMetricValue}>{weekSummary?.days_logged ?? 0}</div>
+              </div>
+              <div className={styles.miniMetric}>
+                <span className={pageStyles.muted}>Avg Sleep</span>
+                <div className={styles.miniMetricValue}>
+                  {(weekSummary?.average_sleep_hours ?? 0).toFixed(1)}
+                </div>
+              </div>
+              <div className={styles.miniMetric}>
+                <span className={pageStyles.muted}>Avg Deep Work</span>
+                <div className={styles.miniMetricValue}>
+                  {Math.round(weekSummary?.average_deep_work_minutes ?? 0)}
+                </div>
+              </div>
+            </div>
+            <div className={styles.logGrid}>
               <InputField
                 label="Sleep Hours"
                 type="number"
@@ -310,7 +353,7 @@ export function PersonalOs(): JSX.Element {
                 }
               />
               <label className={pageStyles.formGrid}>
-                <span className={pageStyles.eyebrow}>Gym Done</span>
+                <span className={pageStyles.eyebrow}>Training</span>
                 <select
                   value={logDraft.gym_done ? 'yes' : 'no'}
                   onChange={(event) =>
@@ -320,8 +363,8 @@ export function PersonalOs(): JSX.Element {
                     }))
                   }
                 >
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
+                  <option value="yes">Done</option>
+                  <option value="no">Missed</option>
                 </select>
               </label>
             </div>
@@ -337,29 +380,36 @@ export function PersonalOs(): JSX.Element {
           </article>
         </section>
 
-        <section className={pageStyles.grid2}>
+        <section className={styles.managerGrid}>
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Profile Blocks</h2>
+              <div>
+                <h2 className={pageStyles.cardTitle}>Profile Blocks</h2>
+                <p className={pageStyles.description}>
+                  Edit the named time slices that make up the selected schedule profile.
+                </p>
+              </div>
               <span className={pageStyles.pill}>{timeBlocks.length} items</span>
             </div>
-            <div className={pageStyles.list}>
+            <div className={styles.blockList}>
               {timeBlocks.map((block) => (
-                <div key={block.id} className={pageStyles.listRow}>
-                  <strong>{block.label}</strong>
-                  <span className={pageStyles.muted}>{block.hours} hours</span>
-                  <div className={pageStyles.inlineRow}>
+                <div key={block.id} className={styles.blockRow}>
+                  <div className={styles.blockRowHeader}>
+                    <strong>{block.label}</strong>
+                    <span className={pageStyles.muted}>{block.hours} hours</span>
+                  </div>
+                  <div className={styles.blockRowFields}>
                     <InputField
                       defaultValue={block.label}
                       onBlur={(event) =>
                         void upsertTimeBlock({
                           id: block.id,
                           profile_id: block.profile_id,
-                          label: event.target.value,
+                          label: event.target.value.trim() || block.label,
                           hours: block.hours,
                           color: block.color,
                           sort_order: block.sort_order
-                        }).then(() => loadSummary())
+                        }).then(() => refreshDashboardSummary())
                       }
                     />
                     <InputField
@@ -370,10 +420,10 @@ export function PersonalOs(): JSX.Element {
                           id: block.id,
                           profile_id: block.profile_id,
                           label: block.label,
-                          hours: Number(event.target.value || 0),
+                          hours: Number(event.target.value || block.hours),
                           color: block.color,
                           sort_order: block.sort_order
-                        }).then(() => loadSummary())
+                        }).then(() => refreshDashboardSummary())
                       }
                     />
                     <InputField
@@ -384,9 +434,9 @@ export function PersonalOs(): JSX.Element {
                           profile_id: block.profile_id,
                           label: block.label,
                           hours: block.hours,
-                          color: event.target.value,
+                          color: event.target.value.trim() || block.color,
                           sort_order: block.sort_order
-                        }).then(() => loadSummary())
+                        }).then(() => refreshDashboardSummary())
                       }
                     />
                     <Button
@@ -394,7 +444,7 @@ export function PersonalOs(): JSX.Element {
                       size="sm"
                       onClick={() =>
                         void deleteTimeBlock(block.id).then(() => {
-                          void loadSummary()
+                          void refreshDashboardSummary()
                         })
                       }
                     >
@@ -404,109 +454,179 @@ export function PersonalOs(): JSX.Element {
                 </div>
               ))}
             </div>
-            <div className={pageStyles.inlineRow}>
-              <InputField
-                placeholder="Block label"
-                value={timeBlockDraft.label}
-                onChange={(event) =>
-                  setTimeBlockDraft((current) => ({ ...current, label: event.target.value }))
-                }
-              />
-              <InputField
-                placeholder="Hours"
-                type="number"
-                value={timeBlockDraft.hours}
-                onChange={(event) =>
-                  setTimeBlockDraft((current) => ({ ...current, hours: event.target.value }))
-                }
-              />
-              <InputField
-                placeholder="Color"
-                value={timeBlockDraft.color}
-                onChange={(event) =>
-                  setTimeBlockDraft((current) => ({ ...current, color: event.target.value }))
-                }
-              />
-              <Button onClick={() => void handleAddTimeBlock()}>Add Block</Button>
+            <div className={styles.blockRow}>
+              <div className={styles.blockRowHeader}>
+                <strong>Add schedule block</strong>
+                <span className={pageStyles.muted}>New</span>
+              </div>
+              <div className={styles.blockRowFields}>
+                <InputField
+                  placeholder="Block label"
+                  value={timeBlockDraft.label}
+                  onChange={(event) =>
+                    setTimeBlockDraft((current) => ({ ...current, label: event.target.value }))
+                  }
+                />
+                <InputField
+                  placeholder="Hours"
+                  type="number"
+                  value={timeBlockDraft.hours}
+                  onChange={(event) =>
+                    setTimeBlockDraft((current) => ({ ...current, hours: event.target.value }))
+                  }
+                />
+                <InputField
+                  placeholder="#8e8e93"
+                  value={timeBlockDraft.color}
+                  onChange={(event) =>
+                    setTimeBlockDraft((current) => ({ ...current, color: event.target.value }))
+                  }
+                />
+                <Button onClick={() => void handleAddTimeBlock()}>Add Block</Button>
+              </div>
             </div>
           </article>
 
-          <article className={pageStyles.card}>
-            <div className={pageStyles.sectionHeader}>
-              <h2 className={pageStyles.cardTitle}>Habits & Countdowns</h2>
-              <span className={pageStyles.pill}>{countdowns.length} countdowns</span>
-            </div>
-            <div className={pageStyles.list}>
-              {habits.map((habit) => (
-                <label key={habit.id} className={pageStyles.listRow}>
-                  <strong>{habit.name}</strong>
-                  <span className={pageStyles.muted}>{habit.description ?? 'Daily operating habit'}</span>
-                  <div className={pageStyles.inlineRow}>
-                    <input
-                      checked={habitStatuses.get(habit.id) ?? false}
-                      type="checkbox"
-                      onChange={(event) =>
-                        void upsertHabitLog({
-                          habit_id: habit.id,
-                          date: today,
-                          completed: event.target.checked
-                        }).then(() => loadSummary())
-                      }
-                    />
-                    <span className={pageStyles.muted}>Done today</span>
-                  </div>
-                </label>
-              ))}
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <InputField
-                placeholder="New habit"
-                value={habitName}
-                onChange={(event) => setHabitName(event.target.value)}
-              />
-              <Button onClick={() => void handleCreateHabit()}>Add Habit</Button>
-            </div>
-            <div className={pageStyles.list}>
-              {countdowns.map((countdown) => (
-                <div key={countdown.id} className={pageStyles.listRow}>
-                  <strong>{countdown.title}</strong>
-                  <span className={pageStyles.muted}>
-                    {countdown.target_date} · {countdown.category}
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={() => void deleteCountdown(countdown.id)}>
-                    Remove
-                  </Button>
+          <div className={styles.splitCard}>
+            <article className={pageStyles.card}>
+              <div className={pageStyles.sectionHeader}>
+                <div>
+                  <h2 className={pageStyles.cardTitle}>Habits</h2>
+                  <p className={pageStyles.description}>
+                    Fast binary check-ins for the habits that keep the system online.
+                  </p>
                 </div>
-              ))}
-            </div>
-            <div className={pageStyles.inlineRow}>
-              <InputField
-                placeholder="Countdown title"
-                value={countdownDraft.title}
-                onChange={(event) =>
-                  setCountdownDraft((current) => ({ ...current, title: event.target.value }))
-                }
-              />
-              <InputField
-                type="date"
-                value={countdownDraft.target_date}
-                onChange={(event) =>
-                  setCountdownDraft((current) => ({
-                    ...current,
-                    target_date: event.target.value
-                  }))
-                }
-              />
-              <InputField
-                placeholder="Category"
-                value={countdownDraft.category}
-                onChange={(event) =>
-                  setCountdownDraft((current) => ({ ...current, category: event.target.value }))
-                }
-              />
-              <Button onClick={() => void handleCreateCountdown()}>Add Countdown</Button>
-            </div>
-          </article>
+                <span className={pageStyles.pill}>{habits.length} tracked</span>
+              </div>
+              <div className={styles.toolbar}>
+                <InputField
+                  placeholder="New habit"
+                  value={habitName}
+                  onChange={(event) => setHabitName(event.target.value)}
+                />
+                <Button onClick={() => void handleCreateHabit()}>Add Habit</Button>
+              </div>
+              <div className={styles.habitList}>
+                {habits.map((habit) => (
+                  <label key={habit.id} className={styles.habitRow}>
+                    <strong>{habit.name}</strong>
+                    <span className={pageStyles.muted}>
+                      {habit.description ?? 'Daily operating habit'}
+                    </span>
+                    <span className={styles.habitCheck}>
+                      <input
+                        checked={habitStatuses.get(habit.id) ?? false}
+                        type="checkbox"
+                        onChange={(event) =>
+                          void upsertHabitLog({
+                            habit_id: habit.id,
+                            date: today,
+                            completed: event.target.checked
+                          }).then(() => refreshDashboardSummary())
+                        }
+                      />
+                      <span className={pageStyles.muted}>Done today</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </article>
+
+            <article className={pageStyles.card}>
+              <div className={pageStyles.sectionHeader}>
+                <div>
+                  <h2 className={pageStyles.cardTitle}>Countdown Trackers</h2>
+                  <p className={pageStyles.description}>
+                    Add, edit, and remove any runway or deadline tracker here.
+                  </p>
+                </div>
+                <span className={pageStyles.pill}>{countdowns.length} active</span>
+              </div>
+              <div className={styles.countdownRow}>
+                <div className={styles.countdownFields}>
+                  <InputField
+                    placeholder="Countdown title"
+                    value={countdownDraft.title}
+                    onChange={(event) =>
+                      setCountdownDraft((current) => ({ ...current, title: event.target.value }))
+                    }
+                  />
+                  <InputField
+                    type="date"
+                    value={countdownDraft.target_date}
+                    onChange={(event) =>
+                      setCountdownDraft((current) => ({
+                        ...current,
+                        target_date: event.target.value
+                      }))
+                    }
+                  />
+                  <InputField
+                    placeholder="Category"
+                    value={countdownDraft.category}
+                    onChange={(event) =>
+                      setCountdownDraft((current) => ({
+                        ...current,
+                        category: event.target.value
+                      }))
+                    }
+                  />
+                  <Button onClick={() => void handleCreateCountdown()}>Add</Button>
+                </div>
+              </div>
+              <div className={styles.countdownList}>
+                {countdowns.map((countdown) => (
+                  <div key={countdown.id} className={styles.countdownRow}>
+                    <div className={styles.blockRowHeader}>
+                      <strong>{countdown.title}</strong>
+                      <span className={pageStyles.muted}>{countdown.target_date}</span>
+                    </div>
+                    <div className={styles.countdownFields}>
+                      <InputField
+                        defaultValue={countdown.title}
+                        onBlur={(event) =>
+                          void updateCountdown({
+                            id: countdown.id,
+                            title: event.target.value.trim() || countdown.title
+                          }).then(() => refreshDashboardSummary())
+                        }
+                      />
+                      <InputField
+                        type="date"
+                        defaultValue={countdown.target_date}
+                        onBlur={(event) =>
+                          void updateCountdown({
+                            id: countdown.id,
+                            target_date: event.target.value || countdown.target_date
+                          }).then(() => refreshDashboardSummary())
+                        }
+                      />
+                      <InputField
+                        defaultValue={countdown.category}
+                        onBlur={(event) =>
+                          void updateCountdown({
+                            id: countdown.id,
+                            category: event.target.value.trim() || countdown.category
+                          }).then(() => refreshDashboardSummary())
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          void deleteCountdown(countdown.id).then(() => {
+                            void refreshDashboardSummary()
+                          })
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
         </section>
       </div>
     </div>

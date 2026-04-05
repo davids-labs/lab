@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/Button'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 export function HomeDashboard(): JSX.Element {
+  const navigate = useNavigate()
   const { error, importStarterTemplate, isLoading, loadSummary, summary } = useDashboardStore()
   const pushToast = useToastStore((state) => state.push)
 
@@ -29,9 +31,7 @@ export function HomeDashboard(): JSX.Element {
     } catch (importError) {
       pushToast({
         message:
-          importError instanceof Error
-            ? importError.message
-            : 'Failed to import starter template.',
+          importError instanceof Error ? importError.message : 'Failed to import starter template.',
         type: 'error'
       })
     }
@@ -45,7 +45,7 @@ export function HomeDashboard(): JSX.Element {
             <span className={pageStyles.eyebrow}>Home</span>
             <h1 className={pageStyles.title}>davids.lab</h1>
             <p className={pageStyles.description}>
-              {isLoading ? 'Loading command center…' : error ?? 'Preparing your command center…'}
+              {isLoading ? 'Loading command center…' : (error ?? 'Preparing your command center…')}
             </p>
           </div>
         </div>
@@ -80,6 +80,33 @@ export function HomeDashboard(): JSX.Element {
             </div>
           </section>
         ) : null}
+
+        <section className={pageStyles.card}>
+          <div className={pageStyles.sectionHeader}>
+            <div>
+              <h2 className={pageStyles.cardTitle}>Where To Edit Things</h2>
+              <p className={pageStyles.description}>
+                Timeline and dependencies live in Master Plan. Schedules, habits, and countdowns
+                live in Personal OS. Skills and evidence live in Skill Matrix. Projects and public
+                pages live in Project Ecosystem.
+              </p>
+            </div>
+            <div className={pageStyles.inlineRow}>
+              <Button variant="outline" onClick={() => navigate('/plan')}>
+                Master Plan
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/os')}>
+                Personal OS
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/skills')}>
+                Skill Matrix
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/ecosystem')}>
+                Ecosystem
+              </Button>
+            </div>
+          </div>
+        </section>
 
         <section className={pageStyles.grid3}>
           {summary.countdowns.map((countdown) => (
@@ -175,7 +202,9 @@ export function HomeDashboard(): JSX.Element {
               </div>
               <div className={pageStyles.metricCard}>
                 <span className={pageStyles.muted}>Gym</span>
-                <div className={pageStyles.metricValue}>{summary.os.today?.gym_done ? 'Yes' : 'No'}</div>
+                <div className={pageStyles.metricValue}>
+                  {summary.os.today?.gym_done ? 'Yes' : 'No'}
+                </div>
               </div>
             </div>
             <div className={pageStyles.pillRow}>
@@ -222,7 +251,9 @@ export function HomeDashboard(): JSX.Element {
         <section className={pageStyles.card}>
           <div className={pageStyles.sectionHeader}>
             <h2 className={pageStyles.cardTitle}>Project Ecosystem</h2>
-            <span className={pageStyles.pill}>{summary.ecosystem.total_projects} total projects</span>
+            <span className={pageStyles.pill}>
+              {summary.ecosystem.total_projects} total projects
+            </span>
           </div>
           <div className={pageStyles.metricGrid}>
             <div className={pageStyles.metricCard}>

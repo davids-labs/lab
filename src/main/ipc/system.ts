@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { dialog, ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain } from 'electron'
 import type { OpenFilesOptions, SaveFileOptions } from '../../preload/types'
 import { validateOpenFilesOptions, validateSaveFileOptions } from '@shared/validation'
 
@@ -36,4 +36,32 @@ export function registerSystemHandlers(): void {
     'system:read-text-file',
     async (_event, filePath: string): Promise<string> => fs.readFileSync(filePath, 'utf8')
   )
+
+  ipcMain.handle('system:toggle-fullscreen', async (event): Promise<boolean> => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+
+    if (!window) {
+      return false
+    }
+
+    const next = !window.isFullScreen()
+    window.setFullScreen(next)
+    return next
+  })
+
+  ipcMain.handle('system:set-fullscreen', async (event, fullscreen: boolean): Promise<boolean> => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+
+    if (!window) {
+      return false
+    }
+
+    window.setFullScreen(fullscreen)
+    return window.isFullScreen()
+  })
+
+  ipcMain.handle('system:is-fullscreen', async (event): Promise<boolean> => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    return window?.isFullScreen() ?? false
+  })
 }

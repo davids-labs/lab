@@ -92,7 +92,10 @@ const bridge: LabBridge = {
   system: {
     openFiles: (options) => ipcRenderer.invoke('system:open-files', options),
     saveFile: (options) => ipcRenderer.invoke('system:save-file', options),
-    readTextFile: (filePath) => ipcRenderer.invoke('system:read-text-file', filePath)
+    readTextFile: (filePath) => ipcRenderer.invoke('system:read-text-file', filePath),
+    toggleFullscreen: () => ipcRenderer.invoke('system:toggle-fullscreen'),
+    setFullscreen: (fullscreen) => ipcRenderer.invoke('system:set-fullscreen', fullscreen),
+    isFullscreen: () => ipcRenderer.invoke('system:is-fullscreen')
   }
 }
 

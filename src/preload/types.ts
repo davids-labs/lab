@@ -827,5 +827,8 @@ export interface LabBridge {
     openFiles: (options?: OpenFilesOptions) => Promise<string[]>
     saveFile: (options?: SaveFileOptions) => Promise<string | null>
     readTextFile: (filePath: string) => Promise<string>
+    toggleFullscreen: () => Promise<boolean>
+    setFullscreen: (fullscreen: boolean) => Promise<boolean>
+    isFullscreen: () => Promise<boolean>
   }
 }

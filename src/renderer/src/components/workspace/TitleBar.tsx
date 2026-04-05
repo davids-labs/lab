@@ -160,6 +160,9 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
         >
           Git
         </Button>
+        <Button variant="ghost" size="sm" onClick={() => void window.lab.system.toggleFullscreen()}>
+          Fullscreen
+        </Button>
         {view === 'customise' && project.git_enabled ? (
           <Button size="sm" disabled={publishing} onClick={() => void handlePublish()}>
             {publishing ? 'Publishing…' : 'Publish'}

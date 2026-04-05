@@ -30,7 +30,7 @@
 }
 
 .projectName {
-  font-family: var(--lab-font-sans);
+  font-family: var(--lab-font-display);
   font-size: 1.05rem;
   font-weight: 600;
 }

@@ -1,0 +1,156 @@
+.topGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+}
+
+.chartWrap {
+  height: 290px;
+}
+
+.profileBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profileChip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--lab-border);
+  background: var(--lab-surface-muted);
+  color: var(--lab-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.profileChipActive {
+  background: rgba(29, 29, 31, 0.08);
+  color: var(--lab-text);
+  border-color: rgba(29, 29, 31, 0.14);
+}
+
+.toolbar {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.summaryStrip {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.miniMetric {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: var(--lab-surface-muted);
+}
+
+.miniMetricValue {
+  font-family: var(--lab-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--lab-text);
+}
+
+.logGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.managerGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.blockList {
+  display: grid;
+  gap: 10px;
+}
+
+.blockRow {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: var(--lab-surface-muted);
+}
+
+.blockRowHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.blockRowFields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.3fr) 108px 132px auto;
+  align-items: end;
+}
+
+.countdownList,
+.habitList {
+  display: grid;
+  gap: 10px;
+}
+
+.countdownRow,
+.habitRow {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: var(--lab-surface-muted);
+}
+
+.countdownFields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.2fr) 160px 132px auto;
+  align-items: end;
+}
+
+.habitCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.splitCard {
+  display: grid;
+  gap: 18px;
+}
+
+.sectionDivider {
+  height: 1px;
+  background: var(--lab-border);
+}
+
+@media (max-width: 1180px) {
+  .topGrid,
+  .managerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .summaryStrip,
+  .logGrid,
+  .blockRowFields,
+  .countdownFields,
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+}

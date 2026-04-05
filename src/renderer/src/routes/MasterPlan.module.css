@@ -1,0 +1,59 @@
+.timelineGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.timelineCard {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: var(--lab-radius-xl);
+  border: 1px solid var(--lab-border);
+  background: var(--lab-surface-muted);
+  text-align: left;
+  transition:
+    border-color var(--lab-transition),
+    background var(--lab-transition),
+    transform var(--lab-transition);
+}
+
+.timelineCard:hover {
+  transform: translateY(-1px);
+}
+
+.timelineCardActive {
+  border-color: rgba(29, 29, 31, 0.16);
+  background: rgba(29, 29, 31, 0.05);
+}
+
+.timelineKicker {
+  color: var(--lab-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timelineTitle {
+  margin: 0;
+  font-family: var(--lab-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--lab-text);
+}
+
+.timelineSummary {
+  margin: 0;
+  color: var(--lab-text-muted);
+  line-height: 1.5;
+}
+
+.phaseSummary {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: var(--lab-surface-muted);
+}

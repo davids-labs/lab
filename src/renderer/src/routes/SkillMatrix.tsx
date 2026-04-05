@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Chart, Legend, LineElement, PointElement, RadialLinearScale, Tooltip } from 'chart.js'
+import {
+  Chart,
+  Legend,
+  LineElement,
+  PointElement,
+  RadarController,
+  RadialLinearScale,
+  Tooltip
+} from 'chart.js'
 import { PROJECT_EXECUTION_STAGES, SKILL_EVIDENCE_SOURCE_TYPES } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
@@ -8,7 +16,7 @@ import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
-Chart.register(RadialLinearScale, PointElement, LineElement, Tooltip, Legend)
+Chart.register(RadarController, RadialLinearScale, PointElement, LineElement, Tooltip, Legend)
 
 export function SkillMatrix(): JSX.Element {
   const radarRef = useRef<HTMLCanvasElement | null>(null)
@@ -71,6 +79,11 @@ export function SkillMatrix(): JSX.Element {
     }
 
     chartRef.current?.destroy()
+
+    if (domains.length === 0) {
+      return
+    }
+
     chartRef.current = new Chart(radarRef.current, {
       type: 'radar',
       data: {
@@ -235,7 +248,9 @@ export function SkillMatrix(): JSX.Element {
                   type="button"
                   style={{
                     background:
-                      domain.id === activeDomainId ? 'rgba(0, 113, 227, 0.08)' : 'var(--lab-surface-muted)'
+                      domain.id === activeDomainId
+                        ? 'rgba(0, 113, 227, 0.08)'
+                        : 'var(--lab-surface-muted)'
                   }}
                 >
                   {domain.title}
@@ -301,14 +316,17 @@ export function SkillMatrix(): JSX.Element {
           <article className={pageStyles.card}>
             <div className={pageStyles.sectionHeader}>
               <h2 className={pageStyles.cardTitle}>Evidence Linking</h2>
-              {activeNodeDetail ? <span className={pageStyles.pill}>{activeNodeDetail.skill.state}</span> : null}
+              {activeNodeDetail ? (
+                <span className={pageStyles.pill}>{activeNodeDetail.skill.state}</span>
+              ) : null}
             </div>
             {activeNodeDetail ? (
               <div className={pageStyles.formGrid}>
                 <div>
                   <strong>{activeNodeDetail.skill.title}</strong>
                   <p className={pageStyles.description}>
-                    {activeNodeDetail.skill.description ?? 'Add a description to clarify the proof required.'}
+                    {activeNodeDetail.skill.description ??
+                      'Add a description to clarify the proof required.'}
                   </p>
                 </div>
                 <label className={pageStyles.formGrid}>
@@ -318,7 +336,8 @@ export function SkillMatrix(): JSX.Element {
                     onChange={(event) =>
                       setEvidenceDraft((current) => ({
                         ...current,
-                        source_type: event.target.value as (typeof SKILL_EVIDENCE_SOURCE_TYPES)[number]
+                        source_type: event.target
+                          .value as (typeof SKILL_EVIDENCE_SOURCE_TYPES)[number]
                       }))
                     }
                   >
@@ -362,7 +381,8 @@ export function SkillMatrix(): JSX.Element {
                         onChange={(event) =>
                           setEvidenceDraft((current) => ({
                             ...current,
-                            required_stage: event.target.value as (typeof PROJECT_EXECUTION_STAGES)[number]
+                            required_stage: event.target
+                              .value as (typeof PROJECT_EXECUTION_STAGES)[number]
                           }))
                         }
                       >

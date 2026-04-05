@@ -20,19 +20,10 @@
   --lab-danger-dim: rgba(197, 59, 45, 0.08);
   --lab-warning: #b46a1f;
   --lab-shadow-card: 0 16px 32px rgba(21, 21, 24, 0.04);
-  --lab-font-sans:
-    'Inter',
-    'Segoe UI Variable Display',
-    'Segoe UI',
-    'SF Pro Display',
-    system-ui,
-    sans-serif;
-  --lab-font-mono:
-    'IBM Plex Mono',
-    'Cascadia Mono',
-    'SFMono-Regular',
-    Consolas,
-    monospace;
+  --lab-font-display:
+    'Segoe UI Variable Display', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  --lab-font-sans: 'Segoe UI Variable Text', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --lab-font-mono: 'IBM Plex Mono', 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
   --lab-space-1: 4px;
   --lab-space-2: 8px;
   --lab-space-3: 12px;
