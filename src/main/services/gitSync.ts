@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { safeStorage } from 'electron'
-import Store from 'electron-store'
 import { eq } from 'drizzle-orm'
 import git from 'isomorphic-git'
 import http from 'isomorphic-git/http/node'
@@ -21,11 +20,54 @@ import { blockQueries } from '../db/queries/blocks'
 import { projectQueries } from '../db/queries/projects'
 import { blocksTable } from '../db/schema'
 import { renderProjectHtml } from '../renderer/pageRenderer'
-import { assertPathInsideProjects, ensureProjectDirectories, getProjectDir } from './appPaths'
+import {
+  assertPathInsideProjects,
+  ensureProjectDirectories,
+  getAppDataDir,
+  getProjectDir
+} from './appPaths'
 
-const settingsStore = new Store<{ githubPat?: string | null }>({
-  name: 'lab-settings'
-})
+interface LabSettings {
+  githubPat?: string | null
+}
+
+let settingsCache: LabSettings | null = null
+
+function getSettingsPath(): string {
+  return path.join(getAppDataDir(), 'lab-settings.json')
+}
+
+function readSettings(): LabSettings {
+  if (settingsCache) {
+    return settingsCache
+  }
+
+  try {
+    const raw = fs.readFileSync(getSettingsPath(), 'utf8')
+    const parsed = JSON.parse(raw) as unknown
+
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      settingsCache = parsed as LabSettings
+      return settingsCache
+    }
+  } catch {
+    // Ignore missing or invalid settings files and fall back to defaults.
+  }
+
+  settingsCache = {}
+  return settingsCache
+}
+
+function writeSettings(next: LabSettings): void {
+  settingsCache = next
+
+  if (Object.keys(next).length === 0) {
+    fs.rmSync(getSettingsPath(), { force: true })
+    return
+  }
+
+  fs.writeFileSync(getSettingsPath(), JSON.stringify(next, null, 2), 'utf8')
+}
 
 const LAB_AUTHOR = {
   name: 'LAB',
@@ -57,7 +99,7 @@ function hasRepository(projectId: string): boolean {
 }
 
 function getStoredGitHubToken(): string | null {
-  const stored = settingsStore.get('githubPat')
+  const stored = readSettings().githubPat
   if (!stored) {
     return null
   }
@@ -82,17 +124,25 @@ export function setGitHubToken(token: string | null): { ok: boolean } {
   const trimmed = token?.trim() ?? ''
 
   if (!trimmed) {
-    settingsStore.delete('githubPat')
+    const next = { ...readSettings() }
+    delete next.githubPat
+    writeSettings(next)
     return { ok: true }
   }
 
   if (safeStorage.isEncryptionAvailable()) {
     const encrypted = safeStorage.encryptString(trimmed)
-    settingsStore.set('githubPat', `enc:${encrypted.toString('base64')}`)
+    writeSettings({
+      ...readSettings(),
+      githubPat: `enc:${encrypted.toString('base64')}`
+    })
     return { ok: true }
   }
 
-  settingsStore.set('githubPat', `plain:${trimmed}`)
+  writeSettings({
+    ...readSettings(),
+    githubPat: `plain:${trimmed}`
+  })
   return { ok: true }
 }
 
