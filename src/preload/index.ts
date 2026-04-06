@@ -130,7 +130,15 @@ const bridge: LabBridge = {
       ipcRenderer.invoke('settings:update-dashboard-preferences', input),
     updateIntegrationSettings: (input) =>
       ipcRenderer.invoke('settings:update-integration-settings', input),
-    updateThemeSettings: (input) => ipcRenderer.invoke('settings:update-theme-settings', input)
+    updateThemeSettings: (input) => ipcRenderer.invoke('settings:update-theme-settings', input),
+    listQuotes: () => ipcRenderer.invoke('settings:list-quotes'),
+    createQuote: (input) => ipcRenderer.invoke('settings:create-quote', input),
+    updateQuote: (input) => ipcRenderer.invoke('settings:update-quote', input),
+    deleteQuote: (id) => ipcRenderer.invoke('settings:delete-quote', id),
+    importQuotes: (input) => ipcRenderer.invoke('settings:import-quotes', input),
+    getQuotePreferences: () => ipcRenderer.invoke('settings:get-quote-preferences'),
+    updateQuotePreferences: (input) =>
+      ipcRenderer.invoke('settings:update-quote-preferences', input)
   },
   pipeline: {
     listOrganizations: () => ipcRenderer.invoke('pipeline:list-organizations'),

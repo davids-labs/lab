@@ -1,12 +1,18 @@
 import { ipcMain } from 'electron'
 import type {
+  ArchetypeQuote,
+  CreateArchetypeQuoteInput,
   DashboardPreferences,
+  ImportArchetypeQuotesInput,
   IntegrationSettings,
   NarrativeProfile,
+  QuotePreferences,
   SettingsBundle,
   ThemeSettings,
+  UpdateArchetypeQuoteInput,
   UpdateDashboardPreferencesInput,
   UpdateIntegrationSettingsInput,
+  UpdateQuotePreferencesInput,
   UpdateNarrativeProfileInput,
   UpdateThemeSettingsInput,
   UpdateUserProfileInput,
@@ -40,5 +46,33 @@ export function registerSettingsHandlers(): void {
     'settings:update-theme-settings',
     async (_event, input: UpdateThemeSettingsInput): Promise<ThemeSettings> =>
       settingsQueries.updateThemeSettings(input)
+  )
+  ipcMain.handle('settings:list-quotes', async (): Promise<ArchetypeQuote[]> => settingsQueries.listQuotes())
+  ipcMain.handle(
+    'settings:create-quote',
+    async (_event, input: CreateArchetypeQuoteInput): Promise<ArchetypeQuote> =>
+      settingsQueries.createQuote(input)
+  )
+  ipcMain.handle(
+    'settings:update-quote',
+    async (_event, input: UpdateArchetypeQuoteInput): Promise<ArchetypeQuote> =>
+      settingsQueries.updateQuote(input)
+  )
+  ipcMain.handle('settings:delete-quote', async (_event, id: string): Promise<{ ok: boolean }> =>
+    settingsQueries.deleteQuote(id)
+  )
+  ipcMain.handle(
+    'settings:import-quotes',
+    async (_event, input: ImportArchetypeQuotesInput): Promise<ArchetypeQuote[]> =>
+      settingsQueries.importQuotes(input)
+  )
+  ipcMain.handle(
+    'settings:get-quote-preferences',
+    async (): Promise<QuotePreferences> => settingsQueries.getQuotePreferences()
+  )
+  ipcMain.handle(
+    'settings:update-quote-preferences',
+    async (_event, input: UpdateQuotePreferencesInput): Promise<QuotePreferences> =>
+      settingsQueries.updateQuotePreferences(input)
   )
 }

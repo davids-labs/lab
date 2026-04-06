@@ -1,12 +1,26 @@
+import { randomUUID } from 'crypto'
 import { eq } from 'drizzle-orm'
+import {
+  BUILTIN_ARCHETYPE_QUOTES,
+  normalizeQuoteTopics,
+  sortQuotes,
+  type ArchetypeQuote,
+  type QuotePreferences
+} from '@shared/quoteLibrary'
 import type {
+  ArchetypeQuote as PreloadArchetypeQuote,
+  CreateArchetypeQuoteInput,
   DashboardPreferences,
+  ImportArchetypeQuotesInput,
   IntegrationSettings,
   NarrativeProfile,
+  QuotePreferences as PreloadQuotePreferences,
   SettingsBundle,
   ThemeSettings,
+  UpdateArchetypeQuoteInput,
   UpdateDashboardPreferencesInput,
   UpdateIntegrationSettingsInput,
+  UpdateQuotePreferencesInput,
   UpdateNarrativeProfileInput,
   UpdateThemeSettingsInput,
   UpdateUserProfileInput,
@@ -94,6 +108,12 @@ const DEFAULT_THEME_SETTINGS: ThemeSettings = {
   font_scale: 'md'
 }
 
+const DEFAULT_QUOTE_PREFERENCES: QuotePreferences = {
+  smart_rotation: true,
+  selected_topics: [],
+  sort_mode: 'topic'
+}
+
 function loadSetting<T>(key: string, fallback: T): T {
   const db = getDb()
   const row = db.select().from(appSettingsTable).where(eq(appSettingsTable.key, key)).get()
@@ -103,7 +123,17 @@ function loadSetting<T>(key: string, fallback: T): T {
   }
 
   try {
-    return { ...fallback, ...(JSON.parse(row.value_json) as Record<string, unknown>) } as T
+    const parsed = JSON.parse(row.value_json) as unknown
+
+    if (Array.isArray(fallback)) {
+      return (Array.isArray(parsed) ? parsed : fallback) as T
+    }
+
+    if (fallback && typeof fallback === 'object') {
+      return { ...fallback, ...(parsed as Record<string, unknown>) } as T
+    }
+
+    return (parsed as T) ?? fallback
   } catch {
     return fallback
   }
@@ -136,7 +166,9 @@ export const settingsQueries = {
       narrative_profile: loadSetting('narrative_profile', DEFAULT_NARRATIVE_PROFILE),
       dashboard_preferences: loadSetting('dashboard_preferences', DEFAULT_DASHBOARD_PREFERENCES),
       integration_settings: loadSetting('integration_settings', DEFAULT_INTEGRATION_SETTINGS),
-      theme_settings: loadSetting('theme_settings', DEFAULT_THEME_SETTINGS)
+      theme_settings: loadSetting('theme_settings', DEFAULT_THEME_SETTINGS),
+      quote_preferences: loadSetting('quote_preferences', DEFAULT_QUOTE_PREFERENCES),
+      quote_library: this.listQuotes()
     }
   },
 
@@ -178,5 +210,108 @@ export const settingsQueries = {
     const next = { ...this.getBundle().theme_settings, ...input }
     saveSetting('theme_settings', next)
     return next
+  },
+
+  listQuotes(): PreloadArchetypeQuote[] {
+    const customQuotes = loadSetting<ArchetypeQuote[]>('quote_library_custom', [])
+    return sortQuotes(
+      [...BUILTIN_ARCHETYPE_QUOTES, ...customQuotes].map((quote) => ({
+        ...quote,
+        topics: normalizeQuoteTopics(quote.topics)
+      })),
+      this.getQuotePreferences().sort_mode
+    )
+  },
+
+  getQuotePreferences(): PreloadQuotePreferences {
+    const preferences = loadSetting('quote_preferences', DEFAULT_QUOTE_PREFERENCES)
+    return {
+      ...preferences,
+      selected_topics: normalizeQuoteTopics(preferences.selected_topics)
+    }
+  },
+
+  updateQuotePreferences(input: UpdateQuotePreferencesInput): PreloadQuotePreferences {
+    const next = {
+      ...this.getQuotePreferences(),
+      ...input,
+      selected_topics: normalizeQuoteTopics(input.selected_topics ?? this.getQuotePreferences().selected_topics)
+    }
+    saveSetting('quote_preferences', next)
+    return next
+  },
+
+  createQuote(input: CreateArchetypeQuoteInput): PreloadArchetypeQuote {
+    const now = Date.now()
+    const nextQuote: ArchetypeQuote = {
+      id: randomUUID(),
+      text: input.text.trim(),
+      author: input.author.trim(),
+      work: input.work?.trim() || null,
+      topics: normalizeQuoteTopics(input.topics),
+      source_url: input.source_url?.trim() || null,
+      source_type: 'custom',
+      created_at: now,
+      updated_at: now
+    }
+
+    if (!nextQuote.text || !nextQuote.author) {
+      throw new Error('Quotes need both text and author.')
+    }
+
+    const customQuotes = loadSetting<ArchetypeQuote[]>('quote_library_custom', [])
+    saveSetting('quote_library_custom', [...customQuotes, nextQuote])
+    return nextQuote
+  },
+
+  updateQuote(input: UpdateArchetypeQuoteInput): PreloadArchetypeQuote {
+    const customQuotes = loadSetting<ArchetypeQuote[]>('quote_library_custom', [])
+    const existing = customQuotes.find((quote) => quote.id === input.id)
+
+    if (!existing) {
+      throw new Error('Only custom quotes can be edited.')
+    }
+
+    const nextQuote: ArchetypeQuote = {
+      ...existing,
+      text: input.text?.trim() ?? existing.text,
+      author: input.author?.trim() ?? existing.author,
+      work: input.work !== undefined ? input.work?.trim() || null : existing.work,
+      topics: input.topics ? normalizeQuoteTopics(input.topics) : existing.topics,
+      source_url:
+        input.source_url !== undefined ? input.source_url?.trim() || null : existing.source_url,
+      updated_at: Date.now()
+    }
+
+    if (!nextQuote.text || !nextQuote.author) {
+      throw new Error('Quotes need both text and author.')
+    }
+
+    saveSetting(
+      'quote_library_custom',
+      customQuotes.map((quote) => (quote.id === input.id ? nextQuote : quote))
+    )
+    return nextQuote
+  },
+
+  deleteQuote(id: string): { ok: boolean } {
+    const customQuotes = loadSetting<ArchetypeQuote[]>('quote_library_custom', [])
+    const nextQuotes = customQuotes.filter((quote) => quote.id !== id)
+
+    if (nextQuotes.length === customQuotes.length) {
+      throw new Error('Built-in quotes cannot be removed.')
+    }
+
+    saveSetting('quote_library_custom', nextQuotes)
+    return { ok: true }
+  },
+
+  importQuotes(input: ImportArchetypeQuotesInput): PreloadArchetypeQuote[] {
+    if (!input.quotes.length) {
+      return []
+    }
+
+    const createdQuotes = input.quotes.map((quote) => this.createQuote(quote))
+    return createdQuotes
   }
 }

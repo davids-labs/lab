@@ -1,8 +1,14 @@
 import { create } from 'zustand'
 import type {
+  ArchetypeQuote,
+  CreateArchetypeQuoteInput,
+  ImportArchetypeQuotesInput,
+  QuotePreferences,
   SettingsBundle,
+  UpdateArchetypeQuoteInput,
   UpdateDashboardPreferencesInput,
   UpdateIntegrationSettingsInput,
+  UpdateQuotePreferencesInput,
   UpdateNarrativeProfileInput,
   UpdateThemeSettingsInput,
   UpdateUserProfileInput
@@ -18,6 +24,11 @@ interface SettingsStore {
   updateDashboardPreferences: (input: UpdateDashboardPreferencesInput) => Promise<void>
   updateIntegrationSettings: (input: UpdateIntegrationSettingsInput) => Promise<void>
   updateThemeSettings: (input: UpdateThemeSettingsInput) => Promise<void>
+  createQuote: (input: CreateArchetypeQuoteInput) => Promise<ArchetypeQuote>
+  updateQuote: (input: UpdateArchetypeQuoteInput) => Promise<ArchetypeQuote>
+  deleteQuote: (id: string) => Promise<void>
+  importQuotes: (input: ImportArchetypeQuotesInput) => Promise<ArchetypeQuote[]>
+  updateQuotePreferences: (input: UpdateQuotePreferencesInput) => Promise<QuotePreferences>
 }
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
@@ -77,5 +88,49 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     if (current) {
       set({ bundle: { ...current, theme_settings } })
     }
+  },
+
+  async createQuote(input) {
+    const current = get().bundle
+    const quote = await window.lab.settings.createQuote(input)
+    if (current) {
+      set({ bundle: { ...current, quote_library: await window.lab.settings.listQuotes() } })
+    }
+    return quote
+  },
+
+  async updateQuote(input) {
+    const current = get().bundle
+    const quote = await window.lab.settings.updateQuote(input)
+    if (current) {
+      set({ bundle: { ...current, quote_library: await window.lab.settings.listQuotes() } })
+    }
+    return quote
+  },
+
+  async deleteQuote(id) {
+    const current = get().bundle
+    await window.lab.settings.deleteQuote(id)
+    if (current) {
+      set({ bundle: { ...current, quote_library: await window.lab.settings.listQuotes() } })
+    }
+  },
+
+  async importQuotes(input) {
+    const current = get().bundle
+    const imported = await window.lab.settings.importQuotes(input)
+    if (current) {
+      set({ bundle: { ...current, quote_library: await window.lab.settings.listQuotes() } })
+    }
+    return imported
+  },
+
+  async updateQuotePreferences(input) {
+    const current = get().bundle
+    const quote_preferences = await window.lab.settings.updateQuotePreferences(input)
+    if (current) {
+      set({ bundle: { ...current, quote_preferences, quote_library: await window.lab.settings.listQuotes() } })
+    }
+    return quote_preferences
   }
 }))

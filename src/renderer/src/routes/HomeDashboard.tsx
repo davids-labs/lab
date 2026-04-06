@@ -114,7 +114,7 @@ export function HomeDashboard(): JSX.Element {
           </p>
         </section>
 
-        <ArchetypeQuotePanel />
+        <ArchetypeQuotePanel summary={summary} />
 
         {showStarterPrompt ? (
           <section className={pageStyles.callout}>

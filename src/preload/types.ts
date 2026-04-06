@@ -139,6 +139,9 @@ export type SidebarMode = (typeof SIDEBAR_MODES)[number]
 export const HOME_LAYOUTS = ['horizons', 'focused'] as const
 export type HomeLayout = (typeof HOME_LAYOUTS)[number]
 
+export const QUOTE_SORT_MODES = ['topic', 'author', 'recent'] as const
+export type QuoteSortMode = (typeof QUOTE_SORT_MODES)[number]
+
 export const CAPTURE_KINDS = [
   'note',
   'link',
@@ -548,12 +551,32 @@ export interface ThemeSettings {
   font_scale: FontScale
 }
 
+export interface ArchetypeQuote {
+  id: string
+  text: string
+  author: string
+  work: string | null
+  topics: string[]
+  source_url: string | null
+  source_type: 'builtin' | 'custom'
+  created_at: number
+  updated_at: number
+}
+
+export interface QuotePreferences {
+  smart_rotation: boolean
+  selected_topics: string[]
+  sort_mode: QuoteSortMode
+}
+
 export interface SettingsBundle {
   user_profile: UserProfile
   narrative_profile: NarrativeProfile
   dashboard_preferences: DashboardPreferences
   integration_settings: IntegrationSettings
   theme_settings: ThemeSettings
+  quote_preferences: QuotePreferences
+  quote_library: ArchetypeQuote[]
 }
 
 export interface TargetOrganization {
@@ -1461,6 +1484,33 @@ export interface UpdateThemeSettingsInput {
   font_scale?: FontScale
 }
 
+export interface UpdateQuotePreferencesInput {
+  smart_rotation?: boolean
+  selected_topics?: string[]
+  sort_mode?: QuoteSortMode
+}
+
+export interface CreateArchetypeQuoteInput {
+  text: string
+  author: string
+  work?: string | null
+  topics?: string[]
+  source_url?: string | null
+}
+
+export interface UpdateArchetypeQuoteInput {
+  id: string
+  text?: string
+  author?: string
+  work?: string | null
+  topics?: string[]
+  source_url?: string | null
+}
+
+export interface ImportArchetypeQuotesInput {
+  quotes: CreateArchetypeQuoteInput[]
+}
+
 export interface CreateTargetOrganizationInput {
   name: string
   category?: string | null
@@ -1992,6 +2042,13 @@ export interface LabBridge {
       input: UpdateIntegrationSettingsInput
     ) => Promise<IntegrationSettings>
     updateThemeSettings: (input: UpdateThemeSettingsInput) => Promise<ThemeSettings>
+    listQuotes: () => Promise<ArchetypeQuote[]>
+    createQuote: (input: CreateArchetypeQuoteInput) => Promise<ArchetypeQuote>
+    updateQuote: (input: UpdateArchetypeQuoteInput) => Promise<ArchetypeQuote>
+    deleteQuote: (id: string) => Promise<{ ok: boolean }>
+    importQuotes: (input: ImportArchetypeQuotesInput) => Promise<ArchetypeQuote[]>
+    getQuotePreferences: () => Promise<QuotePreferences>
+    updateQuotePreferences: (input: UpdateQuotePreferencesInput) => Promise<QuotePreferences>
   }
   pipeline: {
     listOrganizations: () => Promise<TargetOrganization[]>

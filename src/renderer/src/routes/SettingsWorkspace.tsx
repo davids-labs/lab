@@ -1,7 +1,15 @@
-import { useEffect, useState } from 'react'
-import { WATCH_FOLDER_MODES } from '@preload/types'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { QUOTE_SORT_MODES, WATCH_FOLDER_MODES } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
+import {
+  formatQuoteTopicLabel,
+  getAllQuoteTopics,
+  normalizeQuoteTopics,
+  parseQuoteImportJson,
+  sortQuotes
+} from '@renderer/data/archetypeQuotes'
 import { useCalendarStore } from '@renderer/stores/calendarStore'
 import { useIntegrationStore } from '@renderer/stores/integrationStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
@@ -9,9 +17,10 @@ import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
-type SettingsSection = 'profile' | 'narrative' | 'appearance' | 'shell' | 'integrations'
+type SettingsSection = 'profile' | 'narrative' | 'appearance' | 'shell' | 'quotes' | 'integrations'
 
 export function SettingsWorkspace(): JSX.Element {
+  const location = useLocation()
   const {
     bundle,
     loadBundle,
@@ -19,7 +28,11 @@ export function SettingsWorkspace(): JSX.Element {
     updateIntegrationSettings,
     updateNarrativeProfile,
     updateThemeSettings,
-    updateUserProfile
+    updateUserProfile,
+    createQuote,
+    deleteQuote,
+    importQuotes,
+    updateQuotePreferences
   } = useSettingsStore()
   const { sources, loadSources, importIcs, deleteSource, syncSource } = useCalendarStore()
   const {
@@ -52,6 +65,14 @@ export function SettingsWorkspace(): JSX.Element {
     mode: 'library_documents',
     project_id: ''
   })
+  const [quoteDraft, setQuoteDraft] = useState({
+    text: '',
+    author: '',
+    work: '',
+    topics: '',
+    source_url: ''
+  })
+  const [quoteTopicFilter, setQuoteTopicFilter] = useState<string | null>(null)
 
   useEffect(() => {
     void loadBundle()
@@ -72,6 +93,22 @@ export function SettingsWorkspace(): JSX.Element {
         current.folder_path || bundle?.integration_settings.default_watch_folder_path || ''
     }))
   }, [bundle])
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const requestedSection = searchParams.get('section')
+
+    if (
+      requestedSection === 'profile' ||
+      requestedSection === 'narrative' ||
+      requestedSection === 'appearance' ||
+      requestedSection === 'shell' ||
+      requestedSection === 'quotes' ||
+      requestedSection === 'integrations'
+    ) {
+      setActiveSection(requestedSection)
+    }
+  }, [location.search])
 
   async function handleImportCalendar(): Promise<void> {
     const files = await window.lab.system.openFiles({
@@ -163,6 +200,82 @@ export function SettingsWorkspace(): JSX.Element {
   const githubAccount = accounts.find((entry) => entry.type === 'github') ?? null
   const googleAccountConfig = googleAccount ? parseAccountConfig(googleAccount.config_json) : {}
   const githubAccountConfig = githubAccount ? parseAccountConfig(githubAccount.config_json) : {}
+  const quoteLibrary = useMemo(() => bundle?.quote_library ?? [], [bundle?.quote_library])
+  const selectedQuoteTopics = useMemo(
+    () => normalizeQuoteTopics(bundle?.quote_preferences.selected_topics ?? []),
+    [bundle?.quote_preferences.selected_topics]
+  )
+  const quoteTopics = useMemo(() => getAllQuoteTopics(quoteLibrary), [quoteLibrary])
+  const filteredQuoteLibrary = useMemo(() => {
+    const base = quoteTopicFilter
+      ? quoteLibrary.filter((quote) => quote.topics.includes(quoteTopicFilter))
+      : quoteLibrary
+
+    return sortQuotes(base, bundle?.quote_preferences.sort_mode ?? 'topic')
+  }, [bundle?.quote_preferences.sort_mode, quoteLibrary, quoteTopicFilter])
+
+  async function handleImportQuotePack(): Promise<void> {
+    try {
+      const files = await window.lab.system.openFiles({
+        title: 'Import quote pack',
+        properties: ['openFile'],
+        filters: [{ name: 'Quote pack JSON', extensions: ['json'] }]
+      })
+
+      if (!files[0]) {
+        return
+      }
+
+      const content = await window.lab.system.readTextFile(files[0])
+      const importedRecords = parseQuoteImportJson(content).map((entry) => ({
+        text: entry.text,
+        author: entry.author,
+        work: entry.work ?? null,
+        topics: normalizeQuoteTopics(entry.topics),
+        source_url: entry.source_url ?? null
+      }))
+
+      const imported = await importQuotes({ quotes: importedRecords })
+      pushToast({
+        message: `Imported ${imported.length} quote${imported.length === 1 ? '' : 's'}.`,
+        type: 'success'
+      })
+    } catch (error) {
+      pushToast({
+        message: error instanceof Error ? error.message : 'Failed to import quotes.',
+        type: 'error'
+      })
+    }
+  }
+
+  async function handleCreateQuote(): Promise<void> {
+    try {
+      if (!quoteDraft.text.trim() || !quoteDraft.author.trim()) {
+        return
+      }
+
+      await createQuote({
+        text: quoteDraft.text.trim(),
+        author: quoteDraft.author.trim(),
+        work: quoteDraft.work.trim() || null,
+        topics: normalizeQuoteTopics(quoteDraft.topics),
+        source_url: quoteDraft.source_url.trim() || null
+      })
+      setQuoteDraft({
+        text: '',
+        author: '',
+        work: '',
+        topics: '',
+        source_url: ''
+      })
+      pushToast({ message: 'Added quote to the local library.', type: 'success' })
+    } catch (error) {
+      pushToast({
+        message: error instanceof Error ? error.message : 'Failed to add quote.',
+        type: 'error'
+      })
+    }
+  }
 
   if (!bundle) {
     return (
@@ -198,6 +311,7 @@ export function SettingsWorkspace(): JSX.Element {
                 ['narrative', 'Narrative'],
                 ['appearance', 'Appearance'],
                 ['shell', 'Shell'],
+                ['quotes', 'Quotes'],
                 ['integrations', 'Integrations']
               ] as const).map(([section, label]) => (
                 <button
@@ -478,6 +592,242 @@ export function SettingsWorkspace(): JSX.Element {
                   />
                   <span className={pageStyles.muted}>Show onboarding and guidance callouts</span>
                 </label>
+              </div>
+            ) : null}
+
+            {activeSection === 'quotes' ? (
+              <div className={pageStyles.document}>
+                <div className={pageStyles.sectionHeader}>
+                  <div>
+                    <h2 className={pageStyles.sectionTitle}>Quote library</h2>
+                    <p className={pageStyles.sectionDescription}>
+                      Build a local Stoic and philosophy shelf, tag it by topic, and let Home use
+                      it intelligently instead of staying fully random.
+                    </p>
+                  </div>
+                  <span className={pageStyles.chip}>{quoteLibrary.length} quotes</span>
+                </div>
+
+                <div className={pageStyles.documentSection}>
+                  <div className={pageStyles.sectionHeader}>
+                    <div>
+                      <h3 className={pageStyles.sectionTitle}>Home behavior</h3>
+                      <p className={pageStyles.sectionDescription}>
+                        Smart mode leans toward discipline, courage, or clarity depending on what
+                        the operating layer is telling you that day.
+                      </p>
+                    </div>
+                  </div>
+                  <label className={pageStyles.inlineRow}>
+                    <input
+                      checked={bundle.quote_preferences.smart_rotation}
+                      type="checkbox"
+                      onChange={(event) =>
+                        void updateQuotePreferences({
+                          smart_rotation: event.target.checked
+                        })
+                      }
+                    />
+                    <span className={pageStyles.muted}>Use smart topic steering on Home</span>
+                  </label>
+                  <label className={pageStyles.formGrid}>
+                    <span className={pageStyles.eyebrow}>Library sort</span>
+                    <select
+                      value={bundle.quote_preferences.sort_mode}
+                      onChange={(event) =>
+                        void updateQuotePreferences({
+                          sort_mode: event.target.value as (typeof QUOTE_SORT_MODES)[number]
+                        })
+                      }
+                    >
+                      <option value="topic">Topic</option>
+                      <option value="author">Author</option>
+                      <option value="recent">Recent</option>
+                    </select>
+                  </label>
+                  <div className={pageStyles.document}>
+                    <div className={pageStyles.sectionHeader}>
+                      <div>
+                        <h3 className={pageStyles.sectionTitle}>Topic focus</h3>
+                        <p className={pageStyles.sectionDescription}>
+                          Leave this empty to let smart mode roam freely, or narrow the library to
+                          the topics you care about most.
+                        </p>
+                      </div>
+                    </div>
+                    <div className={pageStyles.chipRow}>
+                      <button
+                        className={`${pageStyles.tab} ${
+                          selectedQuoteTopics.length === 0 ? pageStyles.tabActive : ''
+                        }`}
+                        onClick={() => void updateQuotePreferences({ selected_topics: [] })}
+                        type="button"
+                      >
+                        All topics
+                      </button>
+                      {quoteTopics.map((topic) => {
+                        const isActive = selectedQuoteTopics.includes(topic)
+                        const nextTopics = isActive
+                          ? selectedQuoteTopics.filter((entry) => entry !== topic)
+                          : [...selectedQuoteTopics, topic]
+
+                        return (
+                          <button
+                            key={topic}
+                            className={`${pageStyles.tab} ${isActive ? pageStyles.tabActive : ''}`}
+                            onClick={() =>
+                              void updateQuotePreferences({ selected_topics: nextTopics })
+                            }
+                            type="button"
+                          >
+                            {formatQuoteTopicLabel(topic)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={pageStyles.documentSection}>
+                  <div className={pageStyles.sectionHeader}>
+                    <div>
+                      <h3 className={pageStyles.sectionTitle}>Import or add quotes</h3>
+                      <p className={pageStyles.sectionDescription}>
+                        Import a JSON quote pack or add one-off lines manually. JSON supports
+                        arrays of objects with `text`, `author`, `work`, `topics`, and
+                        `source_url`.
+                      </p>
+                    </div>
+                  </div>
+                  <div className={pageStyles.inlineActions}>
+                    <Button variant="outline" onClick={() => void handleImportQuotePack()}>
+                      Import JSON pack
+                    </Button>
+                  </div>
+                  <TextareaField
+                    label="Quote text"
+                    rows={4}
+                    value={quoteDraft.text}
+                    onChange={(event) =>
+                      setQuoteDraft((current) => ({ ...current, text: event.target.value }))
+                    }
+                  />
+                  <div className={pageStyles.propertyGrid}>
+                    <InputField
+                      label="Author"
+                      value={quoteDraft.author}
+                      onChange={(event) =>
+                        setQuoteDraft((current) => ({ ...current, author: event.target.value }))
+                      }
+                    />
+                    <InputField
+                      label="Work"
+                      value={quoteDraft.work}
+                      onChange={(event) =>
+                        setQuoteDraft((current) => ({ ...current, work: event.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className={pageStyles.propertyGrid}>
+                    <InputField
+                      label="Topics"
+                      placeholder="discipline, courage, clarity"
+                      value={quoteDraft.topics}
+                      onChange={(event) =>
+                        setQuoteDraft((current) => ({ ...current, topics: event.target.value }))
+                      }
+                    />
+                    <InputField
+                      label="Source URL"
+                      value={quoteDraft.source_url}
+                      onChange={(event) =>
+                        setQuoteDraft((current) => ({
+                          ...current,
+                          source_url: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+                  <Button onClick={() => void handleCreateQuote()}>Add quote</Button>
+                </div>
+
+                <div className={pageStyles.documentSection}>
+                  <div className={pageStyles.sectionHeader}>
+                    <div>
+                      <h3 className={pageStyles.sectionTitle}>Library</h3>
+                      <p className={pageStyles.sectionDescription}>
+                        Browse by topic, keep the built-ins, and prune imported entries when they
+                        stop being useful.
+                      </p>
+                    </div>
+                  </div>
+                  <div className={pageStyles.chipRow}>
+                    <button
+                      className={`${pageStyles.tab} ${
+                        quoteTopicFilter === null ? pageStyles.tabActive : ''
+                      }`}
+                      onClick={() => setQuoteTopicFilter(null)}
+                      type="button"
+                    >
+                      All
+                    </button>
+                    {quoteTopics.map((topic) => (
+                      <button
+                        key={topic}
+                        className={`${pageStyles.tab} ${
+                          quoteTopicFilter === topic ? pageStyles.tabActive : ''
+                        }`}
+                        onClick={() => setQuoteTopicFilter(topic)}
+                        type="button"
+                      >
+                        {formatQuoteTopicLabel(topic)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={pageStyles.list}>
+                    {filteredQuoteLibrary.map((quote) => (
+                      <div key={quote.id} className={pageStyles.row}>
+                        <span className={pageStyles.rowTitle}>{quote.author}</span>
+                        <span className={pageStyles.rowBody}>{quote.text}</span>
+                        <span className={pageStyles.rowMeta}>
+                          {quote.work ?? 'No work specified'} ·{' '}
+                          {quote.source_type === 'builtin' ? 'Built in' : 'Imported'}
+                        </span>
+                        <div className={pageStyles.chipRow}>
+                          {quote.topics.map((topic) => (
+                            <span key={`${quote.id}-${topic}`} className={pageStyles.chip}>
+                              {formatQuoteTopicLabel(topic)}
+                            </span>
+                          ))}
+                        </div>
+                        {quote.source_type === 'custom' ? (
+                          <div className={pageStyles.inlineActions}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                void deleteQuote(quote.id).then(() =>
+                                  pushToast({
+                                    message: 'Removed imported quote.',
+                                    type: 'success'
+                                  })
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                    {filteredQuoteLibrary.length === 0 ? (
+                      <div className={pageStyles.emptyState}>
+                        <strong>No quotes in this slice</strong>
+                        <span>Change the topic filter or import a pack to widen the library.</span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             ) : null}
 
