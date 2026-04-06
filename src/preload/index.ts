@@ -35,6 +35,7 @@ const bridge: LabBridge = {
     updateSource: (input) => ipcRenderer.invoke('calendar:update-source', input),
     deleteSource: (id) => ipcRenderer.invoke('calendar:delete-source', id),
     importIcs: (input) => ipcRenderer.invoke('calendar:import-ics', input),
+    syncSource: (id) => ipcRenderer.invoke('calendar:sync-source', id),
     listEvents: (sourceId) => ipcRenderer.invoke('calendar:list-events', sourceId)
   },
   review: {
@@ -53,6 +54,14 @@ const bridge: LabBridge = {
     createAccount: (input) => ipcRenderer.invoke('integrations:create-account', input),
     updateAccount: (input) => ipcRenderer.invoke('integrations:update-account', input),
     deleteAccount: (id) => ipcRenderer.invoke('integrations:delete-account', id),
+    getGitHubCliStatus: () => ipcRenderer.invoke('integrations:get-github-cli-status'),
+    syncGitHubRepos: (input) => ipcRenderer.invoke('integrations:sync-github-repos', input),
+    connectGoogleCalendar: (clientId) =>
+      ipcRenderer.invoke('integrations:connect-google-calendar', clientId),
+    syncGoogleCalendar: (accountId) =>
+      ipcRenderer.invoke('integrations:sync-google-calendar', accountId),
+    disconnectGoogleCalendar: (accountId) =>
+      ipcRenderer.invoke('integrations:disconnect-google-calendar', accountId),
     listWatchFolders: () => ipcRenderer.invoke('integrations:list-watch-folders'),
     createWatchFolder: (input) => ipcRenderer.invoke('integrations:create-watch-folder', input),
     updateWatchFolder: (input) => ipcRenderer.invoke('integrations:update-watch-folder', input),

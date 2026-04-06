@@ -2,7 +2,10 @@ import { ipcMain } from 'electron'
 import type {
   CreateIntegrationAccountInput,
   CreateWatchFolderInput,
+  GitHubCliStatus,
+  GoogleCalendarConnectionResult,
   IntegrationAccount,
+  SyncGitHubReposInput,
   SyncJob,
   UpdateIntegrationAccountInput,
   UpdateWatchFolderInput,
@@ -27,6 +30,30 @@ export function registerIntegrationHandlers(): void {
   ipcMain.handle(
     'integrations:delete-account',
     async (_event, id: string): Promise<{ ok: boolean }> => integrationQueries.deleteAccount(id)
+  )
+  ipcMain.handle(
+    'integrations:get-github-cli-status',
+    async (): Promise<GitHubCliStatus> => integrationQueries.getGitHubCliStatus()
+  )
+  ipcMain.handle(
+    'integrations:sync-github-repos',
+    async (_event, input?: SyncGitHubReposInput): Promise<SyncJob> =>
+      integrationQueries.syncGitHubRepos(input)
+  )
+  ipcMain.handle(
+    'integrations:connect-google-calendar',
+    async (_event, clientId?: string): Promise<GoogleCalendarConnectionResult> =>
+      integrationQueries.connectGoogleCalendar(clientId)
+  )
+  ipcMain.handle(
+    'integrations:sync-google-calendar',
+    async (_event, accountId?: string): Promise<SyncJob> =>
+      integrationQueries.syncGoogleCalendar(accountId)
+  )
+  ipcMain.handle(
+    'integrations:disconnect-google-calendar',
+    async (_event, accountId: string): Promise<{ ok: boolean }> =>
+      integrationQueries.disconnectGoogleCalendar(accountId)
   )
   ipcMain.handle('integrations:list-watch-folders', async (): Promise<WatchFolder[]> =>
     integrationQueries.listWatchFolders()

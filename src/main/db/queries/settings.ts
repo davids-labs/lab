@@ -72,10 +72,20 @@ const DEFAULT_INTEGRATION_SETTINGS: IntegrationSettings = {
   github_repo_url: 'https://github.com/davids-labs/lab',
   sync_repo_url: 'https://github.com/davids-labs/labsync',
   linkedin_profile_url: '',
-  default_document_directory: 'C:/Users/david/Downloads/files (3)',
+  default_document_directory: 'C:/Users/david/Documents/Lab',
+  default_watch_folder_path: 'C:/Users/david/Documents/Lab',
   use_gh_cli: true,
   github_monitor_orgs: ['apple', 'logitech', 'nothing-tech'],
-  google_calendar_email: ''
+  github_monitored_repos: [
+    'https://github.com/davids-labs/Flash',
+    'https://github.com/davids-labs/flowstate',
+    'https://github.com/davids-labs/synapse',
+    'https://github.com/davids-labs/link',
+    'https://github.com/davids-labs/lab'
+  ],
+  google_calendar_email: '',
+  google_oauth_client_id:
+    '204928498376-64t6msu3c2mgtkdc1h754oto4318tev7.apps.googleusercontent.com'
 }
 
 const DEFAULT_THEME_SETTINGS: ThemeSettings = {

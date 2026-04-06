@@ -17,6 +17,15 @@ import {
   type CalendarSourceRow
 } from '../schema'
 
+type CalendarEventSeed = {
+  external_id: string
+  title: string
+  starts_at: number
+  ends_at: number | null
+  location: string | null
+  notes: string | null
+}
+
 function clean(value: string | null | undefined): string | null {
   const next = value?.trim() ?? ''
   return next.length > 0 ? next : null
@@ -90,23 +99,9 @@ function parseIcsTimestamp(value: string | undefined): number | null {
   return Number.isNaN(parsed) ? null : parsed
 }
 
-function parseIcsEvents(text: string): Array<{
-  external_id: string
-  title: string
-  starts_at: number
-  ends_at: number | null
-  location: string | null
-  notes: string | null
-}> {
+function parseIcsEvents(text: string): CalendarEventSeed[] {
   const lines = unfoldIcs(text)
-  const events: Array<{
-    external_id: string
-    title: string
-    starts_at: number
-    ends_at: number | null
-    location: string | null
-    notes: string | null
-  }> = []
+  const events: CalendarEventSeed[] = []
   let current: Record<string, string> | null = null
 
   for (const line of lines) {
@@ -148,7 +143,51 @@ function parseIcsEvents(text: string): Array<{
   return events
 }
 
-function syncIcsSource(sourceId: string): void {
+function replaceSourceEvents(sourceId: string, events: CalendarEventSeed[]): void {
+  const db = getDb()
+  const now = Date.now()
+
+  db.delete(calendarEventsTable).where(eq(calendarEventsTable.source_id, sourceId)).run()
+
+  for (const event of events) {
+    db.insert(calendarEventsTable)
+      .values({
+        id: ulid(),
+        source_id: sourceId,
+        external_id: event.external_id,
+        title: event.title,
+        starts_at: event.starts_at,
+        ends_at: event.ends_at,
+        location: event.location,
+        notes: event.notes,
+        created_at: now,
+        updated_at: now
+      })
+      .run()
+  }
+}
+
+function updateSourceState(
+  sourceId: string,
+  input: {
+    sync_status: CalendarSource['sync_status']
+    last_synced_at?: number | null
+    last_error?: string | null
+  }
+): void {
+  const db = getDb()
+  db.update(calendarSourcesTable)
+    .set({
+      sync_status: input.sync_status,
+      last_synced_at: input.last_synced_at === undefined ? undefined : input.last_synced_at,
+      last_error: input.last_error === undefined ? undefined : input.last_error,
+      updated_at: Date.now()
+    })
+    .where(eq(calendarSourcesTable.id, sourceId))
+    .run()
+}
+
+function syncIcsSource(sourceId: string): CalendarSource {
   const db = getDb()
   const source = db
     .select()
@@ -164,45 +203,22 @@ function syncIcsSource(sourceId: string): void {
   try {
     const text = fs.readFileSync(source.source_value, 'utf8')
     const events = parseIcsEvents(text)
-
-    db.delete(calendarEventsTable).where(eq(calendarEventsTable.source_id, sourceId)).run()
-
-    for (const event of events) {
-      db.insert(calendarEventsTable)
-        .values({
-          id: ulid(),
-          source_id: sourceId,
-          external_id: event.external_id,
-          title: event.title,
-          starts_at: event.starts_at,
-          ends_at: event.ends_at,
-          location: event.location,
-          notes: event.notes,
-          created_at: now,
-          updated_at: now
-        })
-        .run()
-    }
-
-    db.update(calendarSourcesTable)
-      .set({
-        sync_status: 'ready',
-        last_synced_at: now,
-        last_error: null,
-        updated_at: now
-      })
-      .where(eq(calendarSourcesTable.id, sourceId))
-      .run()
+    replaceSourceEvents(sourceId, events)
+    updateSourceState(sourceId, {
+      sync_status: 'ready',
+      last_synced_at: now,
+      last_error: null
+    })
   } catch (error) {
-    db.update(calendarSourcesTable)
-      .set({
-        sync_status: 'error',
-        last_error: error instanceof Error ? error.message : 'Failed to sync ICS source.',
-        updated_at: now
-      })
-      .where(eq(calendarSourcesTable.id, sourceId))
-      .run()
+    updateSourceState(sourceId, {
+      sync_status: 'error',
+      last_error: error instanceof Error ? error.message : 'Failed to sync ICS source.'
+    })
   }
+
+  return deserializeSource(
+    db.select().from(calendarSourcesTable).where(eq(calendarSourcesTable.id, sourceId)).get()!
+  )
 }
 
 export const calendarQueries = {
@@ -214,6 +230,75 @@ export const calendarQueries = {
       .orderBy(desc(calendarSourcesTable.updated_at))
       .all()
       .map(deserializeSource)
+  },
+
+  getSource(id: string): CalendarSource | null {
+    const db = getDb()
+    const row = db.select().from(calendarSourcesTable).where(eq(calendarSourcesTable.id, id)).get()
+    return row ? deserializeSource(row) : null
+  },
+
+  upsertGoogleSource(input: { label: string; source_value: string }): CalendarSource {
+    const db = getDb()
+    const now = Date.now()
+    const existing = db
+      .select()
+      .from(calendarSourcesTable)
+      .where(eq(calendarSourcesTable.kind, 'google'))
+      .get()
+
+    if (existing) {
+      db.update(calendarSourcesTable)
+        .set({
+          label: input.label.trim() || existing.label,
+          source_value: input.source_value.trim() || existing.source_value,
+          updated_at: now
+        })
+        .where(eq(calendarSourcesTable.id, existing.id))
+        .run()
+
+      return deserializeSource(
+        db.select().from(calendarSourcesTable).where(eq(calendarSourcesTable.id, existing.id)).get()!
+      )
+    }
+
+    const id = ulid()
+    db.insert(calendarSourcesTable)
+      .values({
+        id,
+        label: input.label.trim(),
+        kind: 'google',
+        source_value: input.source_value.trim(),
+        sync_status: 'idle',
+        last_synced_at: null,
+        last_error: null,
+        created_at: now,
+        updated_at: now
+      })
+      .run()
+
+    return deserializeSource(
+      db.select().from(calendarSourcesTable).where(eq(calendarSourcesTable.id, id)).get()!
+    )
+  },
+
+  replaceEvents(sourceId: string, events: CalendarEventSeed[]): CalendarSource {
+    replaceSourceEvents(sourceId, events)
+    updateSourceState(sourceId, {
+      sync_status: 'ready',
+      last_synced_at: Date.now(),
+      last_error: null
+    })
+
+    return this.getSource(sourceId)!
+  },
+
+  markSourceError(sourceId: string, message: string): CalendarSource {
+    updateSourceState(sourceId, {
+      sync_status: 'error',
+      last_error: message
+    })
+    return this.getSource(sourceId)!
   },
 
   createSource(input: CreateCalendarSourceInput): CalendarSource {
@@ -299,6 +384,20 @@ export const calendarQueries = {
       kind: 'ics',
       source_value: filePath
     })
+  },
+
+  syncSource(sourceId: string): CalendarSource {
+    const source = this.getSource(sourceId)
+
+    if (!source) {
+      throw new Error('Calendar source not found')
+    }
+
+    if (source.kind === 'ics') {
+      return syncIcsSource(sourceId)
+    }
+
+    throw new Error('Google calendar sources sync from the Integrations section.')
   },
 
   listEvents(sourceId?: string): CalendarEvent[] {

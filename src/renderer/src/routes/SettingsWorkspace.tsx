@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { INTEGRATION_TYPES, WATCH_FOLDER_MODES } from '@preload/types'
+import { WATCH_FOLDER_MODES } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useCalendarStore } from '@renderer/stores/calendarStore'
@@ -21,14 +21,18 @@ export function SettingsWorkspace(): JSX.Element {
     updateThemeSettings,
     updateUserProfile
   } = useSettingsStore()
-  const { sources, loadSources, importIcs, deleteSource } = useCalendarStore()
+  const { sources, loadSources, importIcs, deleteSource, syncSource } = useCalendarStore()
   const {
     accounts,
+    githubCliStatus,
     watchFolders,
     syncJobs,
     loadAll: loadIntegrations,
-    createAccount,
     deleteAccount,
+    syncGitHubRepos,
+    connectGoogleCalendar,
+    syncGoogleCalendar,
+    disconnectGoogleCalendar,
     createWatchFolder,
     deleteWatchFolder,
     syncWatchFolder
@@ -38,13 +42,10 @@ export function SettingsWorkspace(): JSX.Element {
   const pushToast = useToastStore((state) => state.push)
   const [documentDirectory, setDocumentDirectory] = useState('')
   const [monitorOrgsText, setMonitorOrgsText] = useState('')
+  const [monitoredReposText, setMonitoredReposText] = useState('')
+  const [googleClientId, setGoogleClientId] = useState('')
   const [activeSection, setActiveSection] = useState<SettingsSection>('profile')
   const [calendarLabel, setCalendarLabel] = useState('')
-  const [accountDraft, setAccountDraft] = useState({
-    label: '',
-    type: 'github',
-    config_json: '{}'
-  })
   const [watchFolderDraft, setWatchFolderDraft] = useState({
     label: '',
     folder_path: '',
@@ -62,6 +63,14 @@ export function SettingsWorkspace(): JSX.Element {
   useEffect(() => {
     setDocumentDirectory(bundle?.integration_settings.default_document_directory ?? '')
     setMonitorOrgsText((bundle?.integration_settings.github_monitor_orgs ?? []).join(', '))
+    setMonitoredReposText((bundle?.integration_settings.github_monitored_repos ?? []).join('\n'))
+    setGoogleClientId(bundle?.integration_settings.google_oauth_client_id ?? '')
+    setWatchFolderDraft((current) => ({
+      ...current,
+      label: current.label || 'Lab watch folder',
+      folder_path:
+        current.folder_path || bundle?.integration_settings.default_watch_folder_path || ''
+    }))
   }, [bundle])
 
   async function handleImportCalendar(): Promise<void> {
@@ -91,20 +100,6 @@ export function SettingsWorkspace(): JSX.Element {
     }
   }
 
-  async function handleCreateAccount(): Promise<void> {
-    if (!accountDraft.label.trim()) {
-      return
-    }
-
-    await createAccount({
-      label: accountDraft.label.trim(),
-      type: accountDraft.type as (typeof INTEGRATION_TYPES)[number],
-      config_json: accountDraft.config_json.trim() || '{}'
-    })
-    setAccountDraft({ label: '', type: 'github', config_json: '{}' })
-    pushToast({ message: 'Added integration account.', type: 'success' })
-  }
-
   async function handleCreateWatchFolder(): Promise<void> {
     if (!watchFolderDraft.label.trim() || !watchFolderDraft.folder_path.trim()) {
       return
@@ -127,6 +122,47 @@ export function SettingsWorkspace(): JSX.Element {
     })
     pushToast({ message: 'Added watch folder.', type: 'success' })
   }
+
+  async function handleSyncGitHub(): Promise<void> {
+    const repoUrls = monitoredReposText
+      .split(/\r?\n|,/)
+      .map((value) => value.trim())
+      .filter(Boolean)
+
+    await updateIntegrationSettings({ github_monitored_repos: repoUrls })
+    await syncGitHubRepos({ repo_urls: repoUrls })
+    pushToast({ message: 'GitHub repo sync completed.', type: 'success' })
+  }
+
+  async function handleConnectGoogleCalendar(): Promise<void> {
+    await updateIntegrationSettings({ google_oauth_client_id: googleClientId.trim() })
+    await connectGoogleCalendar(googleClientId.trim())
+    void loadSources()
+    pushToast({ message: 'Google Calendar connected.', type: 'success' })
+  }
+
+  async function handleSyncGoogleCalendar(): Promise<void> {
+    const account = accounts.find((entry) => entry.type === 'google_calendar')
+    await syncGoogleCalendar(account?.id)
+    void loadSources()
+    pushToast({ message: 'Google Calendar sync completed.', type: 'success' })
+  }
+
+  function parseAccountConfig(value: string): Record<string, unknown> {
+    try {
+      const parsed = JSON.parse(value) as unknown
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {}
+    } catch {
+      return {}
+    }
+  }
+
+  const googleAccount = accounts.find((entry) => entry.type === 'google_calendar') ?? null
+  const githubAccount = accounts.find((entry) => entry.type === 'github') ?? null
+  const googleAccountConfig = googleAccount ? parseAccountConfig(googleAccount.config_json) : {}
+  const githubAccountConfig = githubAccount ? parseAccountConfig(githubAccount.config_json) : {}
 
   if (!bundle) {
     return (
@@ -471,13 +507,32 @@ export function SettingsWorkspace(): JSX.Element {
                     void updateIntegrationSettings({ sync_repo_url: event.target.value })
                   }
                 />
-                <div className={pageStyles.propertyGrid}>
-                  <InputField
-                    label="Google Calendar email"
-                    defaultValue={bundle.integration_settings.google_calendar_email}
-                    onBlur={(event) =>
+                <div className={pageStyles.documentSection}>
+                  <div className={pageStyles.sectionHeader}>
+                    <div>
+                      <h3 className={pageStyles.sectionTitle}>GitHub manual sync</h3>
+                      <p className={pageStyles.sectionDescription}>
+                        Pull repo metadata through the signed-in `gh` CLI and turn it into local
+                        proof/capture context.
+                      </p>
+                    </div>
+                    <span className={pageStyles.chip}>
+                      {githubCliStatus?.authenticated
+                        ? `gh ready${githubCliStatus.login ? ` · ${githubCliStatus.login}` : ''}`
+                        : 'gh not signed in'}
+                    </span>
+                  </div>
+                  <TextareaField
+                    label="Monitored repo URLs"
+                    rows={5}
+                    value={monitoredReposText}
+                    onChange={(event) => setMonitoredReposText(event.target.value)}
+                    onBlur={() =>
                       void updateIntegrationSettings({
-                        google_calendar_email: event.target.value.trim()
+                        github_monitored_repos: monitoredReposText
+                          .split(/\r?\n|,/)
+                          .map((value) => value.trim())
+                          .filter(Boolean)
                       })
                     }
                   />
@@ -494,7 +549,105 @@ export function SettingsWorkspace(): JSX.Element {
                       })
                     }
                   />
+                  <div className={pageStyles.inlineActions}>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        void updateIntegrationSettings({
+                          github_monitored_repos: monitoredReposText
+                            .split(/\r?\n|,/)
+                            .map((value) => value.trim())
+                            .filter(Boolean)
+                        })
+                      }
+                    >
+                      Save repo list
+                    </Button>
+                    <Button onClick={() => void handleSyncGitHub()}>Sync GitHub now</Button>
+                  </div>
+                  {githubAccountConfig?.last_synced_at ? (
+                    <p className={pageStyles.muted}>
+                      Last GitHub sync:{' '}
+                      {new Date(Number(githubAccountConfig.last_synced_at)).toLocaleString('en-IE')}
+                    </p>
+                  ) : null}
+                  {githubAccountConfig?.last_error ? (
+                    <p className={pageStyles.muted}>{String(githubAccountConfig.last_error)}</p>
+                  ) : null}
                 </div>
+
+                <div className={pageStyles.documentSection}>
+                  <div className={pageStyles.sectionHeader}>
+                    <div>
+                      <h3 className={pageStyles.sectionTitle}>Google Calendar</h3>
+                      <p className={pageStyles.sectionDescription}>
+                        Connect once with OAuth, then manually pull upcoming calendar pressure into
+                        Execution whenever you want.
+                      </p>
+                    </div>
+                    <span className={pageStyles.chip}>
+                      {googleAccount ? 'connected' : 'not connected'}
+                    </span>
+                  </div>
+                  <div className={pageStyles.propertyGrid}>
+                    <InputField
+                      label="OAuth client ID"
+                      value={googleClientId}
+                      onChange={(event) => setGoogleClientId(event.target.value)}
+                      onBlur={() =>
+                        void updateIntegrationSettings({
+                          google_oauth_client_id: googleClientId.trim()
+                        })
+                      }
+                    />
+                    <InputField
+                      label="Calendar email"
+                      defaultValue={bundle.integration_settings.google_calendar_email}
+                      onBlur={(event) =>
+                        void updateIntegrationSettings({
+                          google_calendar_email: event.target.value.trim()
+                        })
+                      }
+                    />
+                  </div>
+                  <div className={pageStyles.inlineActions}>
+                    <Button variant="outline" onClick={() => void handleConnectGoogleCalendar()}>
+                      {googleAccount ? 'Reconnect Google Calendar' : 'Connect Google Calendar'}
+                    </Button>
+                    <Button
+                      disabled={!googleAccount}
+                      onClick={() => void handleSyncGoogleCalendar()}
+                    >
+                      Sync Google now
+                    </Button>
+                    {googleAccount ? (
+                      <Button
+                        variant="ghost"
+                        onClick={() =>
+                          void disconnectGoogleCalendar(googleAccount.id).then(() => {
+                            void loadSources()
+                            pushToast({ message: 'Google Calendar disconnected.', type: 'success' })
+                          })
+                        }
+                      >
+                        Disconnect
+                      </Button>
+                    ) : null}
+                  </div>
+                  {googleAccountConfig?.email ? (
+                    <p className={pageStyles.muted}>Connected as {String(googleAccountConfig.email)}</p>
+                  ) : null}
+                  {googleAccountConfig?.last_synced_at ? (
+                    <p className={pageStyles.muted}>
+                      Last Google sync:{' '}
+                      {new Date(Number(googleAccountConfig.last_synced_at)).toLocaleString('en-IE')}
+                    </p>
+                  ) : null}
+                  {googleAccountConfig?.last_error ? (
+                    <p className={pageStyles.muted}>{String(googleAccountConfig.last_error)}</p>
+                  ) : null}
+                </div>
+
                 <InputField
                   label="Default document directory"
                   value={documentDirectory}
@@ -526,14 +679,43 @@ export function SettingsWorkspace(): JSX.Element {
                     Save directory
                   </Button>
                 </div>
+                <InputField
+                  label="Default watch folder path"
+                  value={watchFolderDraft.folder_path}
+                  onChange={(event) =>
+                    setWatchFolderDraft((current) => ({
+                      ...current,
+                      folder_path: event.target.value
+                    }))
+                  }
+                  onBlur={() =>
+                    void updateIntegrationSettings({
+                      default_watch_folder_path: watchFolderDraft.folder_path.trim()
+                    })
+                  }
+                />
+                <div className={pageStyles.inlineActions}>
+                  <Button variant="outline" onClick={() => void handleChooseWatchFolder()}>
+                    Choose watch folder
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      void updateIntegrationSettings({
+                        default_watch_folder_path: watchFolderDraft.folder_path.trim()
+                      })
+                    }
+                  >
+                    Save watch folder default
+                  </Button>
+                </div>
 
                 <div className={pageStyles.documentSection}>
                   <div className={pageStyles.sectionHeader}>
                     <div>
                       <h3 className={pageStyles.sectionTitle}>Calendar sources</h3>
                       <p className={pageStyles.sectionDescription}>
-                        Bring time commitments into Execution with local ICS imports. Google sync is
-                        reserved for explicit account setup later.
+                        Bring time commitments into Execution with portable ICS imports and the
+                        connected Google calendar source.
                       </p>
                     </div>
                     <span className={pageStyles.chip}>{sources.length}</span>
@@ -562,6 +744,20 @@ export function SettingsWorkspace(): JSX.Element {
                         <div className={pageStyles.inlineActions}>
                           <Button
                             size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              void (source.kind === 'google'
+                                ? handleSyncGoogleCalendar()
+                                : syncSource(source.id)
+                              ).then(() =>
+                                pushToast({ message: 'Calendar source synced.', type: 'success' })
+                              )
+                            }
+                          >
+                            Sync
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="ghost"
                             onClick={() => void deleteSource(source.id)}
                           >
@@ -582,56 +778,29 @@ export function SettingsWorkspace(): JSX.Element {
                 <div className={pageStyles.documentSection}>
                   <div className={pageStyles.sectionHeader}>
                     <div>
-                      <h3 className={pageStyles.sectionTitle}>Integration accounts</h3>
+                      <h3 className={pageStyles.sectionTitle}>Connected accounts</h3>
                       <p className={pageStyles.sectionDescription}>
-                        Keep connected accounts explicit. These are lightweight placeholders for
-                        GitHub and Google-level enrichment, not the source of truth.
+                        Integration accounts stay lightweight. Secrets live in secure storage, and
+                        the visible account record just tracks labels, sync state, and non-sensitive
+                        metadata.
                       </p>
                     </div>
                     <span className={pageStyles.chip}>{accounts.length}</span>
                   </div>
-                  <div className={pageStyles.inlineActions}>
-                    <InputField
-                      placeholder="Account label"
-                      value={accountDraft.label}
-                      onChange={(event) =>
-                        setAccountDraft((current) => ({ ...current, label: event.target.value }))
-                      }
-                    />
-                    <label className={pageStyles.formGrid}>
-                      <span className={pageStyles.eyebrow}>Type</span>
-                      <select
-                        value={accountDraft.type}
-                        onChange={(event) =>
-                          setAccountDraft((current) => ({ ...current, type: event.target.value }))
-                        }
-                      >
-                        {INTEGRATION_TYPES.map((type) => (
-                          <option key={type} value={type}>
-                            {type.replace(/_/g, ' ')}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <Button onClick={() => void handleCreateAccount()}>Add account</Button>
-                  </div>
-                  <TextareaField
-                    label="Account config JSON"
-                    rows={4}
-                    value={accountDraft.config_json}
-                    onChange={(event) =>
-                      setAccountDraft((current) => ({
-                        ...current,
-                        config_json: event.target.value
-                      }))
-                    }
-                  />
                   <div className={pageStyles.list}>
                     {accounts.map((account) => (
                       <div key={account.id} className={pageStyles.row}>
                         <span className={pageStyles.rowTitle}>{account.label}</span>
                         <span className={pageStyles.rowMeta}>{account.type.replace(/_/g, ' ')}</span>
-                        <span className={pageStyles.rowMeta}>{account.config_json}</span>
+                        <span className={pageStyles.rowMeta}>
+                          {account.type === 'github'
+                            ? `Manual repo sync${githubCliStatus?.login ? ` via ${githubCliStatus.login}` : ''}`
+                            : account.type === 'google_calendar'
+                              ? `Calendar source ${
+                                  String(parseAccountConfig(account.config_json).calendar_id ?? 'primary')
+                                }`
+                              : 'Manual folder ingestion'}
+                        </span>
                         <div className={pageStyles.inlineActions}>
                           <Button
                             size="sm"
@@ -686,6 +855,20 @@ export function SettingsWorkspace(): JSX.Element {
                     />
                     <Button variant="outline" onClick={() => void handleChooseWatchFolder()}>
                       Choose folder
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setWatchFolderDraft((current) => ({
+                          ...current,
+                          label: current.label || 'Lab watch folder',
+                          folder_path:
+                            bundle.integration_settings.default_watch_folder_path ||
+                            current.folder_path
+                        }))
+                      }
+                    >
+                      Use default path
                     </Button>
                   </div>
                   <div className={pageStyles.propertyGrid}>

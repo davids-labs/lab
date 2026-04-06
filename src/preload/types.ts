@@ -534,9 +534,12 @@ export interface IntegrationSettings {
   sync_repo_url: string
   linkedin_profile_url: string
   default_document_directory: string
+  default_watch_folder_path: string
   use_gh_cli: boolean
   github_monitor_orgs: string[]
+  github_monitored_repos: string[]
   google_calendar_email: string
+  google_oauth_client_id: string
 }
 
 export interface ThemeSettings {
@@ -857,6 +860,17 @@ export interface IntegrationAccount {
   config_json: string
   created_at: number
   updated_at: number
+}
+
+export interface GitHubCliStatus {
+  authenticated: boolean
+  login: string | null
+  auth_source: 'gh-cli' | 'none'
+}
+
+export interface GoogleCalendarConnectionResult {
+  account: IntegrationAccount
+  source: CalendarSource
 }
 
 export interface SyncJob {
@@ -1433,9 +1447,12 @@ export interface UpdateIntegrationSettingsInput {
   sync_repo_url?: string
   linkedin_profile_url?: string
   default_document_directory?: string
+  default_watch_folder_path?: string
   use_gh_cli?: boolean
   github_monitor_orgs?: string[]
+  github_monitored_repos?: string[]
   google_calendar_email?: string
+  google_oauth_client_id?: string
 }
 
 export interface UpdateThemeSettingsInput {
@@ -1782,6 +1799,10 @@ export interface UpdateIntegrationAccountInput {
   config_json?: string
 }
 
+export interface SyncGitHubReposInput {
+  repo_urls?: string[]
+}
+
 export interface CreateWatchFolderInput {
   label: string
   folder_path: string
@@ -1877,6 +1898,7 @@ export interface LabBridge {
     updateSource: (input: UpdateCalendarSourceInput) => Promise<CalendarSource>
     deleteSource: (id: string) => Promise<{ ok: boolean }>
     importIcs: (input: ImportCalendarSourceInput) => Promise<CalendarSource>
+    syncSource: (id: string) => Promise<CalendarSource>
     listEvents: (sourceId?: string) => Promise<CalendarEvent[]>
   }
   review: {
@@ -1895,6 +1917,11 @@ export interface LabBridge {
     createAccount: (input: CreateIntegrationAccountInput) => Promise<IntegrationAccount>
     updateAccount: (input: UpdateIntegrationAccountInput) => Promise<IntegrationAccount>
     deleteAccount: (id: string) => Promise<{ ok: boolean }>
+    getGitHubCliStatus: () => Promise<GitHubCliStatus>
+    syncGitHubRepos: (input?: SyncGitHubReposInput) => Promise<SyncJob>
+    connectGoogleCalendar: (clientId?: string) => Promise<GoogleCalendarConnectionResult>
+    syncGoogleCalendar: (accountId?: string) => Promise<SyncJob>
+    disconnectGoogleCalendar: (accountId: string) => Promise<{ ok: boolean }>
     listWatchFolders: () => Promise<WatchFolder[]>
     createWatchFolder: (input: CreateWatchFolderInput) => Promise<WatchFolder>
     updateWatchFolder: (input: UpdateWatchFolderInput) => Promise<WatchFolder>

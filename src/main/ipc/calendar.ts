@@ -32,6 +32,10 @@ export function registerCalendarHandlers(): void {
       calendarQueries.importIcs(input)
   )
   ipcMain.handle(
+    'calendar:sync-source',
+    async (_event, id: string): Promise<CalendarSource> => calendarQueries.syncSource(id)
+  )
+  ipcMain.handle(
     'calendar:list-events',
     async (_event, sourceId?: string): Promise<CalendarEvent[]> => calendarQueries.listEvents(sourceId)
   )

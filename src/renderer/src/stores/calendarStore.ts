@@ -18,6 +18,7 @@ interface CalendarStore {
   updateSource: (input: UpdateCalendarSourceInput) => Promise<CalendarSource>
   deleteSource: (id: string) => Promise<void>
   importIcs: (input: ImportCalendarSourceInput) => Promise<CalendarSource>
+  syncSource: (id: string) => Promise<CalendarSource>
 }
 
 export const useCalendarStore = create<CalendarStore>((set, get) => ({
@@ -66,6 +67,13 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
 
   async importIcs(input) {
     const source = await window.lab.calendar.importIcs(input)
+    await get().loadSources()
+    await get().loadEvents(source.id)
+    return source
+  },
+
+  async syncSource(id) {
+    const source = await window.lab.calendar.syncSource(id)
     await get().loadSources()
     await get().loadEvents(source.id)
     return source
