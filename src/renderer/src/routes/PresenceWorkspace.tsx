@@ -2,12 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { CONTENT_STATUSES, PRESENCE_ASSET_STATUSES } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
+import { useExportStore } from '@renderer/stores/exportStore'
 import { usePresenceStore } from '@renderer/stores/presenceStore'
+import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 type PresenceTab = 'fragments' | 'assets' | 'cvs' | 'content'
 
 export function PresenceWorkspace(): JSX.Element {
+  const { generatePack } = useExportStore()
+  const pushToast = useToastStore((state) => state.push)
   const {
     narrativeFragments,
     profileAssets,
@@ -102,6 +106,18 @@ export function PresenceWorkspace(): JSX.Element {
               <span className={pageStyles.muted}>Open ideas</span>
               <div className={pageStyles.metricValue}>{openIdeaCount}</div>
             </div>
+          </div>
+          <div className={pageStyles.inlineActions}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                  pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
+                )
+              }
+            >
+              Export narrative packet
+            </Button>
           </div>
         </section>
 

@@ -1,7 +1,10 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/Button'
+import { InputField, TextareaField } from '@renderer/components/ui/InputField'
+import { useCaptureStore } from '@renderer/stores/captureStore'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
+import { useExportStore } from '@renderer/stores/exportStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
@@ -20,14 +23,19 @@ function formatDate(value: number | null | undefined): string {
 export function HomeDashboard(): JSX.Element {
   const navigate = useNavigate()
   const { error, importStarterTemplate, isLoading, loadSummary, summary } = useDashboardStore()
+  const createEntry = useCaptureStore((state) => state.createEntry)
+  const { generatePack, lastPack, loadBundles } = useExportStore()
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
   const pushToast = useToastStore((state) => state.push)
+  const [captureTitle, setCaptureTitle] = useState('')
+  const [captureBody, setCaptureBody] = useState('')
 
   useEffect(() => {
     void loadSummary()
     void loadBundle()
-  }, [loadBundle, loadSummary])
+    void loadBundles()
+  }, [loadBundle, loadBundles, loadSummary])
 
   const showStarterPrompt =
     summary &&
@@ -55,6 +63,23 @@ export function HomeDashboard(): JSX.Element {
         type: 'error'
       })
     }
+  }
+
+  async function handleQuickCapture(): Promise<void> {
+    if (!captureTitle.trim()) {
+      return
+    }
+
+    await createEntry({
+      title: captureTitle.trim(),
+      body: captureBody.trim() || null,
+      kind: 'idea',
+      source: 'manual'
+    })
+    setCaptureTitle('')
+    setCaptureBody('')
+    await loadSummary()
+    pushToast({ message: 'Added to the inbox.', type: 'success' })
   }
 
   if (!summary) {
@@ -111,23 +136,37 @@ export function HomeDashboard(): JSX.Element {
             <div>
               <h2 className={pageStyles.sectionTitle}>Quick capture</h2>
               <p className={pageStyles.sectionDescription}>
-                Jump straight into the next operating move instead of hunting through the shell.
+                Capture first, clarify later. The inbox is the front door for ideas, reminders,
+                doc snippets, and loose opportunities.
               </p>
             </div>
           </div>
-          <div className={pageStyles.inlineActions}>
-            <Button size="sm" onClick={() => navigate('/execution')}>
-              Weekly priority
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('/execution')}>
-              Countdown
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('/pipeline')}>
-              Application
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('/library')}>
-              Import doc
-            </Button>
+          <div className={pageStyles.document}>
+            <InputField
+              placeholder="Capture the next thought, reminder, idea, or loose opportunity"
+              value={captureTitle}
+              onChange={(event) => setCaptureTitle(event.target.value)}
+            />
+            <TextareaField
+              placeholder="Optional context, notes, or why it matters"
+              rows={3}
+              value={captureBody}
+              onChange={(event) => setCaptureBody(event.target.value)}
+            />
+            <div className={pageStyles.inlineActions}>
+              <Button size="sm" onClick={() => void handleQuickCapture()}>
+                Add to inbox
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/execution')}>
+                Open execution
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/notes')}>
+                Open notes
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/library')}>
+                Import doc
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -311,59 +350,169 @@ export function HomeDashboard(): JSX.Element {
           <article className={pageStyles.section}>
             <div className={pageStyles.sectionHeader}>
               <div>
-                <h2 className={pageStyles.sectionTitle}>Proof and pipeline</h2>
+                <h2 className={pageStyles.sectionTitle}>Execution and proof</h2>
                 <p className={pageStyles.sectionDescription}>
-                  Capability and opportunity should stay adjacent so finished work turns into motion.
+                  Keep the inbox small, the action lanes concrete, and the proof/pipeline surfaces in reach.
                 </p>
               </div>
             </div>
             <div className={pageStyles.metricStrip}>
               <div className={pageStyles.metric}>
+                <span className={pageStyles.muted}>Inbox</span>
+                <div className={pageStyles.metricValue}>{summary.inbox.open}</div>
+              </div>
+              <div className={pageStyles.metric}>
+                <span className={pageStyles.muted}>This week actions</span>
+                <div className={pageStyles.metricValue}>{summary.actions.by_status.this_week}</div>
+              </div>
+              <div className={pageStyles.metric}>
                 <span className={pageStyles.muted}>Verified skills</span>
                 <div className={pageStyles.metricValue}>{summary.skill_coverage.verified}</div>
               </div>
-              <div className={pageStyles.metric}>
-                <span className={pageStyles.muted}>Completed projects</span>
-                <div className={pageStyles.metricValue}>
-                  {summary.ecosystem.by_execution_stage.completed}
-                </div>
-              </div>
-              <div className={pageStyles.metric}>
-                <span className={pageStyles.muted}>Active applications</span>
-                <div className={pageStyles.metricValue}>{summary.pipeline.active_applications}</div>
-              </div>
             </div>
             <div className={pageStyles.list}>
-              {summary.pipeline.next_actions.length > 0 ? (
+              {summary.actions.focus.length > 0 ? (
+                summary.actions.focus.slice(0, 4).map((action) => (
+                  <div key={action.id} className={pageStyles.row}>
+                    <span className={pageStyles.rowTitle}>{action.title}</span>
+                    <span className={pageStyles.rowMeta}>
+                      {action.status.replace(/_/g, ' ')}
+                      {action.due_at ? ` · due ${formatDate(action.due_at)}` : ''}
+                    </span>
+                  </div>
+                ))
+              ) : (
                 summary.pipeline.next_actions.slice(0, 3).map((application) => (
                   <div key={application.id} className={pageStyles.row}>
                     <span className={pageStyles.rowTitle}>{application.title}</span>
                     <span className={pageStyles.rowMeta}>
                       {application.status.replace(/_/g, ' ')}
-                      {application.follow_up_at
-                        ? ` · follow up ${formatDate(application.follow_up_at)}`
-                        : application.deadline_at
-                          ? ` · deadline ${formatDate(application.deadline_at)}`
-                          : ''}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                summary.ecosystem.recently_updated.slice(0, 3).map((project) => (
-                  <div key={project.id} className={pageStyles.row}>
-                    <span className={pageStyles.rowTitle}>{project.name}</span>
-                    <span className={pageStyles.rowMeta}>
-                      {project.type} · {project.execution_stage.replace(/_/g, ' ')}
                     </span>
                   </div>
                 ))
               )}
             </div>
             <div className={pageStyles.inlineActions}>
-              <Button onClick={() => navigate('/proof/projects')}>Open proof</Button>
+              <Button onClick={() => navigate('/execution')}>Open execution</Button>
+              <Button variant="outline" onClick={() => navigate('/proof/projects')}>
+                Open proof
+              </Button>
               <Button variant="outline" onClick={() => navigate('/pipeline')}>
                 Open pipeline
               </Button>
+            </div>
+          </article>
+        </section>
+
+        <section className={pageStyles.twoColumn}>
+          <article className={pageStyles.section}>
+            <div className={pageStyles.sectionHeader}>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Notes and calendar</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Keep supporting context close: linked notes, imported calendars, and upcoming commitments.
+                </p>
+              </div>
+            </div>
+            <div className={pageStyles.metricStrip}>
+              <div className={pageStyles.metric}>
+                <span className={pageStyles.muted}>Notes</span>
+                <div className={pageStyles.metricValue}>{summary.notes.count}</div>
+              </div>
+              <div className={pageStyles.metric}>
+                <span className={pageStyles.muted}>Calendar sources</span>
+                <div className={pageStyles.metricValue}>{summary.calendar.sources}</div>
+              </div>
+              <div className={pageStyles.metric}>
+                <span className={pageStyles.muted}>Upcoming events</span>
+                <div className={pageStyles.metricValue}>{summary.calendar.upcoming.length}</div>
+              </div>
+            </div>
+            <div className={pageStyles.list}>
+              {summary.notes.recent.slice(0, 3).map((note) => (
+                <div key={note.id} className={pageStyles.row}>
+                  <span className={pageStyles.rowTitle}>{note.title}</span>
+                  <span className={pageStyles.rowMeta}>{note.type}</span>
+                </div>
+              ))}
+              {summary.calendar.upcoming.slice(0, 3).map((event) => (
+                <div key={event.id} className={pageStyles.row}>
+                  <span className={pageStyles.rowTitle}>{event.title}</span>
+                  <span className={pageStyles.rowMeta}>{formatDate(event.starts_at)}</span>
+                </div>
+              ))}
+            </div>
+            <div className={pageStyles.inlineActions}>
+              <Button onClick={() => navigate('/notes')}>Open notes</Button>
+              <Button variant="outline" onClick={() => navigate('/settings')}>
+                Calendar setup
+              </Button>
+            </div>
+          </article>
+
+          <article className={pageStyles.section}>
+            <div className={pageStyles.sectionHeader}>
+              <div>
+                <h2 className={pageStyles.sectionTitle}>Context packs and insight hooks</h2>
+                <p className={pageStyles.sectionDescription}>
+                  Generate portable packets for review, applications, and external LLM handoff without embedding a cloud copilot.
+                </p>
+              </div>
+            </div>
+            <div className={pageStyles.inlineActions}>
+              <Button
+                size="sm"
+                onClick={() =>
+                  void generatePack({ target: 'weekly_review', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated weekly review packet.', type: 'success' })
+                  )
+                }
+              >
+                Weekly review pack
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated narrative packet.', type: 'success' })
+                  )
+                }
+              >
+                Narrative pack
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void generatePack({ target: 'workspace_dump', format: 'json' }).then(() =>
+                    pushToast({ message: 'Generated workspace dump.', type: 'success' })
+                  )
+                }
+              >
+                Workspace dump
+              </Button>
+            </div>
+            {lastPack ? (
+              <div className={pageStyles.callout}>
+                <strong>{lastPack.title}</strong>
+                <p className={pageStyles.description}>{lastPack.summary}</p>
+                <p className={pageStyles.muted}>{lastPack.prompt_bundle}</p>
+              </div>
+            ) : null}
+            <div className={pageStyles.list}>
+              {summary.insights.drift_alerts.map((alert) => (
+                <div key={alert.id} className={pageStyles.row}>
+                  <span className={pageStyles.rowTitle}>{alert.title}</span>
+                  <span className={pageStyles.rowMeta}>{alert.body}</span>
+                </div>
+              ))}
+              {summary.insights.proof_gaps.slice(0, 2).map((gap) => (
+                <div key={gap.id} className={pageStyles.row}>
+                  <span className={pageStyles.rowTitle}>{gap.title}</span>
+                  <span className={pageStyles.rowMeta}>{gap.body}</span>
+                </div>
+              ))}
             </div>
           </article>
         </section>

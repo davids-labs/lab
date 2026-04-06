@@ -4,6 +4,7 @@ import { HomeDashboard } from '@renderer/routes/HomeDashboard'
 import { CommandCenterLayout } from '@renderer/routes/CommandCenterLayout'
 import { LibraryWorkspace } from '@renderer/routes/LibraryWorkspace'
 import { MasterPlan } from '@renderer/routes/MasterPlan'
+import { NotesWorkspace } from '@renderer/routes/NotesWorkspace'
 import { PageCustomiser } from '@renderer/routes/PageCustomiser'
 import { PersonalOs } from '@renderer/routes/PersonalOs'
 import { PipelineWorkspace } from '@renderer/routes/PipelineWorkspace'
@@ -32,6 +33,10 @@ const router = createHashRouter([
       {
         path: 'direction',
         element: <MasterPlan />
+      },
+      {
+        path: 'notes',
+        element: <NotesWorkspace />
       },
       {
         path: 'execution',

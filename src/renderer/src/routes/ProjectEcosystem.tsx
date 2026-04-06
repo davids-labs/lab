@@ -4,6 +4,7 @@ import { PROJECT_EXECUTION_STAGES, type Project } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
 import { Modal } from '@renderer/components/ui/Modal'
+import { useExportStore } from '@renderer/stores/exportStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { formatRelativeTime } from '@renderer/utils/relativeTime'
@@ -16,6 +17,7 @@ export function ProjectEcosystem(): JSX.Element {
   const navigate = useNavigate()
   const { createProject, deleteProject, filter, loadProjects, projects, setFilter, updateProject } =
     useProjectStore()
+  const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
@@ -185,6 +187,21 @@ export function ProjectEcosystem(): JSX.Element {
                           onClick={() => navigate(`/project/${project.id}/preview`)}
                         >
                           Preview
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            void generatePack({
+                              target: 'project_proof',
+                              project_id: project.id,
+                              format: 'markdown'
+                            }).then(() =>
+                              pushToast({ message: 'Generated project proof packet.', type: 'success' })
+                            )
+                          }
+                        >
+                          Proof pack
                         </Button>
                         <Button
                           size="sm"

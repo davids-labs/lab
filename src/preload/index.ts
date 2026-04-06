@@ -6,6 +6,60 @@ const bridge: LabBridge = {
     summary: () => ipcRenderer.invoke('dashboard:summary'),
     importStarterTemplate: () => ipcRenderer.invoke('dashboard:import-starter-template')
   },
+  capture: {
+    list: (status) => ipcRenderer.invoke('capture:list', status),
+    create: (input) => ipcRenderer.invoke('capture:create', input),
+    update: (input) => ipcRenderer.invoke('capture:update', input),
+    triage: (input) => ipcRenderer.invoke('capture:triage', input),
+    delete: (id) => ipcRenderer.invoke('capture:delete', id)
+  },
+  actions: {
+    list: (status) => ipcRenderer.invoke('actions:list', status),
+    create: (input) => ipcRenderer.invoke('actions:create', input),
+    update: (input) => ipcRenderer.invoke('actions:update', input),
+    delete: (id) => ipcRenderer.invoke('actions:delete', id)
+  },
+  notes: {
+    list: () => ipcRenderer.invoke('notes:list'),
+    get: (id) => ipcRenderer.invoke('notes:get', id),
+    create: (input) => ipcRenderer.invoke('notes:create', input),
+    update: (input) => ipcRenderer.invoke('notes:update', input),
+    delete: (id) => ipcRenderer.invoke('notes:delete', id),
+    listLinks: (noteId) => ipcRenderer.invoke('notes:list-links', noteId),
+    createLink: (input) => ipcRenderer.invoke('notes:create-link', input),
+    deleteLink: (id) => ipcRenderer.invoke('notes:delete-link', id)
+  },
+  calendar: {
+    listSources: () => ipcRenderer.invoke('calendar:list-sources'),
+    createSource: (input) => ipcRenderer.invoke('calendar:create-source', input),
+    updateSource: (input) => ipcRenderer.invoke('calendar:update-source', input),
+    deleteSource: (id) => ipcRenderer.invoke('calendar:delete-source', id),
+    importIcs: (input) => ipcRenderer.invoke('calendar:import-ics', input),
+    listEvents: (sourceId) => ipcRenderer.invoke('calendar:list-events', sourceId)
+  },
+  review: {
+    listSessions: () => ipcRenderer.invoke('review:list-sessions'),
+    createSession: (input) => ipcRenderer.invoke('review:create-session', input),
+    updateSession: (input) => ipcRenderer.invoke('review:update-session', input),
+    getWeeklyReset: (weekKey) => ipcRenderer.invoke('review:get-weekly-reset', weekKey)
+  },
+  exports: {
+    listBundles: () => ipcRenderer.invoke('exports:list-bundles'),
+    generateContextPack: (input) => ipcRenderer.invoke('exports:generate-context-pack', input),
+    saveContextPack: (input) => ipcRenderer.invoke('exports:save-context-pack', input)
+  },
+  integrations: {
+    listAccounts: () => ipcRenderer.invoke('integrations:list-accounts'),
+    createAccount: (input) => ipcRenderer.invoke('integrations:create-account', input),
+    updateAccount: (input) => ipcRenderer.invoke('integrations:update-account', input),
+    deleteAccount: (id) => ipcRenderer.invoke('integrations:delete-account', id),
+    listWatchFolders: () => ipcRenderer.invoke('integrations:list-watch-folders'),
+    createWatchFolder: (input) => ipcRenderer.invoke('integrations:create-watch-folder', input),
+    updateWatchFolder: (input) => ipcRenderer.invoke('integrations:update-watch-folder', input),
+    deleteWatchFolder: (id) => ipcRenderer.invoke('integrations:delete-watch-folder', id),
+    listSyncJobs: () => ipcRenderer.invoke('integrations:list-sync-jobs'),
+    syncWatchFolder: (id) => ipcRenderer.invoke('integrations:sync-watch-folder', id)
+  },
   plan: {
     listNodes: () => ipcRenderer.invoke('plan:list-nodes'),
     getNode: (id) => ipcRenderer.invoke('plan:get-node', id),

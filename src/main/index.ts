@@ -4,17 +4,24 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initializeDatabase } from './db'
+import { registerActionHandlers } from './ipc/actions'
 import { registerAssetHandlers } from './ipc/asset'
 import { registerBlockHandlers } from './ipc/block'
+import { registerCalendarHandlers } from './ipc/calendar'
+import { registerCaptureHandlers } from './ipc/capture'
 import { registerDashboardHandlers } from './ipc/dashboard'
+import { registerExportHandlers } from './ipc/exports'
 import { registerGitHandlers } from './ipc/git'
+import { registerIntegrationHandlers } from './ipc/integrations'
 import { registerLibraryHandlers } from './ipc/library'
+import { registerNoteHandlers } from './ipc/notes'
 import { registerOsHandlers } from './ipc/os'
 import { registerPageHandlers } from './ipc/page'
 import { registerPlanHandlers } from './ipc/plan'
 import { registerPipelineHandlers } from './ipc/pipeline'
 import { registerPresenceHandlers } from './ipc/presence'
 import { registerProjectHandlers } from './ipc/project'
+import { registerReviewHandlers } from './ipc/review'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerSkillHandlers } from './ipc/skills'
 import { registerSystemHandlers } from './ipc/system'
@@ -64,6 +71,13 @@ app.whenReady().then(() => {
   initializeAppPaths(app.getPath('userData'))
   initializeDatabase()
   registerDashboardHandlers()
+  registerCaptureHandlers()
+  registerActionHandlers()
+  registerNoteHandlers()
+  registerCalendarHandlers()
+  registerReviewHandlers()
+  registerExportHandlers()
+  registerIntegrationHandlers()
   registerPlanHandlers()
   registerSkillHandlers()
   registerOsHandlers()

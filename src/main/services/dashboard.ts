@@ -1,6 +1,21 @@
-import type { DashboardCountdown, DashboardSummary, PlanNode, Project } from '../../preload/types'
+import type {
+  ActionStatus,
+  DashboardCountdown,
+  DashboardSummary,
+  DriftAlert,
+  PlanNode,
+  Project,
+  ProofGap,
+  Recommendation
+} from '../../preload/types'
+import { ACTION_STATUSES } from '../../preload/types'
+import { actionQueries } from '../db/queries/actions'
+import { calendarQueries } from '../db/queries/calendar'
+import { captureQueries } from '../db/queries/capture'
+import { exportQueries } from '../db/queries/exports'
 import { buildBlockingAlert, getBlockingReasonsForNode } from './insights'
 import { libraryQueries } from '../db/queries/library'
+import { noteQueries } from '../db/queries/notes'
 import { osQueries } from '../db/queries/os'
 import { pipelineQueries } from '../db/queries/pipeline'
 import { planQueries } from '../db/queries/plan'
@@ -172,6 +187,157 @@ function buildEcosystemSummary(projects: Project[]): DashboardSummary['ecosystem
   }
 }
 
+function buildInboxSummary(): DashboardSummary['inbox'] {
+  const entries = captureQueries.list('inbox')
+  return {
+    open: entries.length,
+    recent: entries.slice(0, 6)
+  }
+}
+
+function buildActionSummary(): DashboardSummary['actions'] {
+  const openActions = actionQueries.listOpen()
+  const byStatus = ACTION_STATUSES.reduce(
+    (accumulator, status) => ({
+      ...accumulator,
+      [status]: openActions.filter((item) => item.status === status).length
+    }),
+    {} as Record<ActionStatus, number>
+  )
+
+  return {
+    by_status: byStatus,
+    focus: openActions
+      .filter((item) => ['today', 'this_week', 'next', 'waiting'].includes(item.status))
+      .sort((left, right) => {
+        const leftDate = left.due_at ?? left.updated_at
+        const rightDate = right.due_at ?? right.updated_at
+        return leftDate - rightDate
+      })
+      .slice(0, 8),
+    overdue: actionQueries.listOverdue().slice(0, 6)
+  }
+}
+
+function buildNoteSummary(): DashboardSummary['notes'] {
+  const notes = noteQueries.list().filter((note) => !note.archived)
+  return {
+    count: notes.length,
+    recent: notes.slice(0, 6)
+  }
+}
+
+function buildCalendarSummary(): DashboardSummary['calendar'] {
+  const now = Date.now()
+  const upcomingLimit = now + 1000 * 60 * 60 * 24 * 21
+  const upcoming = calendarQueries
+    .listEvents()
+    .filter((event) => event.starts_at >= now && event.starts_at <= upcomingLimit)
+    .slice(0, 8)
+
+  return {
+    sources: calendarQueries.listSources().length,
+    upcoming
+  }
+}
+
+function buildDriftAlerts(): DriftAlert[] {
+  const alerts: DriftAlert[] = []
+  const activePhase =
+    planQueries
+      .listNodes()
+      .find((node) => node.kind === 'phase' && node.status !== 'complete' && node.status !== 'paused') ??
+    null
+  const openActions = actionQueries.listOpen()
+  const weeklyPriorities = osQueries.listWeeklyPriorities(getCurrentWeekKey())
+
+  if (activePhase && !openActions.some((item) => item.linked_plan_node_id === activePhase.id)) {
+    alerts.push({
+      id: `phase-action:${activePhase.id}`,
+      title: 'Current phase has no active action owner',
+      body: `Link at least one active action to "${activePhase.title}" so the strategic layer is driving weekly work.`,
+      severity: 'warning',
+      entity_type: 'plan_node',
+      entity_id: activePhase.id
+    })
+  }
+
+  if (weeklyPriorities.length === 0) {
+    alerts.push({
+      id: 'weekly-priority-gap',
+      title: 'The week has no operating priorities',
+      body: 'Set weekly priorities so the execution layer has a clear horizon.',
+      severity: 'warning',
+      entity_type: 'weekly_priority',
+      entity_id: getCurrentWeekKey()
+    })
+  }
+
+  if (captureQueries.list('inbox').length > 8) {
+    alerts.push({
+      id: 'inbox-overflow',
+      title: 'Inbox is starting to overflow',
+      body: 'Triage the oldest captures into actions, notes, or pipeline records before they turn into noise.',
+      severity: 'info',
+      entity_type: 'inbox_entry',
+      entity_id: 'inbox'
+    })
+  }
+
+  return alerts.slice(0, 6)
+}
+
+function buildProofGaps(): ProofGap[] {
+  const unverified = skillQueries
+    .listNodes()
+    .filter((node) => node.state !== 'verified')
+    .slice(0, 5)
+
+  return unverified.map((skill) => ({
+    id: `skill-gap:${skill.id}`,
+    title: `Missing verified proof for ${skill.title}`,
+    body: 'Attach or confirm evidence from a completed project so this skill can move from asserted to verified.',
+    target_role_id: null,
+    target_organization_id: null,
+    related_skill_id: skill.id,
+    related_project_id: null,
+    severity: skill.state === 'in_progress' ? 'warning' : 'critical'
+  }))
+}
+
+function buildRecommendations(): Recommendation[] {
+  const recommendations: Recommendation[] = []
+
+  if (actionQueries.list('today').length === 0) {
+    recommendations.push({
+      id: 'rec-plan-today',
+      title: 'Set today’s action lane',
+      body: 'Move one or two actions into Today so Execution becomes the live operating surface.',
+      target_route: '/execution'
+    })
+  }
+
+  if (noteQueries.list().length === 0) {
+    recommendations.push({
+      id: 'rec-first-note',
+      title: 'Start a strategy note',
+      body: 'Use Notes for decision logs, planning memos, and meeting notes instead of burying them in other modules.',
+      target_route: '/notes'
+    })
+  }
+
+  if (calendarQueries.listSources().length === 0) {
+    recommendations.push({
+      id: 'rec-calendar',
+      title: 'Import a calendar source',
+      body: 'Bring your real time commitments into the app with an ICS calendar import.',
+      target_route: '/settings'
+    })
+  }
+
+  return recommendations.slice(0, 4)
+}
+
 export function getDashboardSummary(): DashboardSummary {
   const nodes = planQueries.listNodes()
   const { activePhase, children } = buildActivePhase(nodes)
@@ -187,6 +353,13 @@ export function getDashboardSummary(): DashboardSummary {
   const suggestions = libraryQueries.listSuggestions()
   const settings = settingsQueries.getBundle()
   const skillCoverage = skillQueries.getCoverageSummary()
+  const inboxSummary = buildInboxSummary()
+  const actionSummary = buildActionSummary()
+  const noteSummary = buildNoteSummary()
+  const calendarSummary = buildCalendarSummary()
+  const driftAlerts = buildDriftAlerts()
+  const proofGaps = buildProofGaps()
+  const recommendations = buildRecommendations()
   const missing: string[] = []
 
   if (!settings.user_profile.linkedin_url && !settings.integration_settings.linkedin_profile_url) {
@@ -209,13 +382,20 @@ export function getDashboardSummary(): DashboardSummary {
     missing.push('Projects')
   }
 
+  if (noteSummary.count === 0) {
+    missing.push('Notes')
+  }
+
   return {
     counts: {
       plan_nodes: nodes.length,
       skills: skillQueries.listNodes().length,
       projects: projects.length,
       countdowns: osQueries.listCountdowns().length,
-      os_logs: osQueries.listDailyLogs().length
+      os_logs: osQueries.listDailyLogs().length,
+      inbox_entries: inboxSummary.open,
+      actions: actionQueries.list().length,
+      notes: noteSummary.count
     },
     active_phase: activePhase,
     active_phase_children: children,
@@ -258,6 +438,18 @@ export function getDashboardSummary(): DashboardSummary {
     library: {
       documents: documents.length,
       pending_suggestions: suggestions.filter((entry) => entry.status === 'pending').length
+    },
+    inbox: inboxSummary,
+    actions: actionSummary,
+    notes: noteSummary,
+    calendar: calendarSummary,
+    insights: {
+      drift_alerts: driftAlerts,
+      proof_gaps: proofGaps,
+      recommendations
+    },
+    exports: {
+      recent: exportQueries.listBundles().slice(0, 5)
     },
     onboarding: {
       needs_setup: settings.dashboard_preferences.show_onboarding || missing.length > 0,

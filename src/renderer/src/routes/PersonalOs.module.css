@@ -186,6 +186,39 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.actionComposer {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.actionList,
+.inboxList,
+.reviewList {
+  display: grid;
+  gap: 10px;
+}
+
+.actionRow,
+.inboxRow,
+.reviewPrompt {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--lab-border);
+  border-radius: var(--lab-radius-lg);
+  background: var(--lab-surface-muted);
+}
+
+.actionRowActions,
+.triageRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
 .sectionDivider {
   height: 1px;
   background: var(--lab-border);
@@ -193,7 +226,8 @@
 
 @media (max-width: 1180px) {
   .priorityDraft,
-  .reviewGrid {
+  .reviewGrid,
+  .actionComposer {
     grid-template-columns: 1fr;
   }
 }

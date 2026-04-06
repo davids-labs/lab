@@ -29,6 +29,8 @@ import { pipelineQueries } from './pipeline'
 import { planQueries } from './plan'
 import { presenceQueries } from './presence'
 import { skillQueries } from './skills'
+import { actionQueries } from './actions'
+import { noteQueries } from './notes'
 
 function deserializeDocument(row: SourceDocumentRow): SourceDocument {
   return {
@@ -175,6 +177,18 @@ function buildSuggestions(
           })
         })
       }
+
+      suggestions.push({
+        excerpt_id: excerpt.id,
+        suggestion_type: 'action_item',
+        title: excerpt.heading ?? 'Roadmap follow-up action',
+        payload_json: JSON.stringify({
+          title: excerpt.heading ?? 'Roadmap follow-up action',
+          details: excerptSummary(excerpt.content),
+          status: 'next',
+          priority: 'high'
+        })
+      })
     }
   }
 
@@ -257,6 +271,17 @@ function buildSuggestions(
           body: excerpt.content
         })
       })
+      suggestions.push({
+        excerpt_id: excerpt.id,
+        suggestion_type: 'note_page',
+        title: excerpt.heading ?? 'LinkedIn strategy note',
+        payload_json: JSON.stringify({
+          title: excerpt.heading ?? 'LinkedIn strategy note',
+          body: excerpt.content,
+          type: 'strategy',
+          summary: excerptSummary(excerpt.content)
+        })
+      })
     }
   }
 
@@ -270,6 +295,37 @@ function buildSuggestions(
           title: excerpt.heading ?? 'Profile narrative fragment',
           fragment_type: 'story',
           body: excerpt.content
+        })
+      })
+    }
+  }
+
+  if (title.includes('landscape')) {
+    for (const excerpt of excerpts.slice(0, 3)) {
+      suggestions.push({
+        excerpt_id: excerpt.id,
+        suggestion_type: 'application_record',
+        title: excerpt.heading ?? 'Target opportunity',
+        payload_json: JSON.stringify({
+          title: excerpt.heading ?? 'Target opportunity',
+          notes: excerptSummary(excerpt.content),
+          status: 'target'
+        })
+      })
+    }
+  }
+
+  if (!title.includes('linkedin')) {
+    for (const excerpt of excerpts.slice(0, 2)) {
+      suggestions.push({
+        excerpt_id: excerpt.id,
+        suggestion_type: 'note_page',
+        title: excerpt.heading ?? `${documentTitle} note`,
+        payload_json: JSON.stringify({
+          title: excerpt.heading ?? `${documentTitle} note`,
+          body: excerpt.content,
+          type: 'reference',
+          summary: excerptSummary(excerpt.content)
         })
       })
     }
@@ -531,6 +587,26 @@ export const libraryQueries = {
           week_key: startOfWeekKey(),
           title: String(payload.title ?? suggestion.title),
           status: 'planned',
+          notes: String(payload.notes ?? '')
+        }).id
+      } else if (suggestion.suggestion_type === 'action_item') {
+        targetRecordId = actionQueries.create({
+          title: String(payload.title ?? suggestion.title),
+          details: String(payload.details ?? ''),
+          status: (payload.status as 'inbox' | 'next' | 'this_week' | 'today' | 'waiting' | 'someday' | 'done' | 'cancelled' | undefined) ?? 'inbox',
+          priority: (payload.priority as 'low' | 'medium' | 'high' | 'critical' | undefined) ?? 'medium'
+        }).id
+      } else if (suggestion.suggestion_type === 'note_page') {
+        targetRecordId = noteQueries.create({
+          title: String(payload.title ?? suggestion.title),
+          body: String(payload.body ?? ''),
+          type: (payload.type as 'strategy' | 'meeting' | 'journal' | 'brief' | 'reference' | undefined) ?? 'reference',
+          summary: String(payload.summary ?? '')
+        }).id
+      } else if (suggestion.suggestion_type === 'application_record') {
+        targetRecordId = pipelineQueries.createApplication({
+          title: String(payload.title ?? suggestion.title),
+          status: 'target',
           notes: String(payload.notes ?? '')
         }).id
       }

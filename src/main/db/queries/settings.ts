@@ -73,7 +73,9 @@ const DEFAULT_INTEGRATION_SETTINGS: IntegrationSettings = {
   sync_repo_url: 'https://github.com/davids-labs/labsync',
   linkedin_profile_url: '',
   default_document_directory: 'C:/Users/david/Downloads/files (3)',
-  use_gh_cli: true
+  use_gh_cli: true,
+  github_monitor_orgs: ['apple', 'logitech', 'nothing-tech'],
+  google_calendar_email: ''
 }
 
 const DEFAULT_THEME_SETTINGS: ThemeSettings = {

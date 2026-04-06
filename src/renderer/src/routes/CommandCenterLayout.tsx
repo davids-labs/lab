@@ -18,6 +18,7 @@ const navSections = [
     items: [
       { to: '/', label: 'Home', symbol: 'HO', end: true },
       { to: '/direction', label: 'Direction', symbol: 'DI' },
+      { to: '/notes', label: 'Notes', symbol: 'NO' },
       { to: '/execution', label: 'Execution', symbol: 'EX' }
     ]
   },
@@ -52,6 +53,13 @@ const workspaceMeta = [
     title: 'North Star and Fractal Plan',
     subtitle: 'Long-range direction, phases, narrative, and linked dependencies.',
     primaryAction: { label: 'Open roadmap', to: '/direction' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/notes'),
+    label: 'Notes',
+    title: 'Notes and working documents',
+    subtitle: 'Planning memos, meeting notes, and linked thinking docs.',
+    primaryAction: { label: 'Open notes', to: '/notes' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/execution'),
@@ -245,6 +253,13 @@ export function CommandCenterLayout(): JSX.Element {
         subtitle: 'Go to weekly priorities and review.',
         group: 'Quick actions',
         onSelect: () => navigate('/execution')
+      },
+      {
+        id: 'quick-notes',
+        title: 'Open notes',
+        subtitle: 'Jump to strategy notes and linked documents.',
+        group: 'Quick actions',
+        onSelect: () => navigate('/notes')
       },
       {
         id: 'quick-library',

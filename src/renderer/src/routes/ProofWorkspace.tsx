@@ -2,11 +2,15 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@renderer/components/ui/Button'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
+import { useExportStore } from '@renderer/stores/exportStore'
+import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 export function ProofWorkspace(): JSX.Element {
   const navigate = useNavigate()
   const { loadSummary, summary } = useDashboardStore()
+  const { generatePack } = useExportStore()
+  const pushToast = useToastStore((state) => state.push)
 
   useEffect(() => {
     void loadSummary()
@@ -37,6 +41,16 @@ export function ProofWorkspace(): JSX.Element {
               <Button onClick={() => navigate('/proof/projects')}>Projects</Button>
               <Button variant="outline" onClick={() => navigate('/proof/skills')}>
                 Skills
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
+                  )
+                }
+              >
+                Narrative pack
               </Button>
             </div>
           </div>
@@ -122,6 +136,12 @@ export function ProofWorkspace(): JSX.Element {
               </div>
             </div>
             <div className={pageStyles.list}>
+              {(summary?.insights.proof_gaps ?? []).slice(0, 4).map((gap) => (
+                <div key={gap.id} className={pageStyles.row}>
+                  <span className={pageStyles.rowTitle}>{gap.title}</span>
+                  <span className={pageStyles.rowMeta}>{gap.body}</span>
+                </div>
+              ))}
               {(summary?.skill_coverage.domains ?? []).map((domain) => (
                 <div key={domain.domain_id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{domain.title}</span>
@@ -131,6 +151,24 @@ export function ProofWorkspace(): JSX.Element {
                 </div>
               ))}
             </div>
+            {summary?.ecosystem.recently_updated[0] ? (
+              <div className={pageStyles.inlineActions}>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    void generatePack({
+                      target: 'project_proof',
+                      project_id: summary.ecosystem.recently_updated[0].id,
+                      format: 'markdown'
+                    }).then(() =>
+                      pushToast({ message: 'Generated project proof packet.', type: 'success' })
+                    )
+                  }
+                >
+                  Proof pack for latest project
+                </Button>
+              </div>
+            ) : null}
           </article>
         </section>
       </div>

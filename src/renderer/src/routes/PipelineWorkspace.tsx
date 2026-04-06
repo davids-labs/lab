@@ -2,12 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { APPLICATION_STATUSES, ORGANIZATION_PRIORITIES } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
+import { useExportStore } from '@renderer/stores/exportStore'
 import { usePipelineStore } from '@renderer/stores/pipelineStore'
+import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 type PipelineTab = 'organizations' | 'applications' | 'contacts' | 'interactions' | 'roles'
 
 export function PipelineWorkspace(): JSX.Element {
+  const { generatePack } = useExportStore()
+  const pushToast = useToastStore((state) => state.push)
   const {
     organizations,
     roles,
@@ -387,6 +391,36 @@ export function PipelineWorkspace(): JSX.Element {
                       })
                     }
                   />
+                  <div className={pageStyles.inlineActions}>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        void generatePack({
+                          target: 'application',
+                          application_id: activeApplication.id,
+                          format: 'markdown'
+                        }).then(() =>
+                          pushToast({ message: 'Generated application packet.', type: 'success' })
+                        )
+                      }
+                    >
+                      Application packet
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        void generatePack({
+                          target: 'interview_prep',
+                          application_id: activeApplication.id,
+                          format: 'markdown'
+                        }).then(() =>
+                          pushToast({ message: 'Generated interview-prep packet.', type: 'success' })
+                        )
+                      }
+                    >
+                      Interview pack
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className={pageStyles.emptyState}>

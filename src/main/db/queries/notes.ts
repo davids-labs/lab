@@ -30,7 +30,10 @@ function deserializePage(row: NotePageRow): NotePage {
 }
 
 function deserializeLink(row: NoteLinkRow): NoteLink {
-  return row
+  return {
+    ...row,
+    target_type: row.target_type as NoteLink['target_type']
+  }
 }
 
 export const noteQueries = {

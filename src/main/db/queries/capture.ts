@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { ulid } from 'ulidx'
 import type {
   CreateInboxEntryInput,
@@ -9,7 +9,6 @@ import type {
 import { getDb } from '../index'
 import { inboxEntriesTable, type InboxEntryRow } from '../schema'
 import { actionQueries } from './actions'
-import { libraryQueries } from './library'
 import { noteQueries } from './notes'
 import { osQueries } from './os'
 import { pipelineQueries } from './pipeline'
