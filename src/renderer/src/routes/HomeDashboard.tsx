@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArchetypeQuotePanel } from '@renderer/components/home/ArchetypeQuotePanel'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useCaptureStore } from '@renderer/stores/captureStore'
@@ -112,6 +113,8 @@ export function HomeDashboard(): JSX.Element {
             tell you where to act next without making you parse a dashboard wall.
           </p>
         </section>
+
+        <ArchetypeQuotePanel />
 
         {showStarterPrompt ? (
           <section className={pageStyles.callout}>
