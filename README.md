@@ -8,6 +8,7 @@ This README is intentionally written like a mini website: start at the navigatio
 
 ## Quick Navigation
 
+- [0. What's New (April 2026)](#0-whats-new-april-2026)
 - [1. What This App Is](#1-what-this-app-is)
 - [2. Current Product Scope (April 2026)](#2-current-product-scope-april-2026)
 - [3. Feature Tour (Every Workspace)](#3-feature-tour-every-workspace)
@@ -25,6 +26,19 @@ This README is intentionally written like a mini website: start at the navigatio
 - [15. Troubleshooting](#15-troubleshooting)
 - [16. FAQ](#16-faq)
 - [17. Product Roadmap](#17-product-roadmap)
+
+---
+
+## 0. What's New (April 2026)
+
+Recent product and feature additions now reflected in this repo:
+
+- Full command-center shell with dedicated workspaces for Direction, Execution, Proof, Pipeline, Presence, Library, and Settings.
+- Expanded project builder with engineering-focused blocks, including `pinout`, `gcode`, and `failed_iteration` in addition to the original structured/public blocks.
+- Markdown workflow upgraded: drag-and-drop import, frontmatter parsing, and editable markdown with sanitized preview.
+- Public page system expanded with theme controls, layout variants (`default`, `minimal`, `magazine`), click-to-edit preview bridge, and HTML/ZIP export modes.
+- Optional Git foundation integrated through the bridge (`git:*` surface) with project-level snapshot/versioning workflow design.
+- Local release pipeline improved via `release:local` packaging script and portable build artifacts.
 
 ---
 
@@ -49,7 +63,20 @@ Core idea:
 
 ## 2. Current Product Scope (April 2026)
 
-The app is actively developed and includes a broad command-center surface, not just a single project workspace.
+The app is actively developed and now operates as a complete local-first product system, not just a standalone project editor.
+
+### Product positioning
+
+LAB separates private creation from public presentation:
+
+- Workspace side: structured planning, execution, and project-building tools for daily use.
+- Public side: polished, exportable project pages generated from the same source data.
+
+Core product goals in this build:
+
+- Keep all project and operating-system data local and portable.
+- Make structured project capture fast (forms, blocks, markdown import, asset linking).
+- Publish portfolio-grade output quickly (live preview + export + optional Git workflows).
 
 ### Workspace domains currently wired in the app shell
 
@@ -66,6 +93,11 @@ The app is actively developed and includes a broad command-center surface, not j
 - Workspace canvas (`/project/:id`)
 - Public page customiser (`/project/:id/customise`)
 - Public page preview route (`/project/:id/preview`)
+
+### Current maturity snapshot
+
+- P1 scope (core local workflow) is largely present across shell, data layer, canvas, block editors, and export.
+- P2 scope (deep Git automation + one-click publish UX) is scaffolded and exposed through bridge surfaces, with iterative hardening still expected.
 
 ### Backend surfaces currently exposed through preload bridge
 
@@ -91,6 +123,12 @@ This means the app already has a substantial multi-domain architecture, with pro
 ## 3. Feature Tour (Every Workspace)
 
 This section explains each major area and what it is for.
+
+Cross-workspace product characteristics:
+
+- Local-first persistence with SQLite and typed IPC bridge boundaries.
+- Shared command-center navigation and action surfaces.
+- Design-token based UI system reused across private workspace and public rendering.
 
 ### 3.1 Home Dashboard
 
@@ -176,10 +214,11 @@ Document flow:
 This is the "builder" side of the app:
 
 - 2-column drag-and-drop canvas
-- Structured block types (BOM, build guide, spec table, markdown, media, etc.)
+- Structured and engineering block types (BOM, build guide, case study, pinout, gcode, spec table, markdown, media, etc.)
 - Visibility toggles for public inclusion
-- Live preview engine
-- Export to HTML and ZIP
+- Live preview engine with click-to-edit bridge
+- Theme/layout controls in customiser route
+- Export to HTML (single-file) and ZIP (assets folder)
 - Git-backed history and publish flows
 
 ---
@@ -493,6 +532,12 @@ Design choice: most variable structures use JSON text columns with type-safe des
 - `note`
 - `todo`
 
+Workspace-only blocks:
+
+- `failed_iteration`
+- `note`
+- `todo`
+
 ### 10.2 Canvas behavior
 
 1. Two-column grid by default.
@@ -501,10 +546,11 @@ Design choice: most variable structures use JSON text columns with type-safe des
 
 ### 10.3 Markdown import and rendering
 
-1. Markdown can be imported from file or authored in editor.
-2. Frontmatter is parsed for metadata.
-3. Rendering uses marked + sanitization.
+1. Markdown can be imported by drag-and-drop, block picker import, or asset-to-canvas flow.
+2. Frontmatter keys (for example `title`, `date`, `tags`, `type`, `visible`) are parsed and retained.
+3. Renderer uses marked + sanitization for safe HTML output.
 4. Public page uses equivalent rendering pipeline for consistency.
+5. Imported file is retained as snapshot; editable block markdown becomes live source-of-truth.
 
 ### 10.4 Public page render pipeline
 
@@ -520,11 +566,19 @@ Design choice: most variable structures use JSON text columns with type-safe des
 - HTML: single-file, self-contained.
 - ZIP: `index.html` + asset files for lighter payload on large media sets.
 
+### 10.6 Layout variants and theming
+
+- `default`: card-based LAB style
+- `minimal`: single-column prose style
+- `magazine`: editorial style with stronger hero treatment
+
+Theme controls include accent/background/surface tone and heading/body font choices.
+
 ---
 
 ## 11. Git Sync and Publishing
 
-Git support is implemented as an opt-in project feature.
+Git support is implemented as an opt-in project feature with project-level repos.
 
 ### 11.1 Why this exists
 
@@ -537,9 +591,10 @@ Git support is implemented as an opt-in project feature.
 1. Initialize git for project
 2. Configure remote
 3. Configure token
-4. Auto or manual commit
-5. Push
-6. Publish
+4. Write project snapshot (`project.json`, `blocks.json`, `public/index.html`)
+5. Auto or manual commit
+6. Push
+7. Publish
 
 ### 11.3 Snapshot strategy
 
@@ -547,7 +602,11 @@ Commits are based on human-readable project snapshots (project metadata, block d
 
 ### 11.4 Restore behavior
 
-Restore flow rehydrates block state from commit snapshots. Confirm behavior details before using in production workflows with large asset changes.
+Restore flow rehydrates block state from commit snapshots.
+
+Current limitation:
+
+- v1 restore scope focuses on block/content state; asset restoration is intentionally limited and should be validated before relying on it for destructive rollback workflows.
 
 ---
 
@@ -679,7 +738,11 @@ High-level phased plan from source docs:
 5. Public page renderer/export
 6. Customiser + polish
 
-Current repo state already contains major pieces across these phases, plus expanded command-center domains.
+Current delivery posture:
+
+- Implemented: broad command-center shell, multi-domain data surfaces, project canvas, core block editing, preview/export pipeline, and local packaging flow.
+- In progress: deeper polish around Git publish UX, restore safety, and long-tail quality/performance hardening.
+- Next: stronger publish automation, richer preview interactions, and broader test coverage around migration/export edge cases.
 
 ---
 
