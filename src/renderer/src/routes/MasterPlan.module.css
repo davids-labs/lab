@@ -1,29 +1,41 @@
+
+
+
 .timelineGrid {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .timelineCard {
   display: grid;
-  gap: 10px;
-  padding: 16px;
-  border: 1px solid var(--lab-divider);
-  border-radius: 14px;
-  background: var(--lab-panel-subtle);
+  gap: 8px;
+  padding: 18px 18px 16px;
+  min-height: 152px;
+  align-content: start;
+  border-radius: 18px;
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 246, 242, 0.9));
+  box-shadow: var(--lab-shadow-card);
   text-align: left;
   transition:
     border-color var(--lab-transition),
-    background var(--lab-transition);
+    background var(--lab-transition),
+    transform var(--lab-transition);
 }
 
 .timelineCard:hover {
-  background: var(--lab-hover);
+  transform: translateY(-1px);
+  border-color: rgba(47, 111, 235, 0.18);
 }
 
 .timelineCardActive {
-  border-color: rgba(47, 111, 235, 0.2);
-  background: rgba(47, 111, 235, 0.06);
+  border-color: rgba(47, 111, 235, 0.18);
+  background:
+    linear-gradient(180deg, rgba(47, 111, 235, 0.08), rgba(47, 111, 235, 0.03)),
+    rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 28px rgba(47, 111, 235, 0.05);
 }
 
 .timelineKicker {
@@ -36,13 +48,23 @@
 
 .timelineTitle {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.2;
-  font-weight: 600;
+  font-family: var(--lab-font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--lab-text);
 }
 
 .timelineSummary {
   margin: 0;
   color: var(--lab-text-muted);
   line-height: 1.55;
+}
+
+.phaseSummary {
+  display: grid;
+  gap: 10px;
+  padding: 16px 16px 15px;
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(249, 247, 243, 0.84));
 }
