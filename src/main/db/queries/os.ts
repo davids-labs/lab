@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { ulid } from 'ulidx'
 import type {
   CountdownItem,
@@ -77,7 +77,9 @@ function deserializeHabit(row: OsHabitRow): OsHabit {
   return {
     ...row,
     description: row.description ?? null,
-    frequency: row.frequency as OsHabit['frequency']
+    frequency: row.frequency as OsHabit['frequency'],
+    trigger_context: row.trigger_context ?? null,
+    anchor_habit_id: row.anchor_habit_id ?? null
   }
 }
 
@@ -144,6 +146,21 @@ function clearDefaultProfiles(exceptId?: string): void {
     .set({ is_default: false, updated_at: Date.now() })
     .where(eq(osProfilesTable.is_default, true))
     .run()
+}
+
+function sanitizeAnchorHabitId(anchorHabitId: string | null | undefined, habitId?: string): string | null {
+  if (!anchorHabitId || anchorHabitId === habitId) {
+    return null
+  }
+
+  const db = getDb()
+  const anchor = db
+    .select({ id: osHabitsTable.id })
+    .from(osHabitsTable)
+    .where(eq(osHabitsTable.id, anchorHabitId))
+    .get()
+
+  return anchor ? anchor.id : null
 }
 
 export const osQueries = {
@@ -386,6 +403,7 @@ export const osQueries = {
     const now = Date.now()
     const id = ulid()
     const existing = this.listHabits()
+    const anchorHabitId = sanitizeAnchorHabitId(parsed.anchor_habit_id)
 
     db.insert(osHabitsTable)
       .values({
@@ -394,6 +412,8 @@ export const osQueries = {
         description: parsed.description ?? null,
         frequency: parsed.frequency ?? 'daily',
         target_count: parsed.target_count ?? 1,
+        trigger_context: parsed.trigger_context ?? null,
+        anchor_habit_id: anchorHabitId,
         sort_order: parsed.sort_order ?? nextSortOrder(existing),
         created_at: now,
         updated_at: now
@@ -412,12 +432,20 @@ export const osQueries = {
       throw new Error('Habit not found')
     }
 
+    const anchorHabitId =
+      parsed.anchor_habit_id === undefined
+        ? current.anchor_habit_id
+        : sanitizeAnchorHabitId(parsed.anchor_habit_id, parsed.id)
+
     db.update(osHabitsTable)
       .set({
         name: parsed.name ?? current.name,
         description: parsed.description === undefined ? current.description : parsed.description,
         frequency: parsed.frequency ?? current.frequency,
         target_count: parsed.target_count ?? current.target_count,
+        trigger_context:
+          parsed.trigger_context === undefined ? current.trigger_context : parsed.trigger_context,
+        anchor_habit_id: anchorHabitId,
         sort_order: parsed.sort_order ?? current.sort_order,
         updated_at: Date.now()
       })
@@ -431,8 +459,25 @@ export const osQueries = {
 
   deleteHabit(id: string): { ok: boolean } {
     const db = getDb()
+    db.update(osHabitsTable)
+      .set({
+        anchor_habit_id: null,
+        updated_at: Date.now()
+      })
+      .where(eq(osHabitsTable.anchor_habit_id, id))
+      .run()
     db.delete(osHabitsTable).where(eq(osHabitsTable.id, id)).run()
     return { ok: true }
+  },
+
+  listHabitLogs(): OsHabitLog[] {
+    const db = getDb()
+    return db
+      .select()
+      .from(osHabitLogsTable)
+      .orderBy(asc(osHabitLogsTable.date), asc(osHabitLogsTable.created_at))
+      .all()
+      .map(deserializeHabitLog)
   },
 
   upsertHabitLog(input: UpsertOsHabitLogInput): OsHabitLog {
@@ -442,9 +487,13 @@ export const osQueries = {
     const current = db
       .select()
       .from(osHabitLogsTable)
-      .where(eq(osHabitLogsTable.habit_id, parsed.habit_id))
-      .all()
-      .find((entry) => entry.date === parsed.date)
+      .where(
+        and(
+          eq(osHabitLogsTable.habit_id, parsed.habit_id),
+          eq(osHabitLogsTable.date, parsed.date)
+        )
+      )
+      .get()
 
     if (current) {
       db.update(osHabitLogsTable)
@@ -484,8 +533,9 @@ export const osQueries = {
     return db
       .select()
       .from(osHabitLogsTable)
+      .where(eq(osHabitLogsTable.date, date))
+      .orderBy(asc(osHabitLogsTable.created_at))
       .all()
-      .filter((entry) => entry.date === date)
       .map(deserializeHabitLog)
   },
 

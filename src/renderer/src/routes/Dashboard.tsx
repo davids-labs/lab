@@ -7,6 +7,7 @@ import { InputField } from '@renderer/components/ui/InputField'
 import { Modal } from '@renderer/components/ui/Modal'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import { formatRelativeTime } from '@renderer/utils/relativeTime'
 
 export function Dashboard(): JSX.Element {
@@ -14,6 +15,7 @@ export function Dashboard(): JSX.Element {
   const { createProject, deleteProject, error, filter, loadProjects, projects, setFilter } =
     useProjectStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [nameError, setNameError] = useState<string | undefined>()
@@ -60,7 +62,7 @@ export function Dashboard(): JSX.Element {
   }
 
   return (
-    <div style={{ padding: 32, display: 'grid', gap: 24 }}>
+    <div style={{ padding: 32, display: 'grid', gap: 24 }} data-reduced-chrome={reducedChrome}>
       <div
         style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}
       >

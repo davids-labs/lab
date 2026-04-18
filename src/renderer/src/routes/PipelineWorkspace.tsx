@@ -5,6 +5,7 @@ import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useExportStore } from '@renderer/stores/exportStore'
 import { usePipelineStore } from '@renderer/stores/pipelineStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 type PipelineTab = 'organizations' | 'applications' | 'contacts' | 'interactions' | 'roles'
@@ -12,6 +13,7 @@ type PipelineTab = 'organizations' | 'applications' | 'contacts' | 'interactions
 export function PipelineWorkspace(): JSX.Element {
   const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const {
     organizations,
     roles,
@@ -83,18 +85,40 @@ export function PipelineWorkspace(): JSX.Element {
   }, [applications, contacts, interactions, organizations, roles])
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.lead}>
-          <span className={pageStyles.eyebrow}>Pipeline</span>
-          <h1 className={pageStyles.title}>Organizations, applications, and relationships</h1>
-          <p className={pageStyles.description}>
-            The pipeline should feel more like a calm CRM than a wall of cards. Work one collection
-            at a time, then drill into the selected record.
-          </p>
+        <section className={pageStyles.surface}>
+          <div className={pageStyles.surfaceHeader}>
+            <div className={pageStyles.lead}>
+              <span className={pageStyles.eyebrow}>Pipeline</span>
+              <h1 className={pageStyles.title}>Targets and relationships</h1>
+              <p className={pageStyles.description}>
+                Keep organizations, applications, contacts, and roles in one working surface.
+              </p>
+            </div>
+            <div className={pageStyles.toolbar}>
+              <Button size="sm" variant="ghost" onClick={() => setActiveTab('organizations')}>
+                Organizations
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setActiveTab('applications')}>
+                Applications
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
+                  )
+                }
+              >
+                Signal pack
+              </Button>
+            </div>
+          </div>
         </section>
 
-        <section className={pageStyles.section}>
+        <section className={pageStyles.surface}>
           <div className={pageStyles.metricStrip}>
             <div className={pageStyles.metric}>
               <span className={pageStyles.muted}>Target organizations</span>
@@ -115,7 +139,7 @@ export function PipelineWorkspace(): JSX.Element {
           </div>
         </section>
 
-        <section className={pageStyles.section}>
+        <section className={pageStyles.toolbar}>
           <div className={pageStyles.tabs}>
             {([
               ['organizations', 'Organizations'],
@@ -139,13 +163,15 @@ export function PipelineWorkspace(): JSX.Element {
         {activeTab === 'organizations' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Add target organization"
                   value={orgName}
                   onChange={(event) => setOrgName(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createOrganization({
                       name: orgName,
@@ -181,7 +207,7 @@ export function PipelineWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeOrganization.name}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Why this target belongs in the landscape and how important it is.
+                        Why this target belongs in the landscape.
                       </p>
                     </div>
                     <Button
@@ -268,7 +294,7 @@ export function PipelineWorkspace(): JSX.Element {
         {activeTab === 'applications' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Application title"
                   value={applicationTitle}
@@ -289,6 +315,8 @@ export function PipelineWorkspace(): JSX.Element {
                   </select>
                 </label>
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createApplication({
                       title: applicationTitle,
@@ -322,7 +350,7 @@ export function PipelineWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeApplication.title}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Track status, follow-up, and the notes that keep an application operational.
+                        Track status, follow-up, and notes.
                       </p>
                     </div>
                     <Button
@@ -393,7 +421,8 @@ export function PipelineWorkspace(): JSX.Element {
                   />
                   <div className={pageStyles.inlineActions}>
                     <Button
-                      variant="outline"
+                      size="sm"
+                      variant="ghost"
                       onClick={() =>
                         void generatePack({
                           target: 'application',
@@ -407,7 +436,8 @@ export function PipelineWorkspace(): JSX.Element {
                       Application packet
                     </Button>
                     <Button
-                      variant="outline"
+                      size="sm"
+                      variant="ghost"
                       onClick={() =>
                         void generatePack({
                           target: 'interview_prep',
@@ -435,7 +465,7 @@ export function PipelineWorkspace(): JSX.Element {
         {activeTab === 'contacts' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Contact name"
                   value={contactName}
@@ -456,6 +486,8 @@ export function PipelineWorkspace(): JSX.Element {
                   </select>
                 </label>
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createContact({
                       full_name: contactName,
@@ -492,7 +524,7 @@ export function PipelineWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeContact.full_name}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Relationship context, title, and links stay together here.
+                        Relationship context and links stay together here.
                       </p>
                     </div>
                     <Button
@@ -582,7 +614,7 @@ export function PipelineWorkspace(): JSX.Element {
         {activeTab === 'interactions' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <label className={pageStyles.formGrid}>
                   <span className={pageStyles.eyebrow}>Contact</span>
                   <select
@@ -603,6 +635,8 @@ export function PipelineWorkspace(): JSX.Element {
                   onChange={(event) => setInteractionSummary(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createInteraction({
                       contact_id: interactionContactId,

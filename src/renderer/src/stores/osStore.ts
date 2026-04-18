@@ -21,6 +21,97 @@ import type {
   UpsertOsHabitLogInput,
   UpsertOsTimeBlockInput
 } from '@preload/types'
+import {
+  buildHabitProgressById,
+  getTodayDate,
+  getWeekKey,
+  type HabitProgressSummary
+} from '@shared/habitProgress'
+
+export interface HabitProgress extends HabitProgressSummary {
+  anchorLabel: string | null
+}
+
+export interface ToggleHabitCompletionResult {
+  habit: OsHabit
+  progress: HabitProgress
+}
+
+function buildRendererHabitProgress(
+  habits: OsHabit[],
+  habitLogs: OsHabitLog[]
+): Record<string, HabitProgress> {
+  const baseProgressById = buildHabitProgressById(habits, habitLogs)
+  const habitById = new Map(habits.map((habit) => [habit.id, habit]))
+
+  return Object.fromEntries(
+    habits.map((habit) => [
+      habit.id,
+      {
+        ...(baseProgressById[habit.id] ?? {
+          currentPeriodCompleted: false,
+          currentPeriodLogDate: null,
+          currentStreak: 0,
+          streakUnit: habit.frequency === 'weekly' ? 'week' : 'day',
+          periodLabel: habit.frequency === 'weekly' ? 'this week' : 'today'
+        }),
+        anchorLabel: habit.anchor_habit_id ? habitById.get(habit.anchor_habit_id)?.name ?? null : null
+      }
+    ])
+  )
+}
+
+function sortHabitLogs(habitLogs: OsHabitLog[]): OsHabitLog[] {
+  return [...habitLogs].sort((left, right) => {
+    const dateComparison = left.date.localeCompare(right.date)
+    return dateComparison !== 0 ? dateComparison : left.created_at - right.created_at
+  })
+}
+
+function mergeHabitLog(habitLogs: OsHabitLog[], nextLog: OsHabitLog): OsHabitLog[] {
+  const nextLogs = [...habitLogs]
+  const index = nextLogs.findIndex(
+    (log) => log.id === nextLog.id || (log.habit_id === nextLog.habit_id && log.date === nextLog.date)
+  )
+
+  if (index === -1) {
+    nextLogs.push(nextLog)
+  } else {
+    nextLogs[index] = nextLog
+  }
+
+  return sortHabitLogs(nextLogs)
+}
+
+function getHabitStatePatch(
+  habits: OsHabit[],
+  habitLogs: OsHabitLog[]
+): Pick<OsStore, 'habits' | 'habitLogs' | 'habitProgressById'> {
+  return {
+    habits,
+    habitLogs,
+    habitProgressById: buildRendererHabitProgress(habits, habitLogs)
+  }
+}
+
+function getCurrentPeriodCompletedLogDate(
+  habit: OsHabit,
+  habitLogs: OsHabitLog[],
+  today = getTodayDate()
+): string | null {
+  const completedLogs = habitLogs.filter((log) => log.habit_id === habit.id && log.completed)
+
+  if (habit.frequency === 'weekly') {
+    const currentWeekKey = getWeekKey(today)
+    const currentWeekLogs = completedLogs
+      .filter((log) => getWeekKey(log.date) === currentWeekKey)
+      .sort((left, right) => left.date.localeCompare(right.date))
+
+    return currentWeekLogs.length > 0 ? currentWeekLogs[currentWeekLogs.length - 1].date : null
+  }
+
+  return completedLogs.some((log) => log.date === today) ? today : null
+}
 
 interface OsStore {
   profiles: OsProfile[]
@@ -29,6 +120,8 @@ interface OsStore {
   dailyLogs: OsDailyLog[]
   currentLog: OsDailyLog | null
   habits: OsHabit[]
+  habitLogs: OsHabitLog[]
+  habitProgressById: Record<string, HabitProgress>
   countdowns: CountdownItem[]
   weeklyPriorities: WeeklyPriority[]
   weeklyReview: WeeklyReview | null
@@ -40,6 +133,7 @@ interface OsStore {
   loadDailyLogs: () => Promise<void>
   loadDailyLog: (date: string) => Promise<void>
   loadHabits: () => Promise<void>
+  loadHabitLogs: () => Promise<void>
   loadCountdowns: () => Promise<void>
   createProfile: (input: CreateOsProfileInput) => Promise<OsProfile>
   updateProfile: (input: UpdateOsProfileInput) => Promise<OsProfile>
@@ -51,6 +145,10 @@ interface OsStore {
   updateHabit: (input: UpdateOsHabitInput) => Promise<OsHabit>
   deleteHabit: (id: string) => Promise<void>
   upsertHabitLog: (input: UpsertOsHabitLogInput) => Promise<OsHabitLog>
+  toggleHabitCompletion: (
+    habitId: string,
+    completed: boolean
+  ) => Promise<ToggleHabitCompletionResult>
   createCountdown: (input: CreateCountdownInput) => Promise<CountdownItem>
   updateCountdown: (input: UpdateCountdownInput) => Promise<CountdownItem>
   deleteCountdown: (id: string) => Promise<void>
@@ -69,6 +167,8 @@ export const useOsStore = create<OsStore>((set, get) => ({
   dailyLogs: [],
   currentLog: null,
   habits: [],
+  habitLogs: [],
+  habitProgressById: {},
   countdowns: [],
   weeklyPriorities: [],
   weeklyReview: null,
@@ -122,7 +222,14 @@ export const useOsStore = create<OsStore>((set, get) => ({
 
   async loadHabits() {
     const habits = await window.lab.os.listHabits()
-    set({ habits })
+    const { habitLogs } = get()
+    set(getHabitStatePatch(habits, habitLogs))
+  },
+
+  async loadHabitLogs() {
+    const habitLogs = await window.lab.os.listHabitLogs()
+    const { habits } = get()
+    set(getHabitStatePatch(habits, habitLogs))
   },
 
   async loadCountdowns() {
@@ -179,12 +286,59 @@ export const useOsStore = create<OsStore>((set, get) => ({
 
   async deleteHabit(id) {
     await window.lab.os.deleteHabit(id)
-    await get().loadHabits()
+    await Promise.all([get().loadHabits(), get().loadHabitLogs()])
   },
 
   async upsertHabitLog(input) {
     const log = await window.lab.os.upsertHabitLog(input)
+    const nextLogs = mergeHabitLog(get().habitLogs, log)
+    set(getHabitStatePatch(get().habits, nextLogs))
     return log
+  },
+
+  async toggleHabitCompletion(habitId, completed) {
+    const habit = get().habits.find((entry) => entry.id === habitId)
+
+    if (!habit) {
+      throw new Error('Habit not found')
+    }
+
+    const today = getTodayDate()
+
+    if (habit.frequency === 'weekly') {
+      const currentPeriodLogDate = getCurrentPeriodCompletedLogDate(habit, get().habitLogs, today)
+
+      if (completed && !currentPeriodLogDate) {
+        await get().upsertHabitLog({
+          habit_id: habitId,
+          date: today,
+          completed: true
+        })
+      } else if (!completed && currentPeriodLogDate) {
+        await get().upsertHabitLog({
+          habit_id: habitId,
+          date: currentPeriodLogDate,
+          completed: false
+        })
+      }
+    } else {
+      await get().upsertHabitLog({
+        habit_id: habitId,
+        date: today,
+        completed
+      })
+    }
+
+    const progress = get().habitProgressById[habitId]
+
+    if (!progress) {
+      throw new Error('Habit progress unavailable')
+    }
+
+    return {
+      habit,
+      progress
+    }
   },
 
   async createCountdown(input) {

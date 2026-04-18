@@ -13,6 +13,7 @@ import { useBlockStore } from '@renderer/stores/blockStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { useUiStore } from '@renderer/stores/uiStore'
+import { useWorkflowStore } from '@renderer/stores/workflowStore'
 import styles from './Workspace.module.css'
 
 export function Workspace(): JSX.Element {
@@ -20,6 +21,8 @@ export function Workspace(): JSX.Element {
   const projectId = params.id ?? ''
   const project = useProjectStore((state) => state.activeProject)
   const loadProject = useProjectStore((state) => state.loadProject)
+  const projectConnections = useWorkflowStore((state) => state.projectConnections[projectId] ?? null)
+  const loadProjectConnections = useWorkflowStore((state) => state.loadProjectConnections)
   const blocks = useBlockStore((state) => state.blocks)
   const activeBlockId = useBlockStore((state) => state.activeBlockId)
   const loadBlocks = useBlockStore((state) => state.loadBlocks)
@@ -28,6 +31,7 @@ export function Workspace(): JSX.Element {
   const importAsset = useAssetStore((state) => state.importAsset)
   const loadAssets = useAssetStore((state) => state.loadAssets)
   const workspaceSidebarWidth = useUiStore((state) => state.workspaceSidebarWidth)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const setWorkspaceSidebarWidth = useUiStore((state) => state.setWorkspaceSidebarWidth)
   const workspacePreviewVisible = useUiStore((state) => state.workspacePreviewVisible)
   const workspacePreviewWidth = useUiStore((state) => state.workspacePreviewWidth)
@@ -57,7 +61,8 @@ export function Workspace(): JSX.Element {
     void loadProject(projectId)
     void loadBlocks(projectId)
     void loadAssets(projectId)
-  }, [loadAssets, loadBlocks, loadProject, projectId])
+    void loadProjectConnections(projectId)
+  }, [loadAssets, loadBlocks, loadProject, loadProjectConnections, projectId])
 
   useEffect(() => {
     if (!activeBlockId) {
@@ -134,7 +139,7 @@ export function Workspace(): JSX.Element {
   }
 
   return (
-    <div className="routeShell">
+    <div className="routeShell" data-reduced-chrome={reducedChrome}>
       <TitleBar project={project} view="workspace" />
       <div
         className={`${styles.shell} ${workspacePreviewVisible ? styles.withPreview : ''}`}
@@ -149,6 +154,7 @@ export function Workspace(): JSX.Element {
           activeBlockId={activeBlockId}
           assets={assets}
           blocks={blocks}
+          connections={projectConnections}
           onFocusBlock={setActiveBlock}
           onImportAssets={() => void handleImportAssets()}
         />
@@ -161,8 +167,12 @@ export function Workspace(): JSX.Element {
           <Canvas activeBlockId={activeBlockId} blocks={blocks} />
           <div className={styles.statusBar}>
             <span>{blocks.length} block{blocks.length === 1 ? '' : 's'}</span>
-            <span>{blocks.filter((block) => block.visible_on_page).length} visible publicly</span>
-            <span>{workspacePreviewVisible ? 'Live preview open' : 'Live preview hidden'}</span>
+            {!reducedChrome ? (
+              <>
+                <span>{blocks.filter((block) => block.visible_on_page).length} visible publicly</span>
+                <span>{workspacePreviewVisible ? 'Live preview open' : 'Live preview hidden'}</span>
+              </>
+            ) : null}
           </div>
         </main>
         {workspacePreviewVisible ? (

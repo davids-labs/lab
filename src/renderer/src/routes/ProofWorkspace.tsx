@@ -4,6 +4,7 @@ import { Button } from '@renderer/components/ui/Button'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
 import { useExportStore } from '@renderer/stores/exportStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 export function ProofWorkspace(): JSX.Element {
@@ -11,39 +12,65 @@ export function ProofWorkspace(): JSX.Element {
   const { loadSummary, summary } = useDashboardStore()
   const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
+  const latestProject = summary?.ecosystem.recently_updated[0]
 
   useEffect(() => {
     void loadSummary()
   }, [loadSummary])
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.lead}>
-          <span className={pageStyles.eyebrow}>Proof</span>
-          <h1 className={pageStyles.title}>Projects and skill evidence</h1>
-          <p className={pageStyles.description}>
-            Proof is where private work becomes undeniable signal: projects move toward portfolio
-            readiness and skill nodes move from attached evidence to verified capability.
-          </p>
-        </section>
-
-        <section className={pageStyles.section}>
-          <div className={pageStyles.sectionHeader}>
-            <div>
-              <h2 className={pageStyles.sectionTitle}>Proof surfaces</h2>
-              <p className={pageStyles.sectionDescription}>
-                Use projects when shaping the actual work. Use skills when turning completed work
-                into verified readiness.
+        <section className={pageStyles.surface}>
+          <div className={pageStyles.surfaceHeader}>
+            <div className={pageStyles.lead}>
+              <span className={pageStyles.eyebrow}>Proof</span>
+              <h1 className={pageStyles.title}>Projects and evidence</h1>
+              <p className={pageStyles.description}>
+                Keep finished work, skill evidence, and exportable proof in one place.
               </p>
             </div>
-            <div className={pageStyles.inlineActions}>
-              <Button onClick={() => navigate('/proof/projects')}>Projects</Button>
-              <Button variant="outline" onClick={() => navigate('/proof/skills')}>
+            <div className={pageStyles.toolbar}>
+              <Button size="sm" onClick={() => navigate('/proof/projects')}>
+                Projects
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/proof/skills')}>
                 Skills
               </Button>
               <Button
-                variant="outline"
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
+                  )
+                }
+              >
+                Narrative pack
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className={pageStyles.surface}>
+          <div className={pageStyles.sectionHeader}>
+            <div>
+              <h2 className={pageStyles.sectionTitle}>Choose a proof path</h2>
+              <p className={pageStyles.sectionDescription}>
+                Projects shape the work itself. Skills turn completed work into verified readiness.
+              </p>
+            </div>
+            <div className={pageStyles.toolbar}>
+              <Button size="sm" onClick={() => navigate('/proof/projects')}>
+                Projects
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/proof/skills')}>
+                Skills
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={() =>
                   void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
                     pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
@@ -57,12 +84,12 @@ export function ProofWorkspace(): JSX.Element {
         </section>
 
         <section className={pageStyles.twoColumn}>
-          <article className={pageStyles.section}>
+          <article className={pageStyles.surface}>
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Project readiness</h2>
                 <p className={pageStyles.sectionDescription}>
-                  A quick read on how much finished, portfolio-grade work exists right now.
+                  A quick read on finished work that is ready to show.
                 </p>
               </div>
               <span className={pageStyles.chip}>{summary?.ecosystem.total_projects ?? 0} tracked</span>
@@ -103,12 +130,12 @@ export function ProofWorkspace(): JSX.Element {
             </div>
           </article>
 
-          <article className={pageStyles.section}>
+          <article className={pageStyles.surface}>
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Evidence gaps</h2>
                 <p className={pageStyles.sectionDescription}>
-                  Readiness should stay grounded in domain coverage, not self-scoring.
+                  Stay grounded in domain coverage, not self-scoring.
                 </p>
               </div>
               <span className={pageStyles.chip}>
@@ -151,14 +178,15 @@ export function ProofWorkspace(): JSX.Element {
                 </div>
               ))}
             </div>
-            {summary?.ecosystem.recently_updated[0] ? (
-              <div className={pageStyles.inlineActions}>
+            {latestProject ? (
+              <div className={pageStyles.toolbar}>
                 <Button
-                  variant="outline"
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void generatePack({
                       target: 'project_proof',
-                      project_id: summary.ecosystem.recently_updated[0].id,
+                      project_id: latestProject.id,
                       format: 'markdown'
                     }).then(() =>
                       pushToast({ message: 'Generated project proof packet.', type: 'success' })

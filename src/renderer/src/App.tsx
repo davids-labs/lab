@@ -1,10 +1,13 @@
 import { Navigate, createHashRouter, RouterProvider } from 'react-router-dom'
 import { ToastStack } from '@renderer/components/ui/ToastStack'
-import { HomeDashboard } from '@renderer/routes/HomeDashboard'
 import { CommandCenterLayout } from '@renderer/routes/CommandCenterLayout'
+import { CalendarHub } from '@renderer/routes/CalendarHub'
+import { DayView } from '@renderer/routes/DayView'
 import { LibraryWorkspace } from '@renderer/routes/LibraryWorkspace'
 import { MasterPlan } from '@renderer/routes/MasterPlan'
+import { MonthView } from '@renderer/routes/MonthView'
 import { NotesWorkspace } from '@renderer/routes/NotesWorkspace'
+import { HomeDashboard } from '@renderer/routes/HomeDashboard'
 import { PageCustomiser } from '@renderer/routes/PageCustomiser'
 import { PersonalOs } from '@renderer/routes/PersonalOs'
 import { PipelineWorkspace } from '@renderer/routes/PipelineWorkspace'
@@ -13,8 +16,11 @@ import { ProjectPreview } from '@renderer/routes/ProjectPreview'
 import { ProjectEcosystem } from '@renderer/routes/ProjectEcosystem'
 import { ProofWorkspace } from '@renderer/routes/ProofWorkspace'
 import { SettingsWorkspace } from '@renderer/routes/SettingsWorkspace'
+import { SixMonthsView } from '@renderer/routes/SixMonthsView'
 import { SkillMatrix } from '@renderer/routes/SkillMatrix'
+import { WeekView } from '@renderer/routes/WeekView'
 import { Workspace } from '@renderer/routes/Workspace'
+import { YearArcView } from '@renderer/routes/YearArcView'
 import './styles/app.css'
 
 const router = createHashRouter([
@@ -27,8 +33,32 @@ const router = createHashRouter([
         element: <HomeDashboard />
       },
       {
+        path: 'calendar',
+        element: <CalendarHub />
+      },
+      {
+        path: 'day',
+        element: <DayView />
+      },
+      {
+        path: 'week',
+        element: <WeekView />
+      },
+      {
+        path: 'month',
+        element: <MonthView />
+      },
+      {
+        path: 'six-months',
+        element: <SixMonthsView />
+      },
+      {
+        path: 'year-arc',
+        element: <YearArcView />
+      },
+      {
         path: 'home',
-        element: <Navigate replace to="/" />
+        element: <HomeDashboard />
       },
       {
         path: 'direction',
@@ -97,6 +127,10 @@ const router = createHashRouter([
       {
         path: 'project/:id/preview',
         element: <ProjectPreview />
+      },
+      {
+        path: '*',
+        element: <Navigate replace to="/home" />
       }
     ]
   }

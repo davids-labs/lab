@@ -266,6 +266,24 @@ export const skillQueries = {
     }
   },
 
+  listEvidence(skillId?: string): SkillEvidence[] {
+    const db = getDb()
+    const rows = skillId
+      ? db
+          .select()
+          .from(skillEvidenceTable)
+          .where(eq(skillEvidenceTable.skill_id, skillId))
+          .orderBy(asc(skillEvidenceTable.created_at))
+          .all()
+      : db
+          .select()
+          .from(skillEvidenceTable)
+          .orderBy(asc(skillEvidenceTable.created_at))
+          .all()
+
+    return rows.map(deserializeEvidence)
+  },
+
   createDomain(input: CreateSkillDomainInput): SkillDomain {
     const db = getDb()
     const parsed = validateCreateSkillDomainInput(input)

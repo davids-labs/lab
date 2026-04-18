@@ -5,14 +5,17 @@ import type {
   CreateApplicationRecordInput,
   CreateContactRecordInput,
   CreateInteractionRecordInput,
+  CreateTargetRoleSkillRequirementInput,
   CreateTargetOrganizationInput,
   CreateTargetRoleInput,
   InteractionRecord,
   TargetOrganization,
   TargetRole,
+  TargetRoleSkillRequirement,
   UpdateApplicationRecordInput,
   UpdateContactRecordInput,
   UpdateInteractionRecordInput,
+  UpdateTargetRoleSkillRequirementInput,
   UpdateTargetOrganizationInput,
   UpdateTargetRoleInput
 } from '@preload/types'
@@ -20,6 +23,7 @@ import type {
 interface PipelineStore {
   organizations: TargetOrganization[]
   roles: TargetRole[]
+  roleRequirements: TargetRoleSkillRequirement[]
   applications: ApplicationRecord[]
   contacts: ContactRecord[]
   interactions: InteractionRecord[]
@@ -32,6 +36,9 @@ interface PipelineStore {
   createRole: (input: CreateTargetRoleInput) => Promise<void>
   updateRole: (input: UpdateTargetRoleInput) => Promise<void>
   deleteRole: (id: string) => Promise<void>
+  createRoleRequirement: (input: CreateTargetRoleSkillRequirementInput) => Promise<void>
+  updateRoleRequirement: (input: UpdateTargetRoleSkillRequirementInput) => Promise<void>
+  deleteRoleRequirement: (id: string) => Promise<void>
   createApplication: (input: CreateApplicationRecordInput) => Promise<void>
   updateApplication: (input: UpdateApplicationRecordInput) => Promise<void>
   deleteApplication: (id: string) => Promise<void>
@@ -46,6 +53,7 @@ interface PipelineStore {
 export const usePipelineStore = create<PipelineStore>((set, get) => ({
   organizations: [],
   roles: [],
+  roleRequirements: [],
   applications: [],
   contacts: [],
   interactions: [],
@@ -56,15 +64,24 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const [organizations, roles, applications, contacts, interactions] = await Promise.all([
+      const [organizations, roles, roleRequirements, applications, contacts, interactions] = await Promise.all([
         window.lab.pipeline.listOrganizations(),
         window.lab.pipeline.listRoles(),
+        window.lab.pipeline.listRoleRequirements(),
         window.lab.pipeline.listApplications(),
         window.lab.pipeline.listContacts(),
         window.lab.pipeline.listInteractions()
       ])
 
-      set({ organizations, roles, applications, contacts, interactions, isLoading: false })
+      set({
+        organizations,
+        roles,
+        roleRequirements,
+        applications,
+        contacts,
+        interactions,
+        isLoading: false
+      })
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load pipeline.',
@@ -95,6 +112,18 @@ export const usePipelineStore = create<PipelineStore>((set, get) => ({
   },
   async deleteRole(id) {
     await window.lab.pipeline.deleteRole(id)
+    await get().loadAll()
+  },
+  async createRoleRequirement(input) {
+    await window.lab.pipeline.createRoleRequirement(input)
+    await get().loadAll()
+  },
+  async updateRoleRequirement(input) {
+    await window.lab.pipeline.updateRoleRequirement(input)
+    await get().loadAll()
+  },
+  async deleteRoleRequirement(id) {
+    await window.lab.pipeline.deleteRoleRequirement(id)
     await get().loadAll()
   },
   async createApplication(input) {

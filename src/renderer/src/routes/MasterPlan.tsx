@@ -17,6 +17,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 import styles from './MasterPlan.module.css'
 
@@ -43,15 +44,37 @@ function findPhaseForNode(
 
   let current = nodeMap.get(nodeId) ?? null
 
-  while (current?.parent_id) {
-    current = nodeMap.get(current.parent_id) ?? null
-  }
+  while (current) {
+    if (current.kind === 'phase') {
+      return current
+    }
 
-  if (current?.kind === 'phase') {
-    return current
+    current = current.parent_id ? (nodeMap.get(current.parent_id) ?? null) : null
   }
 
   return phases.find((phase) => phase.id === nodeId) ?? phases[0] ?? null
+}
+
+function findArcForNode(
+  nodeId: string | null,
+  nodeMap: Map<string, PlanNode>,
+  arcs: PlanNode[]
+): PlanNode | null {
+  if (!nodeId) {
+    return arcs[0] ?? null
+  }
+
+  let current = nodeMap.get(nodeId) ?? null
+
+  while (current) {
+    if (current.kind === 'arc') {
+      return current
+    }
+
+    current = current.parent_id ? (nodeMap.get(current.parent_id) ?? null) : null
+  }
+
+  return arcs[0] ?? null
 }
 
 type TimelineView = 'cards' | 'list'
@@ -74,6 +97,7 @@ export function MasterPlan(): JSX.Element {
   } = usePlanStore()
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const projects = useProjectStore((state) => state.projects)
   const loadProjects = useProjectStore((state) => state.loadProjects)
   const skillNodes = useSkillsStore((state) => state.nodes)
@@ -82,7 +106,7 @@ export function MasterPlan(): JSX.Element {
   const weeklyPriorities = useOsStore((state) => state.weeklyPriorities)
   const loadCountdowns = useOsStore((state) => state.loadCountdowns)
   const loadWeeklyPriorities = useOsStore((state) => state.loadWeeklyPriorities)
-  const { organizations, applications, loadAll: loadPipeline } = usePipelineStore()
+  const { organizations, applications, roles, loadAll: loadPipeline } = usePipelineStore()
   const { narrativeFragments, loadAll: loadPresence } = usePresenceStore()
   const pushToast = useToastStore((state) => state.push)
   const [phaseTitle, setPhaseTitle] = useState('')
@@ -114,14 +138,27 @@ export function MasterPlan(): JSX.Element {
     loadWeeklyPriorities
   ])
 
-  const phases = useMemo(
+  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
+  const arcs = useMemo(
     () =>
       nodes
-        .filter((node) => node.kind === 'phase')
+        .filter((node) => node.kind === 'arc')
         .sort((left, right) => left.sort_order - right.sort_order),
     [nodes]
   )
-  const nodeMap = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
+  const activeArc = useMemo(
+    () => findArcForNode(selectedNodeId, nodeMap, arcs),
+    [arcs, nodeMap, selectedNodeId]
+  )
+  const phases = useMemo(
+    () =>
+      nodes
+        .filter(
+          (node) => node.kind === 'phase' && (!activeArc || node.parent_id === activeArc.id)
+        )
+        .sort((left, right) => left.sort_order - right.sort_order),
+    [activeArc, nodes]
+  )
   const activePhase = useMemo(
     () => findPhaseForNode(selectedNodeId, nodeMap, phases),
     [nodeMap, phases, selectedNodeId]
@@ -149,6 +186,8 @@ export function MasterPlan(): JSX.Element {
         return projects.map((project) => ({ id: project.id, label: project.name }))
       case 'skill_node':
         return skillNodes.map((node) => ({ id: node.id, label: node.title }))
+      case 'target_role':
+        return roles.map((role) => ({ id: role.id, label: role.title }))
       case 'countdown_item':
         return countdowns.map((countdown) => ({ id: countdown.id, label: countdown.title }))
       case 'target_organization':
@@ -175,6 +214,7 @@ export function MasterPlan(): JSX.Element {
     nodes,
     organizations,
     projects,
+    roles,
     selectedNodeId,
     skillNodes,
     weeklyPriorities
@@ -188,6 +228,7 @@ export function MasterPlan(): JSX.Element {
         ...countdowns.map((countdown) => [countdown.id, countdown.title] as const),
         ...nodes.map((node) => [node.id, node.title] as const),
         ...organizations.map((organization) => [organization.id, organization.name] as const),
+        ...roles.map((role) => [role.id, role.title] as const),
         ...applications.map((application) => [application.id, application.title] as const),
         ...weeklyPriorities.map((priority) => [priority.id, priority.title] as const),
         ...narrativeFragments.map((fragment) => [fragment.id, fragment.title] as const)
@@ -199,6 +240,7 @@ export function MasterPlan(): JSX.Element {
       nodes,
       organizations,
       projects,
+      roles,
       skillNodes,
       weeklyPriorities
     ]
@@ -216,7 +258,9 @@ export function MasterPlan(): JSX.Element {
     const phase = await createNode({
       title: phaseTitle.trim(),
       kind: 'phase',
-      status: 'not_started'
+      parent_id: activeArc?.id ?? arcs[0]?.id ?? null,
+      status: 'not_started',
+      horizon_year: activeArc?.horizon_year ?? null
     })
     setPhaseTitle('')
     await selectNode(phase.id)
@@ -271,16 +315,16 @@ export function MasterPlan(): JSX.Element {
         : []
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Direction</span>
           <h1 className={pageStyles.title}>Narrative, phases, and dependencies</h1>
-          <p className={pageStyles.description}>
-            Direction should read like a working document with a database underneath it: the long
-            range self at the top, the phase structure below, and the linked proof or opportunity
-            dependencies alongside it.
-          </p>
+          {!reducedChrome ? (
+            <p className={pageStyles.description}>
+              Keep the long-range story, phase structure, and linked proof in one working surface.
+            </p>
+          ) : null}
         </section>
 
         <section className={pageStyles.twoColumn}>
@@ -288,11 +332,13 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Personal profile</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Identity defaults and the long-range aim that every phase should support.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Identity defaults and the long-range aim every phase should support.
+                  </p>
+                ) : null}
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate('/settings')}>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/settings')}>
                 Edit profile
               </Button>
             </div>
@@ -328,12 +374,13 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Strategic narrative</h2>
-                <p className={pageStyles.sectionDescription}>
-                  The concise story that connects Trinity, portfolio proof, and the Apple /
-                  Columbia path.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    The story that connects Trinity, portfolio proof, and the Apple / Columbia path.
+                  </p>
+                ) : null}
               </div>
-              <Button size="sm" variant="outline" onClick={() => navigate('/settings')}>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/settings')}>
                 Edit narrative
               </Button>
             </div>
@@ -383,12 +430,16 @@ export function MasterPlan(): JSX.Element {
           <div className={pageStyles.sectionHeader}>
             <div>
               <h2 className={pageStyles.sectionTitle}>Fractal timeline</h2>
-              <p className={pageStyles.sectionDescription}>
-                Phases are the outer frame. Pick a phase, then move into its pillars, dependencies,
-                and sprint-level items.
-              </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Arcs hold the permanent story. Phases set the active frame for proof and links.
+                  </p>
+                ) : null}
             </div>
             <div className={pageStyles.inlineActions}>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/year-arc')}>
+                Open year and arc
+              </Button>
               <div className={pageStyles.tabs}>
                 <button
                   className={`${pageStyles.tab} ${timelineView === 'cards' ? pageStyles.tabActive : ''}`}
@@ -413,6 +464,25 @@ export function MasterPlan(): JSX.Element {
               <Button onClick={() => void handleCreatePhase()}>Add phase</Button>
             </div>
           </div>
+          {arcs.length > 0 ? (
+            <div className={pageStyles.chipRow}>
+              {arcs.map((arc) => (
+                <button
+                  key={arc.id}
+                  className={`${pageStyles.chip} ${arc.id === activeArc?.id ? pageStyles.chipActive : ''}`}
+                  onClick={() =>
+                    void selectNode(
+                      nodes.find((node) => node.kind === 'phase' && node.parent_id === arc.id)?.id ??
+                        arc.id
+                    )
+                  }
+                  type="button"
+                >
+                  {arc.title}
+                </button>
+              ))}
+            </div>
+          ) : null}
           {timelineView === 'cards' ? (
             <div className={styles.timelineGrid}>
               {phases.map((phase) => (
@@ -459,9 +529,11 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Phase tree</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Select the active item, then branch deeper when you need more detail.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Select the active item, then branch deeper when you need more detail.
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -512,7 +584,7 @@ export function MasterPlan(): JSX.Element {
                       setChildKind(event.target.value as (typeof PLAN_NODE_KINDS)[number])
                     }
                   >
-                    {PLAN_NODE_KINDS.filter((kind) => kind !== 'phase').map((kind) => (
+                    {PLAN_NODE_KINDS.filter((kind) => kind !== 'phase' && kind !== 'arc').map((kind) => (
                       <option key={kind} value={kind}>
                         {kind.replace(/_/g, ' ')}
                       </option>
@@ -528,9 +600,11 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Selected item</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Edit the current record as a working note, not a crowded inspector.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Edit the current record as a working note, not a crowded inspector.
+                  </p>
+                ) : null}
               </div>
               {selectedNodeDetail ? (
                 <Button
@@ -711,9 +785,11 @@ export function MasterPlan(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Relations</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Link the item to proof, skills, targets, or execution objects.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Link the item to proof, skills, targets, or execution objects.
+                  </p>
+                ) : null}
               </div>
               {selectedNodeDetail ? (
                 <span className={pageStyles.chip}>{relationLinks.length} links</span>
@@ -730,6 +806,7 @@ export function MasterPlan(): JSX.Element {
                   >
                     <option value="skill_node">Skill</option>
                     <option value="project">Project</option>
+                    <option value="target_role">Target role</option>
                     <option value="target_organization">Target organization</option>
                     <option value="application_record">Application</option>
                     <option value="weekly_priority">Weekly priority</option>

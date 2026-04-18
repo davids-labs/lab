@@ -4,6 +4,7 @@ import { PublicPagePreview } from '@renderer/components/preview/PublicPagePrevie
 import { TitleBar } from '@renderer/components/workspace/TitleBar'
 import { useBlockStore } from '@renderer/stores/blockStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import styles from './ProjectPreview.module.css'
 
 export function ProjectPreview(): JSX.Element {
@@ -15,6 +16,7 @@ export function ProjectPreview(): JSX.Element {
   const blocks = useBlockStore((state) => state.blocks)
   const loadBlocks = useBlockStore((state) => state.loadBlocks)
   const setActiveBlock = useBlockStore((state) => state.setActiveBlock)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
 
   useEffect(() => {
     if (!projectId) {
@@ -38,7 +40,7 @@ export function ProjectPreview(): JSX.Element {
   }
 
   return (
-    <div className="routeShell">
+    <div className="routeShell" data-reduced-chrome={reducedChrome}>
       <TitleBar project={project} view="preview" />
       <div className={styles.shell}>
         <PublicPagePreview

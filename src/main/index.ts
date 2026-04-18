@@ -25,6 +25,7 @@ import { registerReviewHandlers } from './ipc/review'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerSkillHandlers } from './ipc/skills'
 import { registerSystemHandlers } from './ipc/system'
+import { registerWorkflowHandlers } from './ipc/workflow'
 import { initializeAppPaths } from './services/appPaths'
 
 function createWindow(): void {
@@ -80,6 +81,7 @@ app.whenReady().then(() => {
   registerIntegrationHandlers()
   registerPlanHandlers()
   registerSkillHandlers()
+  registerWorkflowHandlers()
   registerOsHandlers()
   registerSettingsHandlers()
   registerPipelineHandlers()

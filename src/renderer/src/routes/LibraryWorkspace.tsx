@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { Button } from '@renderer/components/ui/Button'
 import { useLibraryStore } from '@renderer/stores/libraryStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 export function LibraryWorkspace(): JSX.Element {
@@ -18,6 +19,7 @@ export function LibraryWorkspace(): JSX.Element {
   } = useLibraryStore()
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
 
   useEffect(() => {
     void loadDocuments()
@@ -74,7 +76,7 @@ export function LibraryWorkspace(): JSX.Element {
   }
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Library</span>

@@ -69,6 +69,11 @@
   line-height: 1.55;
 }
 
+.panel[data-reduced-chrome='true'] .supporting,
+.panel[data-reduced-chrome='true'] .work {
+  display: none;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

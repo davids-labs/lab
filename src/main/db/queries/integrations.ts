@@ -76,6 +76,7 @@ interface GitHubRepoSnapshot {
 interface GitHubAccountConfig {
   login: string | null
   repo_urls: string[]
+  monitored_orgs?: string[]
   last_synced_at?: number
   last_error?: string | null
   repos?: GitHubRepoSnapshot[]
@@ -614,6 +615,41 @@ function normalizeGitHubRepoUrl(input: string): GitHubRepoRef {
   }
 }
 
+function collectConfiguredGitHubRepoUrls(settings: {
+  github_monitored_repos: string[]
+  github_repo_url: string
+  sync_repo_url: string
+}): string[] {
+  return [
+    ...settings.github_monitored_repos,
+    settings.github_repo_url,
+    settings.sync_repo_url
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function listOrgRepoUrls(org: string): string[] {
+  const response = execGhJson<Array<Record<string, unknown>>>([
+    'api',
+    `orgs/${encodeURIComponent(org)}/repos?per_page=100&sort=updated&type=all`
+  ])
+
+  return response
+    .map((entry) => clean(String(entry.html_url ?? '')))
+    .filter((value): value is string => Boolean(value))
+}
+
+function discoverGitHubOrgRepoUrls(orgs: string[]): string[] {
+  const urls: string[] = []
+
+  for (const org of orgs) {
+    urls.push(...listOrgRepoUrls(org))
+  }
+
+  return urls
+}
+
 function execGh(args: string[]): string {
   try {
     return execFileSync('gh', args, {
@@ -835,10 +871,16 @@ export const integrationQueries = {
     }
 
     const settings = settingsQueries.getBundle().integration_settings
-    const rawRepoUrls =
+    const explicitRepoUrls =
       input?.repo_urls?.length && input.repo_urls.some((value) => value.trim())
         ? input.repo_urls
-        : settings.github_monitored_repos
+        : null
+    const monitoredOrgs = (settings.github_monitor_orgs ?? [])
+      .map((value) => value.trim())
+      .filter(Boolean)
+    const configuredRepoUrls = collectConfiguredGitHubRepoUrls(settings)
+    const orgRepoUrls = explicitRepoUrls ? [] : discoverGitHubOrgRepoUrls(monitoredOrgs)
+    const rawRepoUrls = explicitRepoUrls ?? [...configuredRepoUrls, ...orgRepoUrls]
     const repoRefs = Array.from(
       new Map(rawRepoUrls.map((entry) => [normalizeGitHubRepoUrl(entry).url, normalizeGitHubRepoUrl(entry)])).values()
     )
@@ -849,7 +891,8 @@ export const integrationQueries = {
 
     const jobId = startSyncJob('github', 'GitHub repo sync', {
       repos: repoRefs.map((entry) => entry.url),
-      login: cliStatus.login
+      login: cliStatus.login,
+      monitored_orgs: monitoredOrgs
     })
 
     try {
@@ -900,6 +943,7 @@ export const integrationQueries = {
         {
           login: cliStatus.login,
           repo_urls: repoRefs.map((entry) => entry.url),
+          monitored_orgs: monitoredOrgs,
           last_synced_at: Date.now(),
           last_error: null,
           repos: snapshots
@@ -928,7 +972,8 @@ export const integrationQueries = {
         updateAccountConfig(current.id, {
           ...config,
           login: cliStatus.login,
-          repo_urls: settings.github_monitored_repos,
+          repo_urls: collectConfiguredGitHubRepoUrls(settings),
+          monitored_orgs: monitoredOrgs,
           last_error: message
         })
       }

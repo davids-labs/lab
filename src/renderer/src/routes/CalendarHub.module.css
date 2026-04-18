@@ -1,0 +1,248 @@
+.toolbar {
+  display: grid;
+  gap: 12px;
+}
+
+.viewTabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.viewTab {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--lab-border);
+  border-radius: 999px;
+  background: var(--lab-panel);
+  color: var(--lab-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.viewTabActive {
+  border-color: rgba(47, 111, 235, 0.22);
+  background: var(--lab-accent-soft);
+  color: var(--lab-accent);
+}
+
+.agendaList {
+  display: grid;
+  gap: 12px;
+}
+
+.eventCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--lab-border);
+  border-radius: 14px;
+  background: var(--lab-panel-subtle);
+}
+
+.eventCardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.eventTitle {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.eventMeta,
+.eventBody {
+  margin: 0;
+  color: var(--lab-text-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sourcePill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--lab-border);
+  background: var(--lab-panel);
+  color: var(--lab-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekHeaderCell {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--lab-border);
+  border-radius: 12px;
+  background: var(--lab-panel-subtle);
+  text-align: center;
+}
+
+.weekHeaderCell span {
+  color: var(--lab-text-muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.weekHeaderCell strong {
+  font-size: 1rem;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weekColumn {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.weekColumnDate {
+  padding: 0 4px;
+  color: var(--lab-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.weekColumnBody {
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  padding: 10px;
+  border: 1px solid var(--lab-border);
+  border-radius: 14px;
+  background: var(--lab-panel-subtle);
+}
+
+.weekEvent {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--lab-border);
+  background: var(--lab-panel);
+  color: var(--lab-text);
+}
+
+.weekEvent strong {
+  font-size: 0.84rem;
+}
+
+.weekEvent span {
+  color: var(--lab-text-muted);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.weekEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  color: var(--lab-text-muted);
+  border: 1px dashed var(--lab-divider);
+  border-radius: 12px;
+}
+
+.monthGridHeader {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.monthGridHeaderCell {
+  color: var(--lab-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.monthCell {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+  padding: 10px;
+  border: 1px solid var(--lab-border);
+  border-radius: 14px;
+  background: var(--lab-panel-subtle);
+}
+
+.monthCellMuted {
+  opacity: 0.55;
+}
+
+.monthCellHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--lab-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.monthCellEvents {
+  display: grid;
+  gap: 6px;
+}
+
+.monthEvent,
+.monthMore {
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--lab-panel);
+  border: 1px solid var(--lab-border);
+  color: var(--lab-text-muted);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .weekHeader,
+  .weekGrid,
+  .monthGridHeader,
+  .monthGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    gap: 10px;
+  }
+
+  .eventCardHeader {
+    flex-direction: column;
+  }
+
+  .weekHeader,
+  .weekGrid,
+  .monthGridHeader,
+  .monthGrid {
+    grid-template-columns: 1fr;
+  }
+}

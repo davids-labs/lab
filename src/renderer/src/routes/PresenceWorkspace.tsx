@@ -5,6 +5,7 @@ import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useExportStore } from '@renderer/stores/exportStore'
 import { usePresenceStore } from '@renderer/stores/presenceStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 type PresenceTab = 'fragments' | 'assets' | 'cvs' | 'content'
@@ -12,6 +13,7 @@ type PresenceTab = 'fragments' | 'assets' | 'cvs' | 'content'
 export function PresenceWorkspace(): JSX.Element {
   const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const {
     narrativeFragments,
     profileAssets,
@@ -77,18 +79,34 @@ export function PresenceWorkspace(): JSX.Element {
   )
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
-        <section className={pageStyles.lead}>
-          <span className={pageStyles.eyebrow}>Presence</span>
-          <h1 className={pageStyles.title}>Public signal studio</h1>
-          <p className={pageStyles.description}>
-            Presence should feel editorial, not form-heavy: one collection at a time, one selected
-            asset at a time, with strategy and proof feeding the material underneath.
-          </p>
+        <section className={pageStyles.surface}>
+          <div className={pageStyles.surfaceHeader}>
+            <div className={pageStyles.lead}>
+              <span className={pageStyles.eyebrow}>Presence</span>
+              <h1 className={pageStyles.title}>Public signal</h1>
+              <p className={pageStyles.description}>
+                Narrative assets, CVs, and content drafts stay in one working surface.
+              </p>
+            </div>
+            <div className={pageStyles.toolbar}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
+                    pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
+                  )
+                }
+              >
+                Export packet
+              </Button>
+            </div>
+          </div>
         </section>
 
-        <section className={pageStyles.section}>
+        <section className={pageStyles.surface}>
           <div className={pageStyles.metricStrip}>
             <div className={pageStyles.metric}>
               <span className={pageStyles.muted}>Narrative fragments</span>
@@ -107,21 +125,9 @@ export function PresenceWorkspace(): JSX.Element {
               <div className={pageStyles.metricValue}>{openIdeaCount}</div>
             </div>
           </div>
-          <div className={pageStyles.inlineActions}>
-            <Button
-              variant="outline"
-              onClick={() =>
-                void generatePack({ target: 'narrative_signal', format: 'markdown' }).then(() =>
-                  pushToast({ message: 'Generated narrative signal pack.', type: 'success' })
-                )
-              }
-            >
-              Export narrative packet
-            </Button>
-          </div>
         </section>
 
-        <section className={pageStyles.section}>
+        <section className={pageStyles.toolbar}>
           <div className={pageStyles.tabs}>
             {([
               ['fragments', 'Narrative'],
@@ -144,13 +150,15 @@ export function PresenceWorkspace(): JSX.Element {
         {activeTab === 'fragments' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Add headline, about, story, or proof fragment"
                   value={fragmentTitle}
                   onChange={(event) => setFragmentTitle(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createNarrativeFragment({
                       title: fragmentTitle,
@@ -184,8 +192,7 @@ export function PresenceWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeFragment.title}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Use short narrative fragments as reusable building blocks for LinkedIn,
-                        portfolio copy, and recruiter-facing language.
+                        Reusable building blocks for LinkedIn, portfolio copy, and recruiter-facing language.
                       </p>
                     </div>
                     <Button
@@ -241,13 +248,15 @@ export function PresenceWorkspace(): JSX.Element {
         {activeTab === 'assets' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="LinkedIn About, recruiter bio, portfolio summary..."
                   value={assetTitle}
                   onChange={(event) => setAssetTitle(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createProfileAsset({
                       title: assetTitle,
@@ -283,7 +292,7 @@ export function PresenceWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeAsset.title}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Treat each asset like a publishable document with a platform and readiness state.
+                        Treat each asset like a publishable document.
                       </p>
                     </div>
                     <Button
@@ -359,13 +368,15 @@ export function PresenceWorkspace(): JSX.Element {
         {activeTab === 'cvs' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Apple PD Intern CV"
                   value={cvTitle}
                   onChange={(event) => setCvTitle(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createCvVariant({ title: cvTitle, content: '' }).then(() => setCvTitle(''))
                   }
@@ -395,7 +406,7 @@ export function PresenceWorkspace(): JSX.Element {
                     <div>
                       <h2 className={pageStyles.sectionTitle}>{activeCv.title}</h2>
                       <p className={pageStyles.sectionDescription}>
-                        Keep each CV variant tied to a role shape and supporting summary.
+                        Keep each CV variant tied to a role shape.
                       </p>
                     </div>
                     <Button
@@ -462,13 +473,15 @@ export function PresenceWorkspace(): JSX.Element {
         {activeTab === 'content' ? (
           <section className={pageStyles.collectionLayout}>
             <article className={pageStyles.section}>
-              <div className={pageStyles.inlineActions}>
+              <div className={pageStyles.toolbar}>
                 <InputField
                   placeholder="Add content idea"
                   value={ideaTitle}
                   onChange={(event) => setIdeaTitle(event.target.value)}
                 />
                 <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() =>
                     void createContentIdea({ title: ideaTitle, status: 'backlog' }).then(() =>
                       setIdeaTitle('')
@@ -499,7 +512,7 @@ export function PresenceWorkspace(): JSX.Element {
                   <div>
                     <h2 className={pageStyles.sectionTitle}>Content engine</h2>
                     <p className={pageStyles.sectionDescription}>
-                      Use ideas as the backlog and draft posts as the concrete output layer.
+                      Ideas are the backlog; drafts are the output.
                     </p>
                   </div>
                 </div>
@@ -562,7 +575,7 @@ export function PresenceWorkspace(): JSX.Element {
                     <div>
                       <h3 className={pageStyles.sectionTitle}>Draft posts</h3>
                       <p className={pageStyles.sectionDescription}>
-                        Keep the content backlog and actual publish drafts separate.
+                        Keep the backlog and publish drafts separate.
                       </p>
                     </div>
                   </div>

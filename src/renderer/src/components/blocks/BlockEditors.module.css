@@ -100,6 +100,10 @@
   font-size: 0.82rem;
 }
 
+[data-reduced-chrome='true'] .helperText {
+  display: none;
+}
+
 .checkboxList {
   display: grid;
   gap: var(--lab-space-2);

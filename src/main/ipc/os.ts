@@ -75,6 +75,7 @@ export function registerOsHandlers(): void {
     'os:delete-habit',
     async (_event, id: string): Promise<{ ok: boolean }> => osQueries.deleteHabit(id)
   )
+  ipcMain.handle('os:list-habit-logs', async (): Promise<OsHabitLog[]> => osQueries.listHabitLogs())
   ipcMain.handle(
     'os:upsert-habit-log',
     async (_event, input: UpsertOsHabitLogInput): Promise<OsHabitLog> =>

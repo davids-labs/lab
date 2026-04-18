@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Asset, Block } from '@preload/types'
+import { useNavigate } from 'react-router-dom'
+import type { Asset, Block, ProjectConnectionSummary } from '@preload/types'
 import { BLOCK_LABELS } from '@shared/defaults'
 import { Button } from '@renderer/components/ui/Button'
 import { useUiStore } from '@renderer/stores/uiStore'
@@ -42,6 +43,7 @@ interface WorkspaceSidebarProps {
   activeBlockId: string | null
   assets: Asset[]
   blocks: Block[]
+  connections?: ProjectConnectionSummary | null
   onFocusBlock: (id: string) => void
   onImportAssets: () => void
 }
@@ -50,11 +52,14 @@ export function WorkspaceSidebar({
   activeBlockId,
   assets,
   blocks,
+  connections,
   onFocusBlock,
   onImportAssets
 }: WorkspaceSidebarProps): JSX.Element {
+  const navigate = useNavigate()
   const sidebarTab = useUiStore((state) => state.sidebarTab)
   const setSidebarTab = useUiStore((state) => state.setSidebarTab)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('all')
   const [assetPreviews, setAssetPreviews] = useState<Record<string, string>>({})
 
@@ -101,7 +106,7 @@ export function WorkspaceSidebar({
   )
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={styles.sidebar} data-reduced-chrome={reducedChrome}>
       <div className={styles.tabs}>
         <Button
           size="sm"
@@ -117,6 +122,13 @@ export function WorkspaceSidebar({
         >
           Navigator
         </Button>
+        <Button
+          size="sm"
+          variant={sidebarTab === 'connections' ? 'outline' : 'ghost'}
+          onClick={() => setSidebarTab('connections')}
+        >
+          Links
+        </Button>
       </div>
 
       <div className={styles.body}>
@@ -124,7 +136,7 @@ export function WorkspaceSidebar({
           <div className={styles.panel}>
             <div className={styles.panelHeader}>
               <Button variant="outline" size="sm" onClick={onImportAssets}>
-                Import Files
+                {reducedChrome ? 'Import' : 'Import Files'}
               </Button>
               <span className={styles.muted}>{assetCounts.all} total</span>
             </div>
@@ -156,7 +168,7 @@ export function WorkspaceSidebar({
                     )}
                     <div className={styles.assetMeta}>
                       <strong>{asset.filename}</strong>
-                      <span className={styles.muted}>{asset.mime_type}</span>
+                      {!reducedChrome ? <span className={styles.muted}>{asset.mime_type}</span> : null}
                     </div>
                   </div>
 
@@ -169,7 +181,9 @@ export function WorkspaceSidebar({
                           {tag}
                         </span>
                       ))}
-                    <span className={styles.assetTag}>{formatBytes(asset.size_bytes)}</span>
+                    {!reducedChrome ? (
+                      <span className={styles.assetTag}>{formatBytes(asset.size_bytes)}</span>
+                    ) : null}
                   </div>
                 </div>
               )
@@ -183,7 +197,7 @@ export function WorkspaceSidebar({
               </span>
             ) : null}
           </div>
-        ) : (
+        ) : sidebarTab === 'navigator' ? (
           <div className={styles.panel}>
             {blocks.map((block) => (
               <button
@@ -193,11 +207,104 @@ export function WorkspaceSidebar({
                 type="button"
               >
                 <strong>{BLOCK_LABELS[block.type]}</strong>
-                <span className={styles.muted}>
-                  {block.visible_on_page ? 'Visible on page' : 'Hidden from page'}
-                </span>
+                  {!reducedChrome ? (
+                    <span className={styles.muted}>
+                      {block.visible_on_page ? 'Visible on page' : 'Hidden from page'}
+                    </span>
+                  ) : null}
               </button>
             ))}
+          </div>
+        ) : (
+          <div className={styles.panel}>
+            {connections ? (
+              <>
+                <div className={styles.assetCard}>
+                  <div className={styles.assetMeta}>
+                    <strong>Plan nodes</strong>
+                    <span className={styles.muted}>{connections.plan_nodes.length} linked</span>
+                  </div>
+                  <div className={styles.tagRow}>
+                    {connections.plan_nodes.slice(0, 3).map((node) => (
+                      <span key={node.id} className={styles.assetTag}>
+                        {node.title}
+                      </span>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => navigate('/direction')}>
+                    Open Direction
+                  </Button>
+                </div>
+
+                <div className={styles.assetCard}>
+                  <div className={styles.assetMeta}>
+                    <strong>Skill evidence</strong>
+                    <span className={styles.muted}>{connections.skill_evidence.length} entries</span>
+                  </div>
+                  <div className={styles.tagRow}>
+                    {connections.skill_evidence.slice(0, 3).map((entry) => (
+                      <span key={entry.id} className={styles.assetTag}>
+                        {entry.label}
+                      </span>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => navigate('/proof/skills')}>
+                    Open Skills
+                  </Button>
+                </div>
+
+                <div className={styles.assetCard}>
+                  <div className={styles.assetMeta}>
+                    <strong>CV sections</strong>
+                    <span className={styles.muted}>{connections.cv_sections.length} linked</span>
+                  </div>
+                  <div className={styles.tagRow}>
+                    {connections.cv_sections.slice(0, 3).map((entry) => (
+                      <span key={entry.section.id} className={styles.assetTag}>
+                        {entry.variant.title}: {entry.section.title}
+                      </span>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => navigate('/six-months')}>
+                    Open Chain
+                  </Button>
+                </div>
+
+                <div className={styles.assetCard}>
+                  <div className={styles.assetMeta}>
+                    <strong>Applications and notes</strong>
+                    <span className={styles.muted}>
+                      {connections.applications.length} apps · {connections.notes.length} notes
+                    </span>
+                  </div>
+                  <div className={styles.tagRow}>
+                    {connections.applications.slice(0, 2).map((application) => (
+                      <span key={application.id} className={styles.assetTag}>
+                        {application.title}
+                      </span>
+                    ))}
+                    {connections.notes.slice(0, 2).map((note) => (
+                      <span key={note.id} className={styles.assetTag}>
+                        {note.title}
+                      </span>
+                    ))}
+                  </div>
+                  <div className={styles.panelHeader}>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/pipeline')}>
+                      Pipeline
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/notes')}>
+                      Notes
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => navigate('/presence')}>
+                      Presence
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <span className={styles.muted}>Loading project connections…</span>
+            )}
           </div>
         )}
       </div>

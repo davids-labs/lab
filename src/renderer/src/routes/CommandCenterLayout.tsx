@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { SidebarMode } from '@preload/types'
@@ -12,110 +12,174 @@ import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useUiStore } from '@renderer/stores/uiStore'
 import styles from './CommandCenterLayout.module.css'
 
-const navSections = [
+type ShellLink = {
+  to: string
+  label: string
+  description: string
+  symbol: string
+  end?: boolean
+}
+
+type ShellSection = {
+  label: string
+  links: ShellLink[]
+}
+
+const shellSections: ShellSection[] = [
   {
-    label: 'Operate',
-    items: [
-      { to: '/', label: 'Home', symbol: 'HO', end: true },
-      { to: '/direction', label: 'Direction', symbol: 'DI' },
-      { to: '/notes', label: 'Notes', symbol: 'NO' },
-      { to: '/execution', label: 'Execution', symbol: 'EX' }
+    label: 'Home',
+    links: [{ to: '/home', label: 'Overview', description: 'Daily command surface and quick capture.', symbol: 'H', end: true }]
+  },
+  {
+    label: 'Plan',
+    links: [
+      { to: '/day', label: 'Day', description: 'Morning directive and live pressure.', symbol: 'D' },
+      { to: '/week', label: 'Week', description: 'Priorities, review prefill, and evidence.', symbol: 'W' },
+      { to: '/month', label: 'Month', description: 'Monthly synthesis and cleanup.', symbol: 'M' },
+      { to: '/calendar', label: 'Calendar', description: 'Imported commitments and blocks.', symbol: 'CAL' },
+      { to: '/six-months', label: '6 Months', description: 'Skill, proof, CV, and applications.', symbol: '6M' },
+      { to: '/year-arc', label: 'Year & Arc', description: 'Long-range arcs and phases.', symbol: 'Y+' },
+      { to: '/direction', label: 'Direction', description: 'North star and fractal plan.', symbol: 'DIR' }
     ]
   },
   {
-    label: 'Build',
-    items: [
-      { to: '/proof', label: 'Proof', symbol: 'PR' },
-      { to: '/pipeline', label: 'Pipeline', symbol: 'PI' },
-      { to: '/presence', label: 'Presence', symbol: 'PS' }
+    label: 'Work',
+    links: [
+      { to: '/execution', label: 'Execution', description: 'Daily logging, rituals, and review.', symbol: 'EX' },
+      { to: '/proof', label: 'Proof', description: 'Projects, evidence, and portfolio readiness.', symbol: 'PR' },
+      { to: '/pipeline', label: 'Pipeline', description: 'Targets, applications, and contacts.', symbol: 'PI' },
+      { to: '/presence', label: 'Presence', description: 'Narrative assets and CV structure.', symbol: 'PS' }
     ]
   },
   {
-    label: 'Source',
-    items: [
-      { to: '/library', label: 'Library', symbol: 'LI' },
-      { to: '/settings', label: 'Settings', symbol: 'SE' }
+    label: 'Docs',
+    links: [
+      { to: '/notes', label: 'Notes', description: 'Working documents and captured thinking.', symbol: 'NO' },
+      { to: '/library', label: 'Library', description: 'Imported sources and excerpts.', symbol: 'LI' },
+      { to: '/settings', label: 'Settings', description: 'Identity, shell, integrations, defaults.', symbol: 'SE' }
     ]
   }
-] as const
+]
 
 const workspaceMeta = [
   {
     matcher: (pathname: string) => pathname === '/' || pathname === '/home',
     label: 'Home',
-    title: 'LifeOS',
-    subtitle: 'Today, this week, current phase, and pressure points in one operating note.',
-    primaryAction: { label: 'Plan the week', to: '/execution' }
+    title: 'Overview',
+    subtitle: 'Quick capture and cross-system pressure.',
+    primaryAction: { label: 'Open day', to: '/day' }
+  },
+  {
+    matcher: (pathname: string) => pathname === '/day',
+    label: 'Day',
+    title: 'Day',
+    subtitle: 'Morning synthesis, next moves, habits, and pressure.',
+    primaryAction: { label: 'Open execution', to: '/execution' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/week'),
+    label: 'Week',
+    title: 'Week',
+    subtitle: 'Weekly review, priorities, and evidence.',
+    primaryAction: { label: 'Open execution', to: '/execution' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/month'),
+    label: 'Month',
+    title: 'Month',
+    subtitle: 'Outward signal, stale work, and source cleanup.',
+    primaryAction: { label: 'Open presence', to: '/presence' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/calendar'),
+    label: 'Calendar',
+    title: 'Calendar',
+    subtitle: 'Imported commitments and planning blocks.',
+    primaryAction: { label: 'Open integrations', to: '/settings?section=integrations' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/six-months'),
+    label: '6 Months',
+    title: 'Six Months',
+    subtitle: 'Skill, proof, CV, and application chain.',
+    primaryAction: { label: 'Open pipeline', to: '/pipeline' }
+  },
+  {
+    matcher: (pathname: string) => pathname.startsWith('/year-arc'),
+    label: 'Year & Arc',
+    title: 'Year & Arc',
+    subtitle: 'Long-range arcs, phases, and dependency pressure.',
+    primaryAction: { label: 'Open direction', to: '/direction' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/direction'),
     label: 'Direction',
-    title: 'North Star and Fractal Plan',
-    subtitle: 'Long-range direction, phases, narrative, and linked dependencies.',
-    primaryAction: { label: 'Open roadmap', to: '/direction' }
+    title: 'Direction',
+    subtitle: 'Long-range direction, phases, narrative, and dependencies.',
+    primaryAction: { label: 'Open year and arc', to: '/year-arc' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/notes'),
     label: 'Notes',
-    title: 'Notes and working documents',
+    title: 'Notes',
     subtitle: 'Planning memos, meeting notes, and linked thinking docs.',
     primaryAction: { label: 'Open notes', to: '/notes' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/execution'),
     label: 'Execution',
-    title: 'Execution System',
-    subtitle: 'Daily logging, weekly priorities, rituals, schedule profiles, and review.',
-    primaryAction: { label: 'Add weekly move', to: '/execution' }
+    title: 'Execution',
+    subtitle: 'Daily logging, weekly priorities, rituals, and review.',
+    primaryAction: { label: 'Open week', to: '/week' }
   },
   {
     matcher: (pathname: string) => pathname === '/proof',
     label: 'Proof',
-    title: 'Capability Engine',
+    title: 'Proof',
     subtitle: 'Projects, evidence, and public proof.',
     primaryAction: { label: 'Open projects', to: '/proof/projects' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/proof/projects'),
     label: 'Proof',
-    title: 'Project Ecosystem',
-    subtitle: 'A database of finished, active, and portfolio-bound projects.',
-    primaryAction: { label: 'New project', to: '/proof/projects' }
+    title: 'Projects',
+    subtitle: 'Finished, active, and portfolio-bound projects.',
+    primaryAction: { label: 'Open six months', to: '/six-months' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/proof/skills'),
     label: 'Proof',
-    title: 'Skill Matrix',
+    title: 'Skills',
     subtitle: 'Evidence-backed readiness across domains and nodes.',
-    primaryAction: { label: 'Open skills', to: '/proof/skills' }
+    primaryAction: { label: 'Open six months', to: '/six-months' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/pipeline'),
     label: 'Pipeline',
-    title: 'Career Pipeline',
+    title: 'Pipeline',
     subtitle: 'Targets, applications, contacts, interactions, and next steps.',
-    primaryAction: { label: 'Review pipeline', to: '/pipeline' }
+    primaryAction: { label: 'Open six months', to: '/six-months' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/presence'),
     label: 'Presence',
-    title: 'Public Signal',
+    title: 'Presence',
     subtitle: 'Narrative assets, CVs, profile material, and content.',
-    primaryAction: { label: 'Open assets', to: '/presence' }
+    primaryAction: { label: 'Open month', to: '/month' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/library'),
     label: 'Library',
-    title: 'Source Library',
+    title: 'Library',
     subtitle: 'Imported documents, excerpts, and reviewable suggestions.',
-    primaryAction: { label: 'Import docs', to: '/library' }
+    primaryAction: { label: 'Open month', to: '/month' }
   },
   {
     matcher: (pathname: string) => pathname.startsWith('/settings'),
     label: 'Settings',
     title: 'Settings',
     subtitle: 'Identity, shell preferences, integrations, and defaults.',
-    primaryAction: { label: 'Edit settings', to: '/settings' }
+    primaryAction: { label: 'Edit shell', to: '/settings' }
   }
 ] as const
 
@@ -131,6 +195,14 @@ function cycleSidebarMode(current: SidebarMode): SidebarMode {
   return 'full'
 }
 
+function normalizeLaunchTarget(target: string | undefined): string {
+  if (!target || target === 'home') {
+    return '/home'
+  }
+
+  return target.startsWith('/') ? target : `/${target}`
+}
+
 export function CommandCenterLayout(): JSX.Element {
   const location = useLocation()
   const navigate = useNavigate()
@@ -141,12 +213,12 @@ export function CommandCenterLayout(): JSX.Element {
   const updateDashboardPreferences = useSettingsStore((state) => state.updateDashboardPreferences)
   const focusMode = useUiStore((state) => state.commandCenterFocusMode)
   const setFocusMode = useUiStore((state) => state.setCommandCenterFocusMode)
-  const startWorkspaceApplied = useRef(false)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
+  const setReducedChrome = useUiStore((state) => state.setReducedChrome)
   const preferenceSnapshotApplied = useRef(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('full')
-  const [reducedChrome, setReducedChrome] = useState(false)
 
   const isProjectRoute = location.pathname.startsWith('/project/')
   const meta = workspaceMeta.find((entry) => entry.matcher(location.pathname)) ?? workspaceMeta[0]
@@ -157,18 +229,13 @@ export function CommandCenterLayout(): JSX.Element {
   }, [loadBundle, loadSummary])
 
   useEffect(() => {
-    if (startWorkspaceApplied.current || !bundle) {
+    if (!bundle || location.pathname !== '/') {
       return
     }
 
-    startWorkspaceApplied.current = true
-
-    const startWorkspace = bundle.dashboard_preferences.start_workspace
-    if (location.pathname !== '/' || startWorkspace === 'home') {
-      return
-    }
-
-    navigate(`/${startWorkspace}`, { replace: true })
+    navigate(normalizeLaunchTarget(bundle.dashboard_preferences.start_workspace), {
+      replace: true
+    })
   }, [bundle, location.pathname, navigate])
 
   useEffect(() => {
@@ -181,12 +248,12 @@ export function CommandCenterLayout(): JSX.Element {
     setFocusMode(prefs.focus_mode_default ?? prefs.compact_mode)
     setReducedChrome(prefs.reduced_chrome ?? false)
     setSidebarMode(prefs.sidebar_mode ?? (prefs.sidebar_collapsed ? 'compact' : 'full'))
-  }, [bundle, setFocusMode])
+  }, [bundle, setFocusMode, setReducedChrome])
 
   useEffect(() => {
     let cancelled = false
 
-    const syncFullscreen = async (): Promise<void> => {
+    async function syncFullscreen(): Promise<void> {
       try {
         const next = await window.lab.system.isFullscreen()
         if (!cancelled) {
@@ -231,13 +298,13 @@ export function CommandCenterLayout(): JSX.Element {
 
   const commandActions = useMemo<CommandPaletteAction[]>(
     () => [
-      ...navSections.flatMap((section) =>
-        section.items.map((item) => ({
-          id: `nav-${item.to}`,
-          title: item.label,
-          subtitle: `Open ${item.label}`,
-          group: 'Navigate',
-          onSelect: () => startTransition(() => navigate(item.to))
+      ...shellSections.flatMap((section) =>
+        section.links.map((link) => ({
+          id: `nav-${link.to}`,
+          title: link.label,
+          subtitle: link.description,
+          group: section.label,
+          onSelect: () => navigate(link.to)
         }))
       ),
       {
@@ -248,18 +315,18 @@ export function CommandCenterLayout(): JSX.Element {
         onSelect: () => navigate('/proof/projects')
       },
       {
-        id: 'quick-execution',
-        title: 'Plan the week',
-        subtitle: 'Go to weekly priorities and review.',
+        id: 'quick-week',
+        title: 'Open week',
+        subtitle: 'Go to weekly priorities, prefill, and evidence prompts.',
         group: 'Quick actions',
-        onSelect: () => navigate('/execution')
+        onSelect: () => navigate('/week')
       },
       {
-        id: 'quick-notes',
-        title: 'Open notes',
-        subtitle: 'Jump to strategy notes and linked documents.',
+        id: 'quick-six-months',
+        title: 'Open six months',
+        subtitle: 'Jump to the skills-proof-CV-application chain.',
         group: 'Quick actions',
-        onSelect: () => navigate('/notes')
+        onSelect: () => navigate('/six-months')
       },
       {
         id: 'quick-library',
@@ -267,13 +334,6 @@ export function CommandCenterLayout(): JSX.Element {
         subtitle: 'Go to the source library.',
         group: 'Quick actions',
         onSelect: () => navigate('/library')
-      },
-      {
-        id: 'quick-settings',
-        title: 'Open settings',
-        subtitle: 'Adjust appearance, shell, and integrations.',
-        group: 'Quick actions',
-        onSelect: () => navigate('/settings')
       }
     ],
     [navigate]
@@ -343,13 +403,13 @@ export function CommandCenterLayout(): JSX.Element {
   }
 
   return (
-    <div className={layoutClassName} style={layoutStyle}>
+    <div className={layoutClassName} data-reduced-chrome={reducedChrome} style={layoutStyle}>
       <aside className={styles.sidebar}>
         <div className={styles.brandBlock}>
           <div className={styles.brandMark}>DL</div>
           <div className={styles.brandText}>
             <strong>davids.lab</strong>
-            <span>LifeOS</span>
+            <span>Personal operating system</span>
           </div>
         </div>
 
@@ -362,35 +422,40 @@ export function CommandCenterLayout(): JSX.Element {
           Search
         </Button>
 
-        <nav className={styles.nav} aria-label="Primary navigation">
-          {navSections.map((section) => (
-            <div key={section.label} className={styles.navSection}>
-              <span className={styles.navSectionLabel}>{section.label}</span>
-              <div className={styles.navSectionBody}>
-                {section.items.map((item) => (
+        <div className={styles.sidebarSections}>
+          {shellSections.map((section) => (
+            <section key={section.label} className={styles.sidebarSection}>
+              <span className={styles.sidebarSectionLabel}>{section.label}</span>
+              <div className={styles.sidebarLinks}>
+                {section.links.map((link) => (
                   <NavLink
-                    key={item.to}
-                    end={item.end}
-                    to={item.to}
+                    key={link.to}
+                    end={link.end}
+                    to={link.to}
                     className={({ isActive }) =>
-                      `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
+                      `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
                     }
                   >
-                    <span className={styles.navSymbol}>{item.symbol}</span>
-                    <span className={styles.navLabel}>{item.label}</span>
+                    <span className={styles.sidebarSymbol}>{link.symbol}</span>
+                    <span className={styles.sidebarLinkBody}>
+                      <span className={styles.sidebarLinkLabel}>{link.label}</span>
+                      {sidebarMode === 'compact' ? null : (
+                        <span className={styles.sidebarLinkDescription}>{link.description}</span>
+                      )}
+                    </span>
                   </NavLink>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
-        </nav>
+        </div>
 
         <div className={styles.sidebarFooter}>
           <Button size="sm" variant="ghost" onClick={() => void handleToggleFocusMode()}>
             {focusMode ? 'Exit focus' : 'Focus mode'}
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => navigate('/settings')}>
-            Settings
+          <Button size="sm" variant="ghost" onClick={() => void handleToggleReducedChrome()}>
+            {reducedChrome ? 'Show chrome' : 'Reduce chrome'}
           </Button>
         </div>
       </aside>
@@ -398,15 +463,8 @@ export function CommandCenterLayout(): JSX.Element {
       <main className={styles.main}>
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
-            <button className={styles.iconButton} onClick={() => void handleCycleSidebar()} type="button">
-              {sidebarMode === 'full' ? 'Sidebar' : sidebarMode === 'compact' ? 'Icons' : 'Show'}
-            </button>
-            <div className={styles.breadcrumbs}>
-              <span>davids.lab</span>
-              <span>/</span>
-              <strong>{meta.label}</strong>
-            </div>
             <div className={styles.pageMeta}>
+              <span className={styles.pageLabel}>{meta.label}</span>
               <strong>{meta.title}</strong>
               {!reducedChrome ? <span>{meta.subtitle}</span> : null}
             </div>
@@ -428,13 +486,20 @@ export function CommandCenterLayout(): JSX.Element {
               {meta.primaryAction.label}
             </Button>
             <details className={styles.menu}>
-              <summary className={styles.menuTrigger}>More</summary>
+              <summary className={styles.menuTrigger}>View</summary>
               <div className={styles.menuPanel}>
                 <Button size="sm" variant="ghost" onClick={() => void handleToggleFocusMode()}>
                   {focusMode ? 'Exit focus mode' : 'Enter focus mode'}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => void handleToggleReducedChrome()}>
-                  {reducedChrome ? 'Show more chrome' : 'Reduce chrome'}
+                  {reducedChrome ? 'Show chrome' : 'Reduce chrome'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => void handleCycleSidebar()}>
+                  {sidebarMode === 'full'
+                    ? 'Compact sidebar'
+                    : sidebarMode === 'compact'
+                      ? 'Hide sidebar'
+                      : 'Show sidebar'}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => void handleToggleFullscreen()}>
                   {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}

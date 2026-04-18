@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Block, Project } from '@preload/types'
 import { Button } from '@renderer/components/ui/Button'
 import { useToastStore } from '@renderer/stores/toastStore'
@@ -23,6 +23,14 @@ export function PublicPagePreview({
   const pushToast = useToastStore((state) => state.push)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const requestIdRef = useRef(0)
+  const blockSignature = useMemo(
+    () =>
+      blocks
+        .map((block) => `${block.id}:${block.updated_at}:${block.visible_on_page}:${block.sort_order}`)
+        .join('|'),
+    [blocks]
+  )
+  const pageConfigSignature = useMemo(() => JSON.stringify(project.page_config), [project.page_config])
 
   async function refreshPreview(): Promise<void> {
     const requestId = requestIdRef.current + 1
@@ -68,7 +76,7 @@ export function PublicPagePreview({
       cancelled = true
       window.clearTimeout(timer)
     }
-  }, [blocks, project.id, project.page_config, pushToast])
+  }, [blockSignature, pageConfigSignature, project.id, pushToast])
 
   useEffect(() => {
     const handler = (event: MessageEvent): void => {

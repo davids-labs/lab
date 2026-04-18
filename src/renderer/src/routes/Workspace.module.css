@@ -43,6 +43,10 @@
   font-size: 0.8rem;
 }
 
+.shell[data-reduced-chrome='true'] .statusBar {
+  padding-bottom: 12px;
+}
+
 @media (max-width: 1100px) {
   .withPreview {
     grid-template-columns: var(--workspace-sidebar-width) 10px minmax(0, 1fr);

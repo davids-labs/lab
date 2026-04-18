@@ -41,6 +41,25 @@
   line-height: 1.65;
 }
 
+.page[data-reduced-chrome='true'] .description,
+.page[data-reduced-chrome='true'] .sectionDescription,
+.page[data-reduced-chrome='true'] .rowMeta,
+.page[data-reduced-chrome='true'] .muted {
+  display: none;
+}
+
+.page[data-reduced-chrome='true'] .lead {
+  gap: 4px;
+}
+
+.page[data-reduced-chrome='true'] .sectionHeader {
+  gap: 12px;
+}
+
+.page[data-reduced-chrome='true'] .stack {
+  gap: 14px;
+}
+
 .callout {
   display: grid;
   gap: 12px;
@@ -80,9 +99,62 @@
 
 .sectionHeader {
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
+}
+
+.sectionHeaderCompact {
+  gap: 12px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--lab-divider);
+  border-radius: 14px;
+  background: var(--lab-panel-subtle);
+}
+
+.toolbar > * {
+  min-width: 0;
+}
+
+.surface {
+  display: grid;
+  gap: 14px;
+  padding: var(--command-panel-padding);
+  border: 1px solid var(--lab-border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 248, 245, 0.96));
+  box-shadow: none;
+}
+
+.surfaceHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.surfaceHeader > *,
+.sectionHeader > * {
+  min-width: 0;
+}
+
+.surfaceHeader h2,
+.surfaceHeader h3 {
+  margin: 0;
+}
+
+.surfaceHeader p {
+  margin: 4px 0 0;
+  color: var(--lab-text-muted);
 }
 
 .sectionHeader h2,
@@ -147,6 +219,12 @@
   align-items: start;
 }
 
+.collectionLayout > :first-child,
+.collectionDetailLayout > :first-child {
+  position: sticky;
+  top: 16px;
+}
+
 .collectionSidebar,
 .collectionMain,
 .collectionAside {
@@ -180,6 +258,13 @@
   gap: 8px;
 }
 
+.tabs {
+  padding: 6px;
+  border: 1px solid var(--lab-divider);
+  border-radius: 999px;
+  background: var(--lab-panel-subtle);
+}
+
 .pill,
 .chip,
 .tab {
@@ -194,6 +279,10 @@
   color: var(--lab-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.tab {
+  border-radius: 999px;
 }
 
 .chipActive,
@@ -265,6 +354,7 @@
 .rowTitle {
   font-size: 0.92rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .rowMeta,
@@ -272,6 +362,7 @@
   color: var(--lab-text-muted);
   font-size: 0.82rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .table {
@@ -394,5 +485,28 @@
   .tableHeader,
   .tableRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .surfaceHeader,
+  .sectionHeader {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 16px 14px 28px;
+  }
+
+  .surface,
+  .section,
+  .card,
+  .softSection,
+  .toolbar {
+    border-radius: 12px;
+  }
+
+  .tabs {
+    border-radius: 12px;
   }
 }

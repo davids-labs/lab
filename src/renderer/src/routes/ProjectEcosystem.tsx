@@ -7,6 +7,7 @@ import { Modal } from '@renderer/components/ui/Modal'
 import { useExportStore } from '@renderer/stores/exportStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import { formatRelativeTime } from '@renderer/utils/relativeTime'
 import pageStyles from './CommandCenterPages.module.css'
 import styles from './ProjectEcosystem.module.css'
@@ -19,6 +20,7 @@ export function ProjectEcosystem(): JSX.Element {
     useProjectStore()
   const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [type, setType] = useState<Project['type']>('build')
@@ -67,7 +69,7 @@ export function ProjectEcosystem(): JSX.Element {
   }
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Proof / Projects</span>

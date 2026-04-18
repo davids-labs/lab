@@ -36,13 +36,13 @@ export type BlockType = (typeof BLOCK_TYPES)[number]
 export const PAGE_LAYOUT_VARIANTS = ['default', 'minimal', 'magazine'] as const
 export type PageLayoutVariant = (typeof PAGE_LAYOUT_VARIANTS)[number]
 
-export const SIDEBAR_TABS = ['assets', 'navigator'] as const
+export const SIDEBAR_TABS = ['assets', 'navigator', 'connections'] as const
 export type SidebarTab = (typeof SIDEBAR_TABS)[number]
 
 export const SAVE_STATES = ['idle', 'saving', 'saved', 'error'] as const
 export type SaveState = (typeof SAVE_STATES)[number]
 
-export const PLAN_NODE_KINDS = ['phase', 'pillar', 'dependency', 'sprint'] as const
+export const PLAN_NODE_KINDS = ['arc', 'phase', 'pillar', 'dependency', 'sprint'] as const
 export type PlanNodeKind = (typeof PLAN_NODE_KINDS)[number]
 
 export const PLAN_NODE_STATUSES = [
@@ -59,6 +59,7 @@ export const PLAN_LINK_TARGET_TYPES = [
   'plan_node',
   'project',
   'skill_node',
+  'target_role',
   'countdown_item',
   'target_organization',
   'application_record',
@@ -88,6 +89,9 @@ export type WeeklyPriorityStatus = (typeof WEEKLY_PRIORITY_STATUSES)[number]
 export const ORGANIZATION_PRIORITIES = ['north_star', 'high', 'medium', 'low'] as const
 export type OrganizationPriority = (typeof ORGANIZATION_PRIORITIES)[number]
 
+export const ROLE_REQUIREMENT_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const
+export type RoleRequirementPriority = (typeof ROLE_REQUIREMENT_PRIORITIES)[number]
+
 export const APPLICATION_STATUSES = [
   'target',
   'preparing',
@@ -104,6 +108,9 @@ export type PresenceAssetStatus = (typeof PRESENCE_ASSET_STATUSES)[number]
 
 export const CONTENT_STATUSES = ['backlog', 'drafting', 'ready', 'posted'] as const
 export type ContentStatus = (typeof CONTENT_STATUSES)[number]
+
+export const CV_SECTION_SOURCE_TYPES = ['skill_node', 'project', 'block'] as const
+export type CvVariantSectionSourceType = (typeof CV_SECTION_SOURCE_TYPES)[number]
 
 export const SOURCE_DOCUMENT_KINDS = ['docx', 'txt', 'md'] as const
 export type SourceDocumentKind = (typeof SOURCE_DOCUMENT_KINDS)[number]
@@ -138,6 +145,18 @@ export type SidebarMode = (typeof SIDEBAR_MODES)[number]
 
 export const HOME_LAYOUTS = ['horizons', 'focused'] as const
 export type HomeLayout = (typeof HOME_LAYOUTS)[number]
+
+export const WORKFLOW_VIEWS = ['day', 'week', 'month', 'six_months', 'year_arc'] as const
+export type WorkflowView = (typeof WORKFLOW_VIEWS)[number]
+
+export const SKILLS_PIPELINE_STATUSES = [
+  'missing_skill',
+  'needs_evidence',
+  'needs_cv',
+  'ready_to_apply',
+  'applied'
+] as const
+export type SkillsPipelineStatus = (typeof SKILLS_PIPELINE_STATUSES)[number]
 
 export const QUOTE_SORT_MODES = ['topic', 'author', 'recent'] as const
 export type QuoteSortMode = (typeof QUOTE_SORT_MODES)[number]
@@ -318,6 +337,7 @@ export interface PlanNode {
   kind: PlanNodeKind
   status: PlanNodeStatus
   parent_id: string | null
+  horizon_year: number | null
   start_at: number | null
   due_at: number | null
   notes: string | null
@@ -436,6 +456,8 @@ export interface OsHabit {
   description: string | null
   frequency: HabitFrequency
   target_count: number
+  trigger_context: string | null
+  anchor_habit_id: string | null
   sort_order: number
   created_at: number
   updated_at: number
@@ -603,10 +625,23 @@ export interface TargetRole {
   updated_at: number
 }
 
+export interface TargetRoleSkillRequirement {
+  id: string
+  role_id: string
+  skill_id: string
+  minimum_state: SkillState
+  priority: RoleRequirementPriority
+  notes: string | null
+  sort_order: number
+  created_at: number
+  updated_at: number
+}
+
 export interface ApplicationRecord {
   id: string
   organization_id: string | null
   target_role_id: string | null
+  cv_variant_id: string | null
   title: string
   status: ApplicationStatus
   deadline_at: number | null
@@ -670,9 +705,31 @@ export interface CvVariant {
   id: string
   title: string
   target_role: string | null
+  target_role_id: string | null
   summary: string | null
   content: string
   is_default: boolean
+  created_at: number
+  updated_at: number
+}
+
+export interface CvVariantSection {
+  id: string
+  cv_variant_id: string
+  title: string
+  summary: string | null
+  sort_order: number
+  created_at: number
+  updated_at: number
+}
+
+export interface CvVariantSectionSource {
+  id: string
+  section_id: string
+  source_type: CvVariantSectionSourceType
+  source_id: string
+  notes: string | null
+  sort_order: number
   created_at: number
   updated_at: number
 }
@@ -844,6 +901,20 @@ export interface ReviewSession {
   updated_at: number
 }
 
+export interface WeeklyReviewSuggestion {
+  text: string | null
+  source_labels: string[]
+}
+
+export interface WeeklyReviewPrefill {
+  week_key: string
+  wins: WeeklyReviewSuggestion
+  friction: WeeklyReviewSuggestion
+  focus_next: WeeklyReviewSuggestion
+  proof_move: WeeklyReviewSuggestion
+  pipeline_move: WeeklyReviewSuggestion
+}
+
 export interface WeeklyReset {
   week_key: string
   prompts: ReviewPrompt[]
@@ -851,6 +922,7 @@ export interface WeeklyReset {
   review: WeeklyReview | null
   priorities: WeeklyPriority[]
   actions: ActionItem[]
+  prefill: WeeklyReviewPrefill
 }
 
 export interface ContextPack {
@@ -936,6 +1008,70 @@ export interface ProofGap {
   related_skill_id: string | null
   related_project_id: string | null
   severity: 'info' | 'warning' | 'critical'
+}
+
+export interface MorningDirective {
+  headline: string
+  reason: string
+  target_route: string
+  entity_type: string | null
+  entity_id: string | null
+}
+
+export interface NextMove {
+  id: string
+  title: string
+  reason: string
+  target_route: string
+  entity_type: string | null
+  entity_id: string | null
+  category: 'action' | 'habit' | 'pipeline' | 'plan' | 'countdown' | 'library'
+  score: number
+}
+
+export interface ProjectConnectionSummary {
+  project: Project
+  plan_nodes: PlanNode[]
+  skill_evidence: SkillEvidence[]
+  cv_sections: Array<{
+    section: CvVariantSection
+    variant: CvVariant
+    sources: CvVariantSectionSource[]
+  }>
+  applications: ApplicationRecord[]
+  narrative_fragments: NarrativeFragment[]
+  notes: NotePage[]
+  actions: ActionItem[]
+}
+
+export interface SkillsPipelineEntry {
+  id: string
+  role: TargetRole
+  requirement: TargetRoleSkillRequirement
+  skill: SkillNodeSummary | null
+  matching_projects: Project[]
+  cv_sections: Array<{
+    section: CvVariantSection
+    variant: CvVariant
+  }>
+  applications: ApplicationRecord[]
+  status: SkillsPipelineStatus
+}
+
+export interface WorkflowSnapshot {
+  view: WorkflowView
+  generated_at: number
+  dashboard: DashboardSummary
+  morning_directive: MorningDirective | null
+  next_moves: NextMove[]
+  weekly_reset: WeeklyReset | null
+  weekly_review_prefill: WeeklyReviewPrefill | null
+  weekly_evidence_queue: ProjectConnectionSummary[]
+  monthly_prompts: string[]
+  monthly_project_refreshes: ProjectConnectionSummary[]
+  skills_pipeline: SkillsPipelineEntry[]
+  arcs: PlanNode[]
+  target_roles: TargetRole[]
 }
 
 export interface Recommendation {
@@ -1248,6 +1384,7 @@ export interface CreatePlanNodeInput {
   title: string
   kind: PlanNodeKind
   parent_id?: string | null
+  horizon_year?: number | null
   summary?: string | null
   status?: PlanNodeStatus
   start_at?: number | null
@@ -1261,6 +1398,7 @@ export interface UpdatePlanNodeInput {
   title?: string
   kind?: PlanNodeKind
   parent_id?: string | null
+  horizon_year?: number | null
   summary?: string | null
   status?: PlanNodeStatus
   start_at?: number | null
@@ -1364,6 +1502,8 @@ export interface CreateOsHabitInput {
   description?: string | null
   frequency?: HabitFrequency
   target_count?: number
+  trigger_context?: string | null
+  anchor_habit_id?: string | null
   sort_order?: number
 }
 
@@ -1373,6 +1513,8 @@ export interface UpdateOsHabitInput {
   description?: string | null
   frequency?: HabitFrequency
   target_count?: number
+  trigger_context?: string | null
+  anchor_habit_id?: string | null
   sort_order?: number
 }
 
@@ -1549,9 +1691,28 @@ export interface UpdateTargetRoleInput {
   notes?: string | null
 }
 
+export interface CreateTargetRoleSkillRequirementInput {
+  role_id: string
+  skill_id: string
+  minimum_state?: SkillState
+  priority?: RoleRequirementPriority
+  notes?: string | null
+  sort_order?: number
+}
+
+export interface UpdateTargetRoleSkillRequirementInput {
+  id: string
+  skill_id?: string
+  minimum_state?: SkillState
+  priority?: RoleRequirementPriority
+  notes?: string | null
+  sort_order?: number
+}
+
 export interface CreateApplicationRecordInput {
   organization_id?: string | null
   target_role_id?: string | null
+  cv_variant_id?: string | null
   title: string
   status?: ApplicationStatus
   deadline_at?: number | null
@@ -1566,6 +1727,7 @@ export interface UpdateApplicationRecordInput {
   id: string
   organization_id?: string | null
   target_role_id?: string | null
+  cv_variant_id?: string | null
   title?: string
   status?: ApplicationStatus
   deadline_at?: number | null
@@ -1652,6 +1814,7 @@ export interface UpdateProfileAssetInput {
 export interface CreateCvVariantInput {
   title: string
   target_role?: string | null
+  target_role_id?: string | null
   summary?: string | null
   content?: string
   is_default?: boolean
@@ -1661,9 +1824,38 @@ export interface UpdateCvVariantInput {
   id: string
   title?: string
   target_role?: string | null
+  target_role_id?: string | null
   summary?: string | null
   content?: string
   is_default?: boolean
+}
+
+export interface CreateCvVariantSectionInput {
+  cv_variant_id: string
+  title: string
+  summary?: string | null
+  sort_order?: number
+}
+
+export interface UpdateCvVariantSectionInput {
+  id: string
+  title?: string
+  summary?: string | null
+  sort_order?: number
+}
+
+export interface CreateCvVariantSectionSourceInput {
+  section_id: string
+  source_type: CvVariantSectionSourceType
+  source_id: string
+  notes?: string | null
+  sort_order?: number
+}
+
+export interface UpdateCvVariantSectionSourceInput {
+  id: string
+  notes?: string | null
+  sort_order?: number
 }
 
 export interface CreateContentIdeaInput {
@@ -1989,6 +2181,11 @@ export interface LabBridge {
     createLink: (input: CreatePlanLinkInput) => Promise<PlanNodeLink>
     deleteLink: (id: string) => Promise<{ ok: boolean }>
   }
+  workflow: {
+    getSnapshot: (view: WorkflowView) => Promise<WorkflowSnapshot>
+    getProjectConnections: (projectId: string) => Promise<ProjectConnectionSummary>
+    getSkillsPipeline: (targetRoleId?: string | null) => Promise<SkillsPipelineEntry[]>
+  }
   skills: {
     listDomains: () => Promise<SkillDomainSummary[]>
     createDomain: (input: CreateSkillDomainInput) => Promise<SkillDomain>
@@ -2019,6 +2216,7 @@ export interface LabBridge {
     createHabit: (input: CreateOsHabitInput) => Promise<OsHabit>
     updateHabit: (input: UpdateOsHabitInput) => Promise<OsHabit>
     deleteHabit: (id: string) => Promise<{ ok: boolean }>
+    listHabitLogs: () => Promise<OsHabitLog[]>
     upsertHabitLog: (input: UpsertOsHabitLogInput) => Promise<OsHabitLog>
     listCountdowns: () => Promise<CountdownItem[]>
     createCountdown: (input: CreateCountdownInput) => Promise<CountdownItem>
@@ -2059,6 +2257,14 @@ export interface LabBridge {
     createRole: (input: CreateTargetRoleInput) => Promise<TargetRole>
     updateRole: (input: UpdateTargetRoleInput) => Promise<TargetRole>
     deleteRole: (id: string) => Promise<{ ok: boolean }>
+    listRoleRequirements: (roleId?: string) => Promise<TargetRoleSkillRequirement[]>
+    createRoleRequirement: (
+      input: CreateTargetRoleSkillRequirementInput
+    ) => Promise<TargetRoleSkillRequirement>
+    updateRoleRequirement: (
+      input: UpdateTargetRoleSkillRequirementInput
+    ) => Promise<TargetRoleSkillRequirement>
+    deleteRoleRequirement: (id: string) => Promise<{ ok: boolean }>
     listApplications: () => Promise<ApplicationRecord[]>
     createApplication: (input: CreateApplicationRecordInput) => Promise<ApplicationRecord>
     updateApplication: (input: UpdateApplicationRecordInput) => Promise<ApplicationRecord>
@@ -2089,6 +2295,19 @@ export interface LabBridge {
     createCvVariant: (input: CreateCvVariantInput) => Promise<CvVariant>
     updateCvVariant: (input: UpdateCvVariantInput) => Promise<CvVariant>
     deleteCvVariant: (id: string) => Promise<{ ok: boolean }>
+    listCvSections: (cvVariantId?: string) => Promise<CvVariantSection[]>
+    createCvSection: (input: CreateCvVariantSectionInput) => Promise<CvVariantSection>
+    updateCvSection: (input: UpdateCvVariantSectionInput) => Promise<CvVariantSection>
+    deleteCvSection: (id: string) => Promise<{ ok: boolean }>
+    listCvSectionSources: (sectionId?: string) => Promise<CvVariantSectionSource[]>
+    createCvSectionSource: (
+      input: CreateCvVariantSectionSourceInput
+    ) => Promise<CvVariantSectionSource>
+    updateCvSectionSource: (
+      input: UpdateCvVariantSectionSourceInput
+    ) => Promise<CvVariantSectionSource>
+    deleteCvSectionSource: (id: string) => Promise<{ ok: boolean }>
+    syncCvVariantContent: (id: string) => Promise<CvVariant>
     listContentIdeas: () => Promise<ContentIdea[]>
     createContentIdea: (input: CreateContentIdeaInput) => Promise<ContentIdea>
     updateContentIdea: (input: UpdateContentIdeaInput) => Promise<ContentIdea>

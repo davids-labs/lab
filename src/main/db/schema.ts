@@ -58,6 +58,7 @@ export const planNodesTable = sqliteTable('plan_nodes', {
   kind: text('kind').notNull(),
   status: text('status').notNull().default('not_started'),
   parent_id: text('parent_id'),
+  horizon_year: integer('horizon_year'),
   start_at: integer('start_at'),
   due_at: integer('due_at'),
   notes: text('notes'),
@@ -159,6 +160,8 @@ export const osHabitsTable = sqliteTable('os_habits', {
   description: text('description'),
   frequency: text('frequency').notNull().default('daily'),
   target_count: integer('target_count').notNull().default(1),
+  trigger_context: text('trigger_context'),
+  anchor_habit_id: text('anchor_habit_id'),
   sort_order: real('sort_order').notNull().default(0),
   created_at: integer('created_at').notNull(),
   updated_at: integer('updated_at').notNull()
@@ -243,6 +246,22 @@ export const targetRolesTable = sqliteTable('target_roles', {
   updated_at: integer('updated_at').notNull()
 })
 
+export const targetRoleSkillRequirementsTable = sqliteTable('target_role_skill_requirements', {
+  id: text('id').primaryKey(),
+  role_id: text('role_id')
+    .notNull()
+    .references(() => targetRolesTable.id, { onDelete: 'cascade' }),
+  skill_id: text('skill_id')
+    .notNull()
+    .references(() => skillNodesTable.id, { onDelete: 'cascade' }),
+  minimum_state: text('minimum_state').notNull().default('verified'),
+  priority: text('priority').notNull().default('high'),
+  notes: text('notes'),
+  sort_order: real('sort_order').notNull().default(0),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
 export const applicationRecordsTable = sqliteTable('application_records', {
   id: text('id').primaryKey(),
   organization_id: text('organization_id').references(() => targetOrganizationsTable.id, {
@@ -251,6 +270,7 @@ export const applicationRecordsTable = sqliteTable('application_records', {
   target_role_id: text('target_role_id').references(() => targetRolesTable.id, {
     onDelete: 'set null'
   }),
+  cv_variant_id: text('cv_variant_id'),
   title: text('title').notNull(),
   status: text('status').notNull().default('target'),
   deadline_at: integer('deadline_at'),
@@ -318,9 +338,37 @@ export const cvVariantsTable = sqliteTable('cv_variants', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
   target_role: text('target_role'),
+  target_role_id: text('target_role_id').references(() => targetRolesTable.id, {
+    onDelete: 'set null'
+  }),
   summary: text('summary'),
   content: text('content').notNull().default(''),
   is_default: integer('is_default', { mode: 'boolean' }).notNull().default(false),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const cvVariantSectionsTable = sqliteTable('cv_variant_sections', {
+  id: text('id').primaryKey(),
+  cv_variant_id: text('cv_variant_id')
+    .notNull()
+    .references(() => cvVariantsTable.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  summary: text('summary'),
+  sort_order: real('sort_order').notNull().default(0),
+  created_at: integer('created_at').notNull(),
+  updated_at: integer('updated_at').notNull()
+})
+
+export const cvVariantSectionSourcesTable = sqliteTable('cv_variant_section_sources', {
+  id: text('id').primaryKey(),
+  section_id: text('section_id')
+    .notNull()
+    .references(() => cvVariantSectionsTable.id, { onDelete: 'cascade' }),
+  source_type: text('source_type').notNull(),
+  source_id: text('source_id').notNull(),
+  notes: text('notes'),
+  sort_order: real('sort_order').notNull().default(0),
   created_at: integer('created_at').notNull(),
   updated_at: integer('updated_at').notNull()
 })
@@ -550,12 +598,15 @@ export const schema = {
   weeklyReviewsTable,
   targetOrganizationsTable,
   targetRolesTable,
+  targetRoleSkillRequirementsTable,
   applicationRecordsTable,
   contactRecordsTable,
   interactionRecordsTable,
   narrativeFragmentsTable,
   profileAssetsTable,
   cvVariantsTable,
+  cvVariantSectionsTable,
+  cvVariantSectionSourcesTable,
   contentIdeasTable,
   contentPostsTable,
   sourceDocumentsTable,
@@ -595,12 +646,15 @@ export type WeeklyPriorityRow = typeof weeklyPrioritiesTable.$inferSelect
 export type WeeklyReviewRow = typeof weeklyReviewsTable.$inferSelect
 export type TargetOrganizationRow = typeof targetOrganizationsTable.$inferSelect
 export type TargetRoleRow = typeof targetRolesTable.$inferSelect
+export type TargetRoleSkillRequirementRow = typeof targetRoleSkillRequirementsTable.$inferSelect
 export type ApplicationRecordRow = typeof applicationRecordsTable.$inferSelect
 export type ContactRecordRow = typeof contactRecordsTable.$inferSelect
 export type InteractionRecordRow = typeof interactionRecordsTable.$inferSelect
 export type NarrativeFragmentRow = typeof narrativeFragmentsTable.$inferSelect
 export type ProfileAssetRow = typeof profileAssetsTable.$inferSelect
 export type CvVariantRow = typeof cvVariantsTable.$inferSelect
+export type CvVariantSectionRow = typeof cvVariantSectionsTable.$inferSelect
+export type CvVariantSectionSourceRow = typeof cvVariantSectionSourcesTable.$inferSelect
 export type ContentIdeaRow = typeof contentIdeasTable.$inferSelect
 export type ContentPostRow = typeof contentPostsTable.$inferSelect
 export type SourceDocumentRow = typeof sourceDocumentsTable.$inferSelect

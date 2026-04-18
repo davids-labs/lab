@@ -15,9 +15,12 @@ import { useIntegrationStore } from '@renderer/stores/integrationStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 type SettingsSection = 'profile' | 'narrative' | 'appearance' | 'shell' | 'quotes' | 'integrations'
+
+type AppearancePreset = 'balanced' | 'focused' | 'minimal'
 
 export function SettingsWorkspace(): JSX.Element {
   const location = useLocation()
@@ -34,6 +37,7 @@ export function SettingsWorkspace(): JSX.Element {
     importQuotes,
     updateQuotePreferences
   } = useSettingsStore()
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const { sources, loadSources, importIcs, deleteSource, syncSource } = useCalendarStore()
   const {
     accounts,
@@ -72,6 +76,78 @@ export function SettingsWorkspace(): JSX.Element {
     topics: '',
     source_url: ''
   })
+  const appearancePreset = useMemo<AppearancePreset>(() => {
+    if (!bundle) {
+      return 'balanced'
+    }
+
+    const themeSettings = bundle.theme_settings
+    const dashboardPreferences = bundle.dashboard_preferences
+
+    if (
+      themeSettings.shell_density === 'compact' &&
+      themeSettings.font_scale === 'sm' &&
+      dashboardPreferences.reduced_chrome &&
+      dashboardPreferences.sidebar_mode === 'hidden' &&
+      dashboardPreferences.preferred_home_layout === 'focused'
+    ) {
+      return 'minimal'
+    }
+
+    if (
+      themeSettings.shell_density === 'compact' ||
+      dashboardPreferences.reduced_chrome ||
+      dashboardPreferences.focus_mode_default ||
+      dashboardPreferences.compact_mode
+    ) {
+      return 'focused'
+    }
+
+    return 'balanced'
+  }, [bundle])
+
+  async function applyAppearancePreset(preset: AppearancePreset): Promise<void> {
+    if (!bundle) {
+      return
+    }
+
+    if (preset === 'balanced') {
+      await updateThemeSettings({ shell_density: 'comfortable', font_scale: 'md' })
+      await updateDashboardPreferences({
+        compact_mode: false,
+        focus_mode_default: false,
+        preferred_home_layout: 'horizons',
+        reduced_chrome: false,
+        sidebar_collapsed: false,
+        sidebar_mode: 'full'
+      })
+      return
+    }
+
+    if (preset === 'minimal') {
+      await updateThemeSettings({ shell_density: 'compact', font_scale: 'sm' })
+      await updateDashboardPreferences({
+        compact_mode: true,
+        focus_mode_default: true,
+        preferred_home_layout: 'focused',
+        reduced_chrome: true,
+        show_onboarding: false,
+        sidebar_collapsed: true,
+        sidebar_mode: 'hidden'
+      })
+      return
+    }
+
+    await updateThemeSettings({ shell_density: 'compact', font_scale: 'md' })
+    await updateDashboardPreferences({
+      compact_mode: true,
+      focus_mode_default: true,
+      preferred_home_layout: 'focused',
+      reduced_chrome: true,
+      sidebar_collapsed: false,
+      sidebar_mode: 'compact'
+    })
+  }
   const [quoteTopicFilter, setQuoteTopicFilter] = useState<string | null>(null)
 
   useEffect(() => {
@@ -279,12 +355,12 @@ export function SettingsWorkspace(): JSX.Element {
 
   if (!bundle) {
     return (
-      <div className={pageStyles.page}>
+      <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
         <div className={pageStyles.stack}>
           <section className={pageStyles.lead}>
             <span className={pageStyles.eyebrow}>Settings</span>
             <h1 className={pageStyles.title}>Loading settings</h1>
-            <p className={pageStyles.description}>Preparing the control layer…</p>
+            <p className={pageStyles.description}>Preparing the control layer...</p>
           </section>
         </div>
       </div>
@@ -292,7 +368,7 @@ export function SettingsWorkspace(): JSX.Element {
   }
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Settings</span>
@@ -447,6 +523,20 @@ export function SettingsWorkspace(): JSX.Element {
                   </div>
                 </div>
                 <label className={pageStyles.formGrid}>
+                  <span className={pageStyles.eyebrow}>Appearance preset</span>
+                  <select
+                    value={appearancePreset}
+                    onChange={(event) => void applyAppearancePreset(event.target.value as AppearancePreset)}
+                  >
+                    <option value="balanced">Balanced</option>
+                    <option value="focused">Focused</option>
+                    <option value="minimal">Minimal</option>
+                  </select>
+                </label>
+                <p className={pageStyles.muted}>
+                  Presets batch shell density, font scale, sidebar posture, and chrome reduction together.
+                </p>
+                <label className={pageStyles.formGrid}>
                   <span className={pageStyles.eyebrow}>Shell density</span>
                   <select
                     defaultValue={bundle.theme_settings.shell_density}
@@ -496,7 +586,7 @@ export function SettingsWorkspace(): JSX.Element {
                   </div>
                 </div>
                 <label className={pageStyles.formGrid}>
-                  <span className={pageStyles.eyebrow}>Start workspace</span>
+                  <span className={pageStyles.eyebrow}>Start view</span>
                   <select
                     defaultValue={bundle.dashboard_preferences.start_workspace}
                     onChange={(event) =>
@@ -504,6 +594,11 @@ export function SettingsWorkspace(): JSX.Element {
                     }
                   >
                     <option value="home">Home</option>
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                    <option value="six-months">Six Months</option>
+                    <option value="year-arc">Year + Arc</option>
                     <option value="direction">Direction</option>
                     <option value="notes">Notes</option>
                     <option value="execution">Execution</option>

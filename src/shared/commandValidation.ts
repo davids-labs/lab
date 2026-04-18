@@ -38,6 +38,7 @@ export const createPlanNodeInputSchema = z.object({
   title: z.string().trim().min(1).max(160),
   kind: z.enum(PLAN_NODE_KINDS),
   parent_id: z.string().trim().nullable().optional(),
+  horizon_year: z.number().int().nullable().optional(),
   summary: z.string().trim().max(400).nullable().optional(),
   status: z.enum(PLAN_NODE_STATUSES).optional(),
   start_at: z.number().int().nullable().optional(),
@@ -51,6 +52,7 @@ export const updatePlanNodeInputSchema = z.object({
   title: z.string().trim().min(1).max(160).optional(),
   kind: z.enum(PLAN_NODE_KINDS).optional(),
   parent_id: z.string().trim().nullable().optional(),
+  horizon_year: z.number().int().nullable().optional(),
   summary: z.string().trim().max(400).nullable().optional(),
   status: z.enum(PLAN_NODE_STATUSES).optional(),
   start_at: z.number().int().nullable().optional(),
@@ -154,6 +156,8 @@ export const createOsHabitInputSchema = z.object({
   description: z.string().trim().max(300).nullable().optional(),
   frequency: z.enum(HABIT_FREQUENCIES).optional(),
   target_count: z.number().int().min(1).max(100).optional(),
+  trigger_context: z.string().trim().max(200).nullable().optional(),
+  anchor_habit_id: z.string().trim().nullable().optional(),
   sort_order: z.number().optional()
 })
 
@@ -163,6 +167,8 @@ export const updateOsHabitInputSchema = z.object({
   description: z.string().trim().max(300).nullable().optional(),
   frequency: z.enum(HABIT_FREQUENCIES).optional(),
   target_count: z.number().int().min(1).max(100).optional(),
+  trigger_context: z.string().trim().max(200).nullable().optional(),
+  anchor_habit_id: z.string().trim().nullable().optional(),
   sort_order: z.number().optional()
 })
 

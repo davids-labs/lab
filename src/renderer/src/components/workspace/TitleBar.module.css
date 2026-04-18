@@ -54,6 +54,14 @@
   font-size: 0.8rem;
 }
 
+.bar[data-reduced-chrome='true'] {
+  padding-inline: 14px;
+}
+
+.bar[data-reduced-chrome='true'] .status {
+  display: none;
+}
+
 .menu {
   position: relative;
 }

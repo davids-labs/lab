@@ -4,14 +4,20 @@ import type {
   ContentPost,
   CreateContentIdeaInput,
   CreateContentPostInput,
+  CreateCvVariantSectionInput,
+  CreateCvVariantSectionSourceInput,
   CreateCvVariantInput,
   CreateNarrativeFragmentInput,
   CreateProfileAssetInput,
   CvVariant,
+  CvVariantSection,
+  CvVariantSectionSource,
   NarrativeFragment,
   ProfileAsset,
   UpdateContentIdeaInput,
   UpdateContentPostInput,
+  UpdateCvVariantSectionInput,
+  UpdateCvVariantSectionSourceInput,
   UpdateCvVariantInput,
   UpdateNarrativeFragmentInput,
   UpdateProfileAssetInput
@@ -66,6 +72,49 @@ export function registerPresenceHandlers(): void {
   )
   ipcMain.handle('presence:delete-cv-variant', async (_event, id: string): Promise<{ ok: boolean }> =>
     presenceQueries.deleteCvVariant(id)
+  )
+  ipcMain.handle(
+    'presence:list-cv-sections',
+    async (_event, cvVariantId?: string): Promise<CvVariantSection[]> =>
+      presenceQueries.listCvSections(cvVariantId)
+  )
+  ipcMain.handle(
+    'presence:create-cv-section',
+    async (_event, input: CreateCvVariantSectionInput): Promise<CvVariantSection> =>
+      presenceQueries.createCvSection(input)
+  )
+  ipcMain.handle(
+    'presence:update-cv-section',
+    async (_event, input: UpdateCvVariantSectionInput): Promise<CvVariantSection> =>
+      presenceQueries.updateCvSection(input)
+  )
+  ipcMain.handle(
+    'presence:delete-cv-section',
+    async (_event, id: string): Promise<{ ok: boolean }> => presenceQueries.deleteCvSection(id)
+  )
+  ipcMain.handle(
+    'presence:list-cv-section-sources',
+    async (_event, sectionId?: string): Promise<CvVariantSectionSource[]> =>
+      presenceQueries.listCvSectionSources(sectionId)
+  )
+  ipcMain.handle(
+    'presence:create-cv-section-source',
+    async (_event, input: CreateCvVariantSectionSourceInput): Promise<CvVariantSectionSource> =>
+      presenceQueries.createCvSectionSource(input)
+  )
+  ipcMain.handle(
+    'presence:update-cv-section-source',
+    async (_event, input: UpdateCvVariantSectionSourceInput): Promise<CvVariantSectionSource> =>
+      presenceQueries.updateCvSectionSource(input)
+  )
+  ipcMain.handle(
+    'presence:delete-cv-section-source',
+    async (_event, id: string): Promise<{ ok: boolean }> =>
+      presenceQueries.deleteCvSectionSource(id)
+  )
+  ipcMain.handle(
+    'presence:sync-cv-variant-content',
+    async (_event, id: string): Promise<CvVariant> => presenceQueries.syncCvVariantContent(id)
   )
   ipcMain.handle('presence:list-content-ideas', async (): Promise<ContentIdea[]> =>
     presenceQueries.listContentIdeas()

@@ -5,6 +5,7 @@ import { GitPanelModal } from '@renderer/components/git/GitPanelModal'
 import { Button } from '@renderer/components/ui/Button'
 import { InputField } from '@renderer/components/ui/InputField'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { useUiStore } from '@renderer/stores/uiStore'
 import styles from './TitleBar.module.css'
@@ -18,9 +19,13 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const navigate = useNavigate()
   const loadProject = useProjectStore((state) => state.loadProject)
   const updateProject = useProjectStore((state) => state.updateProject)
+  const loadBundle = useSettingsStore((state) => state.loadBundle)
+  const bundle = useSettingsStore((state) => state.bundle)
   const saveState = useUiStore((state) => state.saveState)
   const workspacePreviewVisible = useUiStore((state) => state.workspacePreviewVisible)
   const toggleWorkspacePreview = useUiStore((state) => state.toggleWorkspacePreview)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
+  const setReducedChrome = useUiStore((state) => state.setReducedChrome)
   const pushToast = useToastStore((state) => state.push)
   const [editingName, setEditingName] = useState(false)
   const [draftName, setDraftName] = useState(project.name)
@@ -30,6 +35,12 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => setDraftName(project.name), [project.name])
+  useEffect(() => {
+    void loadBundle()
+  }, [loadBundle])
+  useEffect(() => {
+    setReducedChrome(bundle?.dashboard_preferences.reduced_chrome ?? false)
+  }, [bundle, setReducedChrome])
   useEffect(() => {
     let cancelled = false
 
@@ -123,7 +134,7 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
   }
 
   return (
-    <header className={styles.bar}>
+    <header className={styles.bar} data-reduced-chrome={reducedChrome}>
       <div className={styles.left}>
         <Button variant="ghost" size="sm" onClick={() => navigate('/proof/projects')}>
           Back
@@ -216,15 +227,17 @@ export function TitleBar({ project, view }: TitleBarProps): JSX.Element {
             </Button>
           </div>
         </details>
-        <span className={styles.status}>
-          {saveState === 'saved'
-            ? 'Saved'
-            : saveState === 'saving'
-              ? 'Saving…'
-              : saveState === 'error'
-                ? 'Save failed'
-                : 'Idle'}
-        </span>
+        {!reducedChrome ? (
+          <span className={styles.status}>
+            {saveState === 'saved'
+              ? 'Saved'
+              : saveState === 'saving'
+                ? 'Saving…'
+                : saveState === 'error'
+                  ? 'Save failed'
+                  : 'Idle'}
+          </span>
+        ) : null}
       </div>
       {gitOpen ? <GitPanelModal onClose={() => setGitOpen(false)} project={project} /> : null}
     </header>

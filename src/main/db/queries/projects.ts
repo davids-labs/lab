@@ -1,7 +1,13 @@
 import fs from 'node:fs'
 import { desc, eq } from 'drizzle-orm'
 import { ulid } from 'ulidx'
-import type { Block, CreateProjectInput, Project, UpdateProjectInput } from '../../../preload/types'
+import type {
+  Block,
+  CreateProjectInput,
+  Project,
+  ProjectConnectionSummary,
+  UpdateProjectInput
+} from '../../../preload/types'
 import { WORKSPACE_ONLY_BLOCK_TYPES, cloneDefaultPageConfig } from '@shared/defaults'
 import {
   parsePageConfig,
@@ -9,13 +15,24 @@ import {
   validateUpdateProjectInput
 } from '@shared/validation'
 import { getDb } from '../index'
-import { projectsTable, type ProjectRow } from '../schema'
+import {
+  blocksTable,
+  planNodeLinksTable,
+  planNodesTable,
+  projectsTable,
+  type ProjectRow
+} from '../schema'
 import {
   assertPathInsideProjects,
   ensureProjectDirectories,
   getProjectDir
 } from '../../services/appPaths'
 import { slugify } from '../../utils/slugify'
+import { actionQueries } from './actions'
+import { noteQueries } from './notes'
+import { pipelineQueries } from './pipeline'
+import { presenceQueries } from './presence'
+import { skillQueries } from './skills'
 
 function deserializeProject(row: ProjectRow): Project {
   return {
@@ -30,6 +47,22 @@ function deserializeProject(row: ProjectRow): Project {
     git_enabled: Boolean(row.git_enabled),
     git_remote: row.git_remote ?? null,
     git_pages_url: row.git_pages_url ?? null
+  }
+}
+
+function deserializePlanNode(
+  row: typeof planNodesTable.$inferSelect
+): ProjectConnectionSummary['plan_nodes'][number] {
+  return {
+    ...row,
+    summary: row.summary ?? null,
+    parent_id: row.parent_id ?? null,
+    horizon_year: row.horizon_year ?? null,
+    start_at: row.start_at ?? null,
+    due_at: row.due_at ?? null,
+    notes: row.notes ?? null,
+    kind: row.kind as ProjectConnectionSummary['plan_nodes'][number]['kind'],
+    status: row.status as ProjectConnectionSummary['plan_nodes'][number]['status']
   }
 }
 
@@ -71,6 +104,80 @@ export const projectQueries = {
     }
 
     return deserializeProject(row)
+  },
+
+  getConnections(id: string): ProjectConnectionSummary {
+    const db = getDb()
+    const project = this.get(id)
+    const planLinks = db
+      .select()
+      .from(planNodeLinksTable)
+      .where(eq(planNodeLinksTable.target_id, id))
+      .all()
+      .filter((link) => link.target_type === 'project')
+    const nodeIds = new Set(planLinks.map((link) => link.node_id))
+    const planNodes = db
+      .select()
+      .from(planNodesTable)
+      .all()
+      .filter((node) => nodeIds.has(node.id))
+      .map(deserializePlanNode)
+    const skillEvidence = skillQueries.listEvidence().filter((entry) => entry.project_id === id)
+    const skillIds = new Set(skillEvidence.map((entry) => entry.skill_id))
+    const blockIds = new Set(
+      db
+        .select({ id: blocksTable.id })
+        .from(blocksTable)
+        .where(eq(blocksTable.project_id, id))
+        .all()
+        .map((block) => block.id)
+    )
+    const variants = presenceQueries.listCvVariants()
+    const variantById = new Map(variants.map((variant) => [variant.id, variant]))
+    const allSectionSources = presenceQueries.listCvSectionSources()
+    const cvSections = presenceQueries
+      .listCvSections()
+      .flatMap((section) => {
+        const sources = allSectionSources.filter(
+          (source) =>
+            source.section_id === section.id &&
+            ((source.source_type === 'project' && source.source_id === id) ||
+              (source.source_type === 'skill_node' && skillIds.has(source.source_id)) ||
+              (source.source_type === 'block' && blockIds.has(source.source_id)))
+        )
+        const variant = variantById.get(section.cv_variant_id)
+
+        return variant && sources.length > 0 ? [{ section, variant, sources }] : []
+      })
+    const applications = pipelineQueries
+      .listApplications()
+      .filter(
+        (application) =>
+          application.linked_project_id === id ||
+          (application.linked_skill_id ? skillIds.has(application.linked_skill_id) : false)
+      )
+    const narrativeFragments = presenceQueries
+      .listNarrativeFragments()
+      .filter((fragment) => fragment.linked_project_id === id)
+    const noteIds = new Set(
+      noteQueries
+        .listLinks()
+        .filter((link) => link.target_type === 'project' && link.target_id === id)
+        .map((link) => link.note_id)
+    )
+    const notes = noteQueries.list().filter((note) => noteIds.has(note.id))
+    const actions = actionQueries.list().filter((action) => action.linked_project_id === id)
+
+    return {
+      project,
+      plan_nodes: planNodes,
+      skill_evidence: skillEvidence,
+      cv_sections: cvSections,
+      applications,
+      narrative_fragments: narrativeFragments,
+      notes,
+      actions
+    }
   },
 
   create(input: CreateProjectInput): Project {

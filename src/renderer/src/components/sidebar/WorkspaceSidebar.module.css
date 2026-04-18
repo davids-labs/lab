@@ -144,3 +144,11 @@
   font-size: 0.82rem;
   line-height: 1.45;
 }
+
+.sidebar[data-reduced-chrome='true'] .tabs {
+  padding: 10px 12px;
+}
+
+.sidebar[data-reduced-chrome='true'] .body {
+  padding: 12px;
+}

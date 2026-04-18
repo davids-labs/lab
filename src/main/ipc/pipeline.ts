@@ -5,14 +5,17 @@ import type {
   CreateApplicationRecordInput,
   CreateContactRecordInput,
   CreateInteractionRecordInput,
+  CreateTargetRoleSkillRequirementInput,
   CreateTargetOrganizationInput,
   CreateTargetRoleInput,
   InteractionRecord,
   TargetOrganization,
   TargetRole,
+  TargetRoleSkillRequirement,
   UpdateApplicationRecordInput,
   UpdateContactRecordInput,
   UpdateInteractionRecordInput,
+  UpdateTargetRoleSkillRequirementInput,
   UpdateTargetOrganizationInput,
   UpdateTargetRoleInput
 } from '../../preload/types'
@@ -48,6 +51,25 @@ export function registerPipelineHandlers(): void {
   )
   ipcMain.handle('pipeline:delete-role', async (_event, id: string): Promise<{ ok: boolean }> =>
     pipelineQueries.deleteRole(id)
+  )
+  ipcMain.handle(
+    'pipeline:list-role-requirements',
+    async (_event, roleId?: string): Promise<TargetRoleSkillRequirement[]> =>
+      pipelineQueries.listRoleRequirements(roleId)
+  )
+  ipcMain.handle(
+    'pipeline:create-role-requirement',
+    async (_event, input: CreateTargetRoleSkillRequirementInput): Promise<TargetRoleSkillRequirement> =>
+      pipelineQueries.createRoleRequirement(input)
+  )
+  ipcMain.handle(
+    'pipeline:update-role-requirement',
+    async (_event, input: UpdateTargetRoleSkillRequirementInput): Promise<TargetRoleSkillRequirement> =>
+      pipelineQueries.updateRoleRequirement(input)
+  )
+  ipcMain.handle(
+    'pipeline:delete-role-requirement',
+    async (_event, id: string): Promise<{ ok: boolean }> => pipelineQueries.deleteRoleRequirement(id)
   )
   ipcMain.handle('pipeline:list-applications', async (): Promise<ApplicationRecord[]> =>
     pipelineQueries.listApplications()

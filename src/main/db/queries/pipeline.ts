@@ -6,14 +6,17 @@ import type {
   CreateApplicationRecordInput,
   CreateContactRecordInput,
   CreateInteractionRecordInput,
+  CreateTargetRoleSkillRequirementInput,
   CreateTargetOrganizationInput,
   CreateTargetRoleInput,
   InteractionRecord,
   TargetOrganization,
   TargetRole,
+  TargetRoleSkillRequirement,
   UpdateApplicationRecordInput,
   UpdateContactRecordInput,
   UpdateInteractionRecordInput,
+  UpdateTargetRoleSkillRequirementInput,
   UpdateTargetOrganizationInput,
   UpdateTargetRoleInput
 } from '../../../preload/types'
@@ -22,11 +25,13 @@ import {
   applicationRecordsTable,
   contactRecordsTable,
   interactionRecordsTable,
+  targetRoleSkillRequirementsTable,
   targetOrganizationsTable,
   targetRolesTable,
   type ApplicationRecordRow,
   type ContactRecordRow,
   type InteractionRecordRow,
+  type TargetRoleSkillRequirementRow,
   type TargetOrganizationRow,
   type TargetRoleRow
 } from '../schema'
@@ -62,6 +67,7 @@ function deserializeApplication(row: ApplicationRecordRow): ApplicationRecord {
     ...row,
     organization_id: row.organization_id ?? null,
     target_role_id: row.target_role_id ?? null,
+    cv_variant_id: row.cv_variant_id ?? null,
     deadline_at: row.deadline_at ?? null,
     applied_at: row.applied_at ?? null,
     follow_up_at: row.follow_up_at ?? null,
@@ -88,6 +94,15 @@ function deserializeInteraction(row: InteractionRecordRow): InteractionRecord {
   return {
     ...row,
     next_action_at: row.next_action_at ?? null
+  }
+}
+
+function deserializeRoleRequirement(row: TargetRoleSkillRequirementRow): TargetRoleSkillRequirement {
+  return {
+    ...row,
+    minimum_state: row.minimum_state as TargetRoleSkillRequirement['minimum_state'],
+    priority: row.priority as TargetRoleSkillRequirement['priority'],
+    notes: row.notes ?? null
   }
 }
 
@@ -238,6 +253,101 @@ export const pipelineQueries = {
     return { ok: true }
   },
 
+  listRoleRequirements(roleId?: string): TargetRoleSkillRequirement[] {
+    const db = getDb()
+    const rows = roleId
+      ? db
+          .select()
+          .from(targetRoleSkillRequirementsTable)
+          .where(eq(targetRoleSkillRequirementsTable.role_id, roleId))
+          .orderBy(
+            asc(targetRoleSkillRequirementsTable.sort_order),
+            asc(targetRoleSkillRequirementsTable.created_at)
+          )
+          .all()
+      : db
+          .select()
+          .from(targetRoleSkillRequirementsTable)
+          .orderBy(
+            asc(targetRoleSkillRequirementsTable.sort_order),
+            asc(targetRoleSkillRequirementsTable.created_at)
+          )
+          .all()
+
+    return rows.map(deserializeRoleRequirement)
+  },
+
+  createRoleRequirement(input: CreateTargetRoleSkillRequirementInput): TargetRoleSkillRequirement {
+    const db = getDb()
+    const now = Date.now()
+    const id = ulid()
+    const existing = this.listRoleRequirements(input.role_id)
+
+    db.insert(targetRoleSkillRequirementsTable)
+      .values({
+        id,
+        role_id: input.role_id,
+        skill_id: input.skill_id,
+        minimum_state: input.minimum_state ?? 'verified',
+        priority: input.priority ?? 'high',
+        notes: clean(input.notes),
+        sort_order:
+          input.sort_order ?? (existing.length > 0 ? Math.max(...existing.map((item) => item.sort_order)) + 1 : 0),
+        created_at: now,
+        updated_at: now
+      })
+      .run()
+
+    return deserializeRoleRequirement(
+      db
+        .select()
+        .from(targetRoleSkillRequirementsTable)
+        .where(eq(targetRoleSkillRequirementsTable.id, id))
+        .get()!
+    )
+  },
+
+  updateRoleRequirement(
+    input: UpdateTargetRoleSkillRequirementInput
+  ): TargetRoleSkillRequirement {
+    const db = getDb()
+    const current = db
+      .select()
+      .from(targetRoleSkillRequirementsTable)
+      .where(eq(targetRoleSkillRequirementsTable.id, input.id))
+      .get()
+
+    if (!current) {
+      throw new Error('Role requirement not found')
+    }
+
+    db.update(targetRoleSkillRequirementsTable)
+      .set({
+        skill_id: input.skill_id ?? current.skill_id,
+        minimum_state: input.minimum_state ?? current.minimum_state,
+        priority: input.priority ?? current.priority,
+        notes: input.notes === undefined ? current.notes : clean(input.notes),
+        sort_order: input.sort_order ?? current.sort_order,
+        updated_at: Date.now()
+      })
+      .where(eq(targetRoleSkillRequirementsTable.id, input.id))
+      .run()
+
+    return deserializeRoleRequirement(
+      db
+        .select()
+        .from(targetRoleSkillRequirementsTable)
+        .where(eq(targetRoleSkillRequirementsTable.id, input.id))
+        .get()!
+    )
+  },
+
+  deleteRoleRequirement(id: string): { ok: boolean } {
+    const db = getDb()
+    db.delete(targetRoleSkillRequirementsTable).where(eq(targetRoleSkillRequirementsTable.id, id)).run()
+    return { ok: true }
+  },
+
   listApplications(): ApplicationRecord[] {
     const db = getDb()
     return db
@@ -258,6 +368,7 @@ export const pipelineQueries = {
         id,
         organization_id: input.organization_id ?? null,
         target_role_id: input.target_role_id ?? null,
+        cv_variant_id: input.cv_variant_id ?? null,
         title: input.title.trim(),
         status: input.status ?? 'target',
         deadline_at: input.deadline_at ?? null,
@@ -294,6 +405,8 @@ export const pipelineQueries = {
           input.organization_id === undefined ? current.organization_id : input.organization_id,
         target_role_id:
           input.target_role_id === undefined ? current.target_role_id : input.target_role_id,
+        cv_variant_id:
+          input.cv_variant_id === undefined ? current.cv_variant_id : input.cv_variant_id,
         title: input.title?.trim() || current.title,
         status: input.status ?? current.status,
         deadline_at: input.deadline_at === undefined ? current.deadline_at : input.deadline_at,

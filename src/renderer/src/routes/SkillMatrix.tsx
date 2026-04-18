@@ -14,6 +14,7 @@ import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 import styles from './SkillMatrix.module.css'
 
@@ -38,6 +39,7 @@ export function SkillMatrix(): JSX.Element {
     nodes,
     setActiveDomainId
   } = useSkillsStore()
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const projects = useProjectStore((state) => state.projects)
   const loadProjects = useProjectStore((state) => state.loadProjects)
   const pushToast = useToastStore((state) => state.push)
@@ -206,7 +208,7 @@ export function SkillMatrix(): JSX.Element {
   }
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Proof / Skills</span>

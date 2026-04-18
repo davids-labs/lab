@@ -8,7 +8,7 @@ import {
   validateReorderBlocksInput,
   validateUpsertBlockInput
 } from '@shared/validation'
-import { getDb } from '../index'
+import { getDb, getSqlite } from '../index'
 import { blocksTable, type BlockRow } from '../schema'
 import { projectQueries } from './projects'
 
@@ -129,18 +129,23 @@ export const blockQueries = {
       throw new Error('Block reorder request does not match the blocks owned by this project.')
     }
 
-    orderedIds.forEach((id, index) => {
-      db.update(blocksTable)
-        .set({
-          sort_order: index + 1,
-          updated_at: Date.now()
-        })
-        .where(eq(blocksTable.id, id))
-        .run()
-    })
+    const now = Date.now()
 
-    projectQueries.resyncSections(parsed.projectId, this.list(parsed.projectId))
-    projectQueries.touch(parsed.projectId)
+    getSqlite().transaction(() => {
+      orderedIds.forEach((id, index) => {
+        db.update(blocksTable)
+          .set({
+            sort_order: index + 1,
+            updated_at: now
+          })
+          .where(eq(blocksTable.id, id))
+          .run()
+      })
+
+      projectQueries.resyncSections(parsed.projectId, this.list(parsed.projectId))
+      projectQueries.touch(parsed.projectId)
+    })()
+
     return { ok: true }
   }
 }

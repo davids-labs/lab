@@ -40,6 +40,7 @@ export function PageCustomiser(): JSX.Element {
   const pageCustomiserSidebarWidth = useUiStore((state) => state.pageCustomiserSidebarWidth)
   const setPageCustomiserSidebarWidth = useUiStore((state) => state.setPageCustomiserSidebarWidth)
   const setSaveState = useUiStore((state) => state.setSaveState)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [draftConfig, setDraftConfig] = useState(project?.page_config ?? null)
   const [activeTab, setActiveTab] = useState<CustomiserTab>('structure')
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
@@ -215,7 +216,7 @@ export function PageCustomiser(): JSX.Element {
   }
 
   return (
-    <div className="routeShell">
+    <div className="routeShell" data-reduced-chrome={reducedChrome}>
       <TitleBar project={project} view="customise" />
       <div
         className={styles.shell}

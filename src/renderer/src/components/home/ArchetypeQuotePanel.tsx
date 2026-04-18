@@ -13,6 +13,7 @@ import {
   type ArchetypeQuote
 } from '@renderer/data/archetypeQuotes'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import { useToastStore } from '@renderer/stores/toastStore'
 import pageStyles from '@renderer/routes/CommandCenterPages.module.css'
 import styles from './ArchetypeQuotePanel.module.css'
@@ -107,6 +108,7 @@ function getSmartTopics(summary: DashboardSummary): { topics: string[]; label: s
 export function ArchetypeQuotePanel({ summary }: ArchetypeQuotePanelProps): JSX.Element {
   const navigate = useNavigate()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const bundle = useSettingsStore((state) => state.bundle)
   const smartSignal = useMemo(() => getSmartTopics(summary), [summary])
   const quoteLibrary = bundle?.quote_library?.length ? bundle.quote_library : ARCHETYPE_QUOTES
@@ -206,16 +208,20 @@ export function ArchetypeQuotePanel({ summary }: ArchetypeQuotePanelProps): JSX.
   }
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.panel} data-reduced-chrome={reducedChrome}>
       <div className={styles.header}>
         <div>
           <span className={styles.kicker}>Stoic Calibration</span>
-          <p className={styles.supporting}>
-            Your library can now steer the Home quote by topic. Keep it smart, pin it to the
-            themes you care about, or keep reloading until you find the line that hits.
-          </p>
-          {quotePreferences.smart_rotation ? (
-            <p className={styles.supporting}>{smartSignal.label}</p>
+          {!reducedChrome ? (
+            <>
+              <p className={styles.supporting}>
+                Your library can now steer the Home quote by topic. Keep it smart, pin it to the
+                themes you care about, or keep reloading until you find the line that hits.
+              </p>
+              {quotePreferences.smart_rotation ? (
+                <p className={styles.supporting}>{smartSignal.label}</p>
+              ) : null}
+            </>
           ) : null}
         </div>
         <div className={pageStyles.chipRow}>
@@ -238,9 +244,11 @@ export function ArchetypeQuotePanel({ summary }: ArchetypeQuotePanelProps): JSX.
       <div className={styles.footer}>
         <div className={styles.meta}>
           <span className={styles.author}>{activeQuote.author}</span>
-          <span className={styles.work}>
-            {activeQuote.work ?? 'Imported into davids.lab'}
-          </span>
+          {!reducedChrome ? (
+            <span className={styles.work}>
+              {activeQuote.work ?? 'Imported into davids.lab'}
+            </span>
+          ) : null}
         </div>
         <div className={styles.actions}>
           <Button size="sm" onClick={handleShuffle}>

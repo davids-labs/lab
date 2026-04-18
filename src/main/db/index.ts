@@ -6,7 +6,7 @@ import { schema } from './schema'
 let sqlite: Database.Database | null = null
 let db: BetterSQLite3Database<typeof schema> | null = null
 
-const SCHEMA_VERSION = 7
+const SCHEMA_VERSION = 9
 
 type Migration = {
   version: number
@@ -797,6 +797,182 @@ const migrations: Migration[] = [
             updated_at INTEGER NOT NULL
           );
         `)
+      }
+    }
+  },
+  {
+    version: 8,
+    description: 'Add habit trigger and anchor metadata',
+    run(database) {
+      if (!hasColumn(database, 'os_habits', 'trigger_context')) {
+        database.exec(`
+          ALTER TABLE os_habits ADD COLUMN trigger_context TEXT;
+        `)
+      }
+
+      if (!hasColumn(database, 'os_habits', 'anchor_habit_id')) {
+        database.exec(`
+          ALTER TABLE os_habits ADD COLUMN anchor_habit_id TEXT;
+        `)
+      }
+    }
+  },
+  {
+    version: 9,
+    description: 'Add horizon workflow, arc planning, and structured skills pipeline tables',
+    run(database) {
+      if (!hasColumn(database, 'plan_nodes', 'horizon_year')) {
+        database.exec(`
+          ALTER TABLE plan_nodes ADD COLUMN horizon_year INTEGER;
+        `)
+      }
+
+      if (!hasTable(database, 'target_role_skill_requirements')) {
+        database.exec(`
+          CREATE TABLE target_role_skill_requirements (
+            id TEXT PRIMARY KEY,
+            role_id TEXT NOT NULL REFERENCES target_roles(id) ON DELETE CASCADE,
+            skill_id TEXT NOT NULL REFERENCES skill_nodes(id) ON DELETE CASCADE,
+            minimum_state TEXT NOT NULL DEFAULT 'verified',
+            priority TEXT NOT NULL DEFAULT 'high',
+            notes TEXT,
+            sort_order REAL NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_role_requirements_role ON target_role_skill_requirements(role_id);
+          CREATE INDEX idx_role_requirements_skill ON target_role_skill_requirements(skill_id);
+        `)
+      }
+
+      if (!hasColumn(database, 'application_records', 'cv_variant_id')) {
+        database.exec(`
+          ALTER TABLE application_records ADD COLUMN cv_variant_id TEXT;
+        `)
+      }
+
+      if (!hasColumn(database, 'cv_variants', 'target_role_id')) {
+        database.exec(`
+          ALTER TABLE cv_variants ADD COLUMN target_role_id TEXT;
+        `)
+      }
+
+      if (!hasTable(database, 'cv_variant_sections')) {
+        database.exec(`
+          CREATE TABLE cv_variant_sections (
+            id TEXT PRIMARY KEY,
+            cv_variant_id TEXT NOT NULL REFERENCES cv_variants(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            summary TEXT,
+            sort_order REAL NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_cv_variant_sections_variant ON cv_variant_sections(cv_variant_id);
+        `)
+      }
+
+      if (!hasTable(database, 'cv_variant_section_sources')) {
+        database.exec(`
+          CREATE TABLE cv_variant_section_sources (
+            id TEXT PRIMARY KEY,
+            section_id TEXT NOT NULL REFERENCES cv_variant_sections(id) ON DELETE CASCADE,
+            source_type TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            notes TEXT,
+            sort_order REAL NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+          );
+
+          CREATE INDEX idx_cv_section_sources_section ON cv_variant_section_sources(section_id);
+        `)
+      }
+
+      const arcCount = database
+        .prepare(`SELECT COUNT(*) AS count FROM plan_nodes WHERE kind = 'arc'`)
+        .get() as { count: number }
+
+      if (arcCount.count === 0) {
+        const now = Date.now()
+        const userProfileRow = database
+          .prepare(`SELECT value_json FROM app_settings WHERE key = 'user_profile'`)
+          .get() as { value_json?: string } | undefined
+        let arcTitle = 'Current arc'
+
+        try {
+          const parsed = JSON.parse(userProfileRow?.value_json ?? '{}') as {
+            north_star_goal?: string
+          }
+          if (typeof parsed.north_star_goal === 'string' && parsed.north_star_goal.trim().length > 0) {
+            arcTitle = parsed.north_star_goal.trim()
+          }
+        } catch {
+          arcTitle = 'Current arc'
+        }
+
+        const rootPhaseCount = database
+          .prepare(
+            `SELECT COUNT(*) AS count FROM plan_nodes WHERE kind = 'phase' AND parent_id IS NULL`
+          )
+          .get() as { count: number }
+        const arcId = `arc-${now}`
+
+        database
+          .prepare(
+            `
+              INSERT INTO plan_nodes (
+                id, title, summary, kind, status, parent_id, horizon_year, start_at, due_at, notes, sort_order, created_at, updated_at
+              ) VALUES (?, ?, ?, 'arc', ?, NULL, ?, NULL, NULL, NULL, 0, ?, ?)
+            `
+          )
+          .run(
+            arcId,
+            arcTitle,
+            'Long-range arc anchoring the current planning horizons.',
+            rootPhaseCount.count > 0 ? 'in_progress' : 'not_started',
+            new Date().getUTCFullYear(),
+            now,
+            now
+          )
+
+        database
+          .prepare(
+            `
+              UPDATE plan_nodes
+              SET parent_id = ?, updated_at = ?
+              WHERE kind = 'phase' AND parent_id IS NULL
+            `
+          )
+          .run(arcId, now)
+      }
+
+      const variants = database
+        .prepare(`SELECT id, content FROM cv_variants`)
+        .all() as Array<{ id: string; content: string }>
+
+      for (const variant of variants) {
+        const sectionCount = database
+          .prepare(`SELECT COUNT(*) AS count FROM cv_variant_sections WHERE cv_variant_id = ?`)
+          .get(variant.id) as { count: number }
+
+        if (sectionCount.count > 0) {
+          continue
+        }
+
+        const now = Date.now()
+        const summary = variant.content.trim().length > 0 ? variant.content.trim().slice(0, 400) : null
+        database
+          .prepare(
+            `
+              INSERT INTO cv_variant_sections (
+                id, cv_variant_id, title, summary, sort_order, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, 0, ?, ?)
+            `
+          )
+          .run(`cv-section-${variant.id}`, variant.id, 'Manual baseline', summary, now, now)
       }
     }
   }

@@ -4,14 +4,20 @@ import type {
   ContentPost,
   CreateContentIdeaInput,
   CreateContentPostInput,
+  CreateCvVariantSectionInput,
+  CreateCvVariantSectionSourceInput,
   CreateCvVariantInput,
   CreateNarrativeFragmentInput,
   CreateProfileAssetInput,
   CvVariant,
+  CvVariantSection,
+  CvVariantSectionSource,
   NarrativeFragment,
   ProfileAsset,
   UpdateContentIdeaInput,
   UpdateContentPostInput,
+  UpdateCvVariantSectionInput,
+  UpdateCvVariantSectionSourceInput,
   UpdateCvVariantInput,
   UpdateNarrativeFragmentInput,
   UpdateProfileAssetInput
@@ -21,6 +27,8 @@ interface PresenceStore {
   narrativeFragments: NarrativeFragment[]
   profileAssets: ProfileAsset[]
   cvVariants: CvVariant[]
+  cvSections: CvVariantSection[]
+  cvSectionSources: CvVariantSectionSource[]
   contentIdeas: ContentIdea[]
   contentPosts: ContentPost[]
   isLoading: boolean
@@ -35,6 +43,13 @@ interface PresenceStore {
   createCvVariant: (input: CreateCvVariantInput) => Promise<void>
   updateCvVariant: (input: UpdateCvVariantInput) => Promise<void>
   deleteCvVariant: (id: string) => Promise<void>
+  createCvSection: (input: CreateCvVariantSectionInput) => Promise<void>
+  updateCvSection: (input: UpdateCvVariantSectionInput) => Promise<void>
+  deleteCvSection: (id: string) => Promise<void>
+  createCvSectionSource: (input: CreateCvVariantSectionSourceInput) => Promise<void>
+  updateCvSectionSource: (input: UpdateCvVariantSectionSourceInput) => Promise<void>
+  deleteCvSectionSource: (id: string) => Promise<void>
+  syncCvVariantContent: (id: string) => Promise<void>
   createContentIdea: (input: CreateContentIdeaInput) => Promise<void>
   updateContentIdea: (input: UpdateContentIdeaInput) => Promise<void>
   deleteContentIdea: (id: string) => Promise<void>
@@ -47,6 +62,8 @@ export const usePresenceStore = create<PresenceStore>((set, get) => ({
   narrativeFragments: [],
   profileAssets: [],
   cvVariants: [],
+  cvSections: [],
+  cvSectionSources: [],
   contentIdeas: [],
   contentPosts: [],
   isLoading: false,
@@ -56,11 +73,13 @@ export const usePresenceStore = create<PresenceStore>((set, get) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const [narrativeFragments, profileAssets, cvVariants, contentIdeas, contentPosts] =
+      const [narrativeFragments, profileAssets, cvVariants, cvSections, cvSectionSources, contentIdeas, contentPosts] =
         await Promise.all([
           window.lab.presence.listNarrativeFragments(),
           window.lab.presence.listProfileAssets(),
           window.lab.presence.listCvVariants(),
+          window.lab.presence.listCvSections(),
+          window.lab.presence.listCvSectionSources(),
           window.lab.presence.listContentIdeas(),
           window.lab.presence.listContentPosts()
         ])
@@ -69,6 +88,8 @@ export const usePresenceStore = create<PresenceStore>((set, get) => ({
         narrativeFragments,
         profileAssets,
         cvVariants,
+        cvSections,
+        cvSectionSources,
         contentIdeas,
         contentPosts,
         isLoading: false
@@ -115,6 +136,34 @@ export const usePresenceStore = create<PresenceStore>((set, get) => ({
   },
   async deleteCvVariant(id) {
     await window.lab.presence.deleteCvVariant(id)
+    await get().loadAll()
+  },
+  async createCvSection(input) {
+    await window.lab.presence.createCvSection(input)
+    await get().loadAll()
+  },
+  async updateCvSection(input) {
+    await window.lab.presence.updateCvSection(input)
+    await get().loadAll()
+  },
+  async deleteCvSection(id) {
+    await window.lab.presence.deleteCvSection(id)
+    await get().loadAll()
+  },
+  async createCvSectionSource(input) {
+    await window.lab.presence.createCvSectionSource(input)
+    await get().loadAll()
+  },
+  async updateCvSectionSource(input) {
+    await window.lab.presence.updateCvSectionSource(input)
+    await get().loadAll()
+  },
+  async deleteCvSectionSource(id) {
+    await window.lab.presence.deleteCvSectionSource(id)
+    await get().loadAll()
+  },
+  async syncCvVariantContent(id) {
+    await window.lab.presence.syncCvVariantContent(id)
     await get().loadAll()
   },
   async createContentIdea(input) {

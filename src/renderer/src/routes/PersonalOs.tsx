@@ -18,11 +18,12 @@ import { useCalendarStore } from '@renderer/stores/calendarStore'
 import { useCaptureStore } from '@renderer/stores/captureStore'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
 import { useExportStore } from '@renderer/stores/exportStore'
-import { useOsStore } from '@renderer/stores/osStore'
+import { useOsStore, type HabitProgress } from '@renderer/stores/osStore'
 import { usePipelineStore } from '@renderer/stores/pipelineStore'
 import { usePlanStore } from '@renderer/stores/planStore'
 import { useReviewStore } from '@renderer/stores/reviewStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 import styles from './PersonalOs.module.css'
 
@@ -72,6 +73,59 @@ function getCountdownDaysRemaining(targetDate: string): number {
   return Math.ceil((target - today) / (1000 * 60 * 60 * 24))
 }
 
+function createEmptyHabitDraft(): {
+  name: string
+  description: string
+  frequency: string
+  trigger_context: string
+  anchor_habit_id: string
+} {
+  return {
+    name: '',
+    description: '',
+    frequency: 'daily',
+    trigger_context: '',
+    anchor_habit_id: ''
+  }
+}
+
+function formatHabitStreak(progress: HabitProgress | undefined): string | null {
+  if (!progress || progress.currentStreak === 0) {
+    return null
+  }
+
+  const unitLabel = progress.streakUnit === 'week' ? 'week' : 'day'
+  const suffix = progress.currentStreak === 1 ? '' : 's'
+  return `${progress.currentStreak}-${unitLabel}${suffix} streak`
+}
+
+function formatHabitSupportLine(habit: {
+  description: string | null
+  trigger_context: string | null
+  frequency: string
+}, progress: HabitProgress | undefined): string {
+  const parts = [
+    habit.description,
+    habit.trigger_context,
+    progress?.anchorLabel ? `After ${progress.anchorLabel}` : null
+  ].filter((value): value is string => Boolean(value))
+
+  return parts.length > 0 ? parts.join(' · ') : habit.frequency.replace(/_/g, ' ')
+}
+
+function buildHabitToastMessage(
+  habitName: string,
+  completed: boolean,
+  progress: HabitProgress | undefined
+): string {
+  if (!completed) {
+    return `Cleared ${habitName} for ${progress?.periodLabel ?? 'today'}.`
+  }
+
+  const streak = formatHabitStreak(progress)
+  return streak ? `Logged ${habitName}. ${streak}.` : `Logged ${habitName}.`
+}
+
 export function PersonalOs(): JSX.Element {
   const navigate = useNavigate()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -93,21 +147,24 @@ export function PersonalOs(): JSX.Element {
     deleteHabit,
     deleteTimeBlock,
     deleteWeeklyPriority,
+    habitProgressById,
     habits,
     loadCountdowns,
     loadDailyLog,
     loadDailyLogs,
     loadHabits,
+    loadHabitLogs,
     loadProfiles,
     loadWeeklyPriorities,
     loadWeeklyReview,
     profiles,
     setActiveProfileId,
     timeBlocks,
+    toggleHabitCompletion,
     updateCountdown,
+    updateHabit,
     updateWeeklyPriority,
     upsertDailyLog,
-    upsertHabitLog,
     upsertTimeBlock,
     upsertWeeklyReview,
     weeklyPriorities,
@@ -119,10 +176,12 @@ export function PersonalOs(): JSX.Element {
   const loadNodes = usePlanStore((state) => state.loadNodes)
   const { generatePack } = useExportStore()
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const today = getTodayDate()
   const weekKey = getCurrentWeekKey()
   const [profileName, setProfileName] = useState('')
-  const [habitDraft, setHabitDraft] = useState({ name: '', description: '', frequency: 'daily' })
+  const [habitDraft, setHabitDraft] = useState(createEmptyHabitDraft)
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null)
   const [captureDraft, setCaptureDraft] = useState({ title: '', body: '', kind: 'idea' })
   const [triageSelection, setTriageSelection] = useState<Record<string, TriageTarget>>({})
   const [captureAction, setCaptureAction] = useState<
@@ -178,6 +237,7 @@ export function PersonalOs(): JSX.Element {
     void loadDailyLogs()
     void loadDailyLog(today)
     void loadHabits()
+    void loadHabitLogs()
     void loadCountdowns()
     void loadWeeklyPriorities(weekKey)
     void loadWeeklyReview(weekKey)
@@ -194,6 +254,7 @@ export function PersonalOs(): JSX.Element {
     loadEntries,
     loadEvents,
     loadHabits,
+    loadHabitLogs,
     loadItems,
     loadNodes,
     loadPipeline,
@@ -229,12 +290,12 @@ export function PersonalOs(): JSX.Element {
     })
   }, [weeklyReview])
 
-  const chartBlocks = timeBlocks.length > 0 ? timeBlocks : (summary?.os.time_blocks ?? [])
+  const chartBlocks = useMemo(
+    () => (timeBlocks.length > 0 ? timeBlocks : (summary?.os.time_blocks ?? [])),
+    [summary?.os.time_blocks, timeBlocks]
+  )
   const weekSummary = summary?.os.week
   const activeProfile = profiles.find((profile) => profile.id === activeProfileId) ?? null
-  const habitStatuses = new Map(
-    (summary?.os.habits ?? []).map((habit) => [habit.id, habit.today_completed])
-  )
   const planNodeLabels = useMemo(() => new Map(nodes.map((node) => [node.id, node.title])), [nodes])
   const applicationLabels = useMemo(
     () => new Map(applications.map((application) => [application.id, application.title])),
@@ -302,7 +363,8 @@ export function PersonalOs(): JSX.Element {
       loadCountdowns(),
       loadEvents(),
       loadDailyLog(today),
-      loadHabits()
+      loadHabits(),
+      loadHabitLogs()
     ])
   }
 
@@ -404,28 +466,66 @@ export function PersonalOs(): JSX.Element {
     pushToast({ message: 'Created schedule profile.', type: 'success' })
   }
 
-  async function handleCreateHabit(): Promise<void> {
+  async function handleSaveHabit(): Promise<void> {
     if (!habitDraft.name.trim()) {
       return
     }
 
-    await createHabit({
+    const input = {
       name: habitDraft.name.trim(),
       description: habitDraft.description.trim() || null,
-      frequency: habitDraft.frequency as (typeof HABIT_FREQUENCIES)[number]
-    })
-    setHabitDraft({ name: '', description: '', frequency: 'daily' })
+      frequency: habitDraft.frequency as (typeof HABIT_FREQUENCIES)[number],
+      trigger_context: habitDraft.trigger_context.trim() || null,
+      anchor_habit_id: habitDraft.anchor_habit_id || null
+    }
+
+    if (editingHabitId) {
+      await updateHabit({
+        id: editingHabitId,
+        ...input
+      })
+    } else {
+      await createHabit(input)
+    }
+
+    setHabitDraft(createEmptyHabitDraft())
+    setEditingHabitId(null)
     await refresh()
-    pushToast({ message: 'Added ritual.', type: 'success' })
+    pushToast({
+      message: editingHabitId ? 'Updated ritual.' : 'Added ritual.',
+      type: 'success'
+    })
   }
 
   async function handleToggleHabit(habitId: string, completed: boolean): Promise<void> {
-    await upsertHabitLog({
-      habit_id: habitId,
-      date: today,
-      completed
-    })
+    const { habit, progress } = await toggleHabitCompletion(habitId, completed)
     await refresh()
+    pushToast({
+      message: buildHabitToastMessage(habit.name, completed, progress),
+      type: 'success'
+    })
+  }
+
+  function handleEditHabit(habitId: string): void {
+    const habit = habits.find((entry) => entry.id === habitId)
+
+    if (!habit) {
+      return
+    }
+
+    setEditingHabitId(habit.id)
+    setHabitDraft({
+      name: habit.name,
+      description: habit.description ?? '',
+      frequency: habit.frequency,
+      trigger_context: habit.trigger_context ?? '',
+      anchor_habit_id: habit.anchor_habit_id ?? ''
+    })
+  }
+
+  function handleCancelHabitEdit(): void {
+    setEditingHabitId(null)
+    setHabitDraft(createEmptyHabitDraft())
   }
 
   async function handleCreateTimeBlock(): Promise<void> {
@@ -984,19 +1084,35 @@ export function PersonalOs(): JSX.Element {
             </div>
             <div className={pageStyles.list}>
               {habits.map((habit) => (
-                <label key={habit.id} className={`${pageStyles.row} ${styles.habitCheck}`}>
-                  <input
-                    checked={habitStatuses.get(habit.id) ?? false}
-                    type="checkbox"
-                    onChange={(event) => void handleToggleHabit(habit.id, event.target.checked)}
-                  />
-                  <span>
-                    <span className={pageStyles.rowTitle}>{habit.name}</span>
-                    <span className={pageStyles.rowMeta}>
-                      {habit.description ?? habit.frequency.replace(/_/g, ' ')}
-                    </span>
-                  </span>
-                </label>
+                <div key={habit.id} className={pageStyles.row}>
+                  <div className={pageStyles.inlineActions}>
+                    <label className={styles.habitCheck}>
+                      <input
+                        checked={habitProgressById[habit.id]?.currentPeriodCompleted ?? false}
+                        type="checkbox"
+                        onChange={(event) => void handleToggleHabit(habit.id, event.target.checked)}
+                      />
+                      <span>
+                        <span className={pageStyles.rowTitle}>{habit.name}</span>
+                        <span className={pageStyles.rowMeta}>
+                          {formatHabitSupportLine(habit, habitProgressById[habit.id])}
+                        </span>
+                      </span>
+                    </label>
+                    <div className={pageStyles.chipRow}>
+                      <span className={pageStyles.chip}>
+                        {habitProgressById[habit.id]?.currentPeriodCompleted
+                          ? `Done ${habitProgressById[habit.id]?.periodLabel ?? 'today'}`
+                          : `Open ${habitProgressById[habit.id]?.periodLabel ?? 'today'}`}
+                      </span>
+                      {formatHabitStreak(habitProgressById[habit.id]) ? (
+                        <span className={pageStyles.chip}>
+                          {formatHabitStreak(habitProgressById[habit.id])}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
               ))}
               {habits.length === 0 ? (
                 <div className={pageStyles.emptyState}>
@@ -1231,13 +1347,15 @@ export function PersonalOs(): JSX.Element {
           </div>
           <div className={styles.inlineManager}>
             <InputField
-              placeholder="New ritual"
+              placeholder="Ritual name"
               value={habitDraft.name}
               onChange={(event) =>
                 setHabitDraft((current) => ({ ...current, name: event.target.value }))
               }
             />
-            <Button onClick={() => void handleCreateHabit()}>Add ritual</Button>
+            <Button onClick={() => void handleSaveHabit()}>
+              {editingHabitId ? 'Save ritual' : 'Add ritual'}
+            </Button>
           </div>
           <TextareaField
             placeholder="Optional ritual description"
@@ -1245,6 +1363,13 @@ export function PersonalOs(): JSX.Element {
             value={habitDraft.description}
             onChange={(event) =>
               setHabitDraft((current) => ({ ...current, description: event.target.value }))
+            }
+          />
+          <InputField
+            placeholder="Trigger context, e.g. After morning coffee"
+            value={habitDraft.trigger_context}
+            onChange={(event) =>
+              setHabitDraft((current) => ({ ...current, trigger_context: event.target.value }))
             }
           />
           <label className={pageStyles.formGrid}>
@@ -1262,6 +1387,31 @@ export function PersonalOs(): JSX.Element {
               ))}
             </select>
           </label>
+          <label className={pageStyles.formGrid}>
+            <span className={pageStyles.eyebrow}>Anchor habit</span>
+            <select
+              value={habitDraft.anchor_habit_id}
+              onChange={(event) =>
+                setHabitDraft((current) => ({ ...current, anchor_habit_id: event.target.value }))
+              }
+            >
+              <option value="">No anchor habit</option>
+              {habits
+                .filter((habit) => habit.id !== editingHabitId)
+                .map((habit) => (
+                  <option key={habit.id} value={habit.id}>
+                    {habit.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {editingHabitId ? (
+            <div className={pageStyles.inlineActions}>
+              <Button variant="outline" onClick={handleCancelHabitEdit}>
+                Cancel edit
+              </Button>
+            </div>
+          ) : null}
           <div className={styles.habitList}>
             {habits.map((habit) => (
               <div key={habit.id} className={styles.habitRow}>
@@ -1272,16 +1422,30 @@ export function PersonalOs(): JSX.Element {
                     {habit.target_count > 1 ? ` · target ${habit.target_count}` : ''}
                   </span>
                 </div>
-                {habit.description ? <div className={pageStyles.muted}>{habit.description}</div> : null}
+                <div className={pageStyles.muted}>
+                  {formatHabitSupportLine(habit, habitProgressById[habit.id])}
+                </div>
                 <div className={pageStyles.inlineActions}>
                   <label className={styles.habitCheck}>
                     <input
-                      checked={habitStatuses.get(habit.id) ?? false}
+                      checked={habitProgressById[habit.id]?.currentPeriodCompleted ?? false}
                       type="checkbox"
                       onChange={(event) => void handleToggleHabit(habit.id, event.target.checked)}
                     />
-                    <span className={pageStyles.muted}>Done today</span>
+                    <span className={pageStyles.muted}>
+                      {habitProgressById[habit.id]?.currentPeriodCompleted
+                        ? `Done ${habitProgressById[habit.id]?.periodLabel ?? 'today'}`
+                        : `Mark ${habitProgressById[habit.id]?.periodLabel ?? 'today'}`}
+                    </span>
                   </label>
+                  {formatHabitStreak(habitProgressById[habit.id]) ? (
+                    <span className={pageStyles.chip}>
+                      {formatHabitStreak(habitProgressById[habit.id])}
+                    </span>
+                  ) : null}
+                  <Button size="sm" variant="outline" onClick={() => handleEditHabit(habit.id)}>
+                    Edit
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1698,7 +1862,7 @@ export function PersonalOs(): JSX.Element {
   }
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.hero}>
           <span className={pageStyles.eyebrow}>Execution</span>

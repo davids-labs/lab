@@ -7,6 +7,7 @@ interface UiStore {
   insertAfterBlockId: string | null
   saveState: SaveState
   commandCenterFocusMode: boolean
+  reducedChrome: boolean
   workspaceSidebarWidth: number
   workspacePreviewVisible: boolean
   workspacePreviewWidth: number
@@ -18,6 +19,7 @@ interface UiStore {
   toggleWorkspacePreview: () => void
   setCommandCenterFocusMode: (focused: boolean) => void
   toggleCommandCenterFocusMode: () => void
+  setReducedChrome: (reduced: boolean) => void
   setPageCustomiserSidebarWidth: (width: number) => void
   openBlockPicker: (afterBlockId?: string | null) => void
   closeBlockPicker: () => void
@@ -30,6 +32,7 @@ export const useUiStore = create<UiStore>((set) => ({
   insertAfterBlockId: null,
   saveState: 'idle',
   commandCenterFocusMode: false,
+  reducedChrome: false,
   workspaceSidebarWidth: 300,
   workspacePreviewVisible: false,
   workspacePreviewWidth: 420,
@@ -61,6 +64,10 @@ export const useUiStore = create<UiStore>((set) => ({
 
   toggleCommandCenterFocusMode() {
     set((state) => ({ commandCenterFocusMode: !state.commandCenterFocusMode }))
+  },
+
+  setReducedChrome(reducedChrome) {
+    set({ reducedChrome })
   },
 
   setPageCustomiserSidebarWidth(pageCustomiserSidebarWidth) {

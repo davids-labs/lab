@@ -9,7 +9,7 @@ import type {
   ImportCalendarSourceInput,
   UpdateCalendarSourceInput
 } from '../../../preload/types'
-import { getDb } from '../index'
+import { getDb, getSqlite } from '../index'
 import {
   calendarEventsTable,
   calendarSourcesTable,
@@ -147,24 +147,26 @@ function replaceSourceEvents(sourceId: string, events: CalendarEventSeed[]): voi
   const db = getDb()
   const now = Date.now()
 
-  db.delete(calendarEventsTable).where(eq(calendarEventsTable.source_id, sourceId)).run()
+  getSqlite().transaction(() => {
+    db.delete(calendarEventsTable).where(eq(calendarEventsTable.source_id, sourceId)).run()
 
-  for (const event of events) {
-    db.insert(calendarEventsTable)
-      .values({
-        id: ulid(),
-        source_id: sourceId,
-        external_id: event.external_id,
-        title: event.title,
-        starts_at: event.starts_at,
-        ends_at: event.ends_at,
-        location: event.location,
-        notes: event.notes,
-        created_at: now,
-        updated_at: now
-      })
-      .run()
-  }
+    for (const event of events) {
+      db.insert(calendarEventsTable)
+        .values({
+          id: ulid(),
+          source_id: sourceId,
+          external_id: event.external_id,
+          title: event.title,
+          starts_at: event.starts_at,
+          ends_at: event.ends_at,
+          location: event.location,
+          notes: event.notes,
+          created_at: now,
+          updated_at: now
+        })
+        .run()
+    }
+  })()
 }
 
 function updateSourceState(

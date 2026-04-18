@@ -9,6 +9,7 @@ import type {
   Recommendation
 } from '../../preload/types'
 import { ACTION_STATUSES } from '../../preload/types'
+import { buildHabitProgressById } from '@shared/habitProgress'
 import { actionQueries } from '../db/queries/actions'
 import { calendarQueries } from '../db/queries/calendar'
 import { captureQueries } from '../db/queries/capture'
@@ -119,7 +120,7 @@ function buildOsSummary(): DashboardSummary['os'] {
   const timeBlocks = activeProfile ? osQueries.listTimeBlocks(activeProfile.id) : []
   const todayLog = osQueries.getDailyLog(today)
   const habits = osQueries.listHabits()
-  const todayHabitLogs = new Map(osQueries.getHabitLogsForDate(today).map((entry) => [entry.habit_id, entry]))
+  const habitProgressById = buildHabitProgressById(habits, osQueries.listHabitLogs(), today)
   const recentDates = Array.from({ length: 7 }, (_, index) => toIsoDate(addDays(new Date(`${today}T00:00:00.000Z`), -index)))
   const recentLogSet = new Set(recentDates)
   const recentLogs = osQueries.listDailyLogs().filter((entry) => recentLogSet.has(entry.date))
@@ -161,7 +162,7 @@ function buildOsSummary(): DashboardSummary['os'] {
     time_blocks: timeBlocks,
     habits: habits.map((habit) => ({
       ...habit,
-      today_completed: todayHabitLogs.get(habit.id)?.completed ?? false
+      today_completed: habitProgressById[habit.id]?.currentPeriodCompleted ?? false
     }))
   }
 }

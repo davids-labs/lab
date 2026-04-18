@@ -6,8 +6,10 @@ import { InputField, TextareaField } from '@renderer/components/ui/InputField'
 import { useCaptureStore } from '@renderer/stores/captureStore'
 import { useDashboardStore } from '@renderer/stores/dashboardStore'
 import { useExportStore } from '@renderer/stores/exportStore'
+import { useOsStore, type HabitProgress } from '@renderer/stores/osStore'
 import { useSettingsStore } from '@renderer/stores/settingsStore'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 function formatDate(value: number | null | undefined): string {
@@ -21,14 +23,49 @@ function formatDate(value: number | null | undefined): string {
   })
 }
 
+function formatHabitStreak(progress: HabitProgress): string {
+  const unitLabel = progress.streakUnit === 'week' ? 'week' : 'day'
+  const suffix = progress.currentStreak === 1 ? '' : 's'
+  return `${progress.currentStreak}-${unitLabel}${suffix} streak`
+}
+
+function formatHabitContext(
+  description: string | null,
+  triggerContext: string | null,
+  progress: HabitProgress | undefined
+): string {
+  const parts = [description, triggerContext, progress?.anchorLabel ? `After ${progress.anchorLabel}` : null]
+    .filter((value): value is string => Boolean(value))
+
+  return parts.length > 0 ? parts.join(' · ') : `Still open ${progress?.periodLabel ?? 'today'}`
+}
+
+function buildHabitToastMessage(
+  habitName: string,
+  completed: boolean,
+  progress: HabitProgress | undefined
+): string {
+  if (!completed) {
+    return `Cleared ${habitName} for ${progress?.periodLabel ?? 'today'}.`
+  }
+
+  if (progress && progress.currentStreak > 0) {
+    return `Logged ${habitName}. ${formatHabitStreak(progress)}.`
+  }
+
+  return `Logged ${habitName}.`
+}
+
 export function HomeDashboard(): JSX.Element {
   const navigate = useNavigate()
   const { error, importStarterTemplate, isLoading, loadSummary, summary } = useDashboardStore()
   const createEntry = useCaptureStore((state) => state.createEntry)
   const { generatePack, lastPack, loadBundles } = useExportStore()
+  const { habitProgressById, habits, loadHabitLogs, loadHabits, toggleHabitCompletion } = useOsStore()
   const bundle = useSettingsStore((state) => state.bundle)
   const loadBundle = useSettingsStore((state) => state.loadBundle)
   const pushToast = useToastStore((state) => state.push)
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [captureTitle, setCaptureTitle] = useState('')
   const [captureBody, setCaptureBody] = useState('')
 
@@ -36,7 +73,9 @@ export function HomeDashboard(): JSX.Element {
     void loadSummary()
     void loadBundle()
     void loadBundles()
-  }, [loadBundle, loadBundles, loadSummary])
+    void loadHabits()
+    void loadHabitLogs()
+  }, [loadBundle, loadBundles, loadHabitLogs, loadHabits, loadSummary])
 
   const showStarterPrompt =
     summary &&
@@ -46,8 +85,11 @@ export function HomeDashboard(): JSX.Element {
     summary.os.profiles.length === 0
 
   const todayCompletedHabits = useMemo(
-    () => (summary?.os.habits ?? []).filter((habit) => habit.today_completed).length,
-    [summary]
+    () =>
+      habits.length > 0
+        ? habits.filter((habit) => habitProgressById[habit.id]?.currentPeriodCompleted).length
+        : (summary?.os.habits ?? []).filter((habit) => habit.today_completed).length,
+    [habitProgressById, habits, summary]
   )
 
   async function handleImportStarterTemplate(): Promise<void> {
@@ -83,9 +125,18 @@ export function HomeDashboard(): JSX.Element {
     pushToast({ message: 'Added to the inbox.', type: 'success' })
   }
 
+  async function handleToggleHabit(habitId: string, completed: boolean): Promise<void> {
+    const { habit, progress } = await toggleHabitCompletion(habitId, completed)
+    await loadSummary()
+    pushToast({
+      message: buildHabitToastMessage(habit.name, completed, progress),
+      type: 'success'
+    })
+  }
+
   if (!summary) {
     return (
-      <div className={pageStyles.page}>
+      <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
         <div className={pageStyles.stack}>
           <section className={pageStyles.lead}>
             <span className={pageStyles.eyebrow}>Home</span>
@@ -101,17 +152,20 @@ export function HomeDashboard(): JSX.Element {
 
   const homeLayout = bundle?.dashboard_preferences.preferred_home_layout ?? 'horizons'
   const horizonClass = homeLayout === 'focused' ? pageStyles.grid2 : pageStyles.grid3
+  const displayedHabits = habits.length > 0 ? habits : summary.os.habits
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Home</span>
           <h1 className={pageStyles.title}>Three horizons, one operating page</h1>
-          <p className={pageStyles.description}>
-            Keep the day light, the week concrete, and the current phase honest. This page should
-            tell you where to act next without making you parse a dashboard wall.
-          </p>
+          {!reducedChrome ? (
+            <p className={pageStyles.description}>
+              Keep the day light, the week concrete, and the current phase honest. This page should
+              tell you where to act next without making you parse a dashboard wall.
+            </p>
+          ) : null}
         </section>
 
         <ArchetypeQuotePanel summary={summary} />
@@ -119,10 +173,12 @@ export function HomeDashboard(): JSX.Element {
         {showStarterPrompt ? (
           <section className={pageStyles.callout}>
             <strong>Start with a real structure</strong>
-            <p className={pageStyles.description}>
-              Load the David starter system as editable local data, then make the roadmap, skills,
-              rituals, and countdowns your own.
-            </p>
+            {!reducedChrome ? (
+              <p className={pageStyles.description}>
+                Load the David starter system as editable local data, then make the roadmap,
+                skills, rituals, and countdowns your own.
+              </p>
+            ) : null}
             <div className={pageStyles.inlineActions}>
               <Button disabled={isLoading} onClick={() => void handleImportStarterTemplate()}>
                 {isLoading ? 'Loading…' : "Load David's starter template"}
@@ -138,10 +194,12 @@ export function HomeDashboard(): JSX.Element {
           <div className={pageStyles.sectionHeader}>
             <div>
               <h2 className={pageStyles.sectionTitle}>Quick capture</h2>
-              <p className={pageStyles.sectionDescription}>
-                Capture first, clarify later. The inbox is the front door for ideas, reminders,
-                doc snippets, and loose opportunities.
-              </p>
+              {!reducedChrome ? (
+                <p className={pageStyles.sectionDescription}>
+                  Capture first, clarify later. The inbox is the front door for ideas, reminders,
+                  doc snippets, and loose opportunities.
+                </p>
+              ) : null}
             </div>
           </div>
           <div className={pageStyles.document}>
@@ -176,11 +234,81 @@ export function HomeDashboard(): JSX.Element {
         <section className={pageStyles.section}>
           <div className={pageStyles.sectionHeader}>
             <div>
+              <h2 className={pageStyles.sectionTitle}>Today&apos;s habits</h2>
+              {!reducedChrome ? (
+                <p className={pageStyles.sectionDescription}>
+                  Log the repeatable behaviors from Home so momentum stays one tap away.
+                </p>
+              ) : null}
+            </div>
+            <div className={pageStyles.chipRow}>
+              <span className={pageStyles.chip}>
+                {todayCompletedHabits}/{displayedHabits.length} complete
+              </span>
+            </div>
+          </div>
+          <div className={pageStyles.list}>
+            {displayedHabits.map((habit) => {
+              const progress = habitProgressById[habit.id]
+
+              return (
+                <div key={habit.id} className={pageStyles.row}>
+                  <div className={pageStyles.inlineActions}>
+                    <label className={pageStyles.inlineRow}>
+                      <input
+                        checked={progress?.currentPeriodCompleted ?? false}
+                        type="checkbox"
+                        onChange={(event) =>
+                          void handleToggleHabit(habit.id, event.target.checked)
+                        }
+                      />
+                      <span>
+                        <span className={pageStyles.rowTitle}>{habit.name}</span>
+                        {!reducedChrome ? (
+                          <span className={pageStyles.rowMeta}>
+                            {formatHabitContext(habit.description, habit.trigger_context, progress)}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                    <div className={pageStyles.chipRow}>
+                      <span className={pageStyles.chip}>
+                        {progress?.currentPeriodCompleted
+                          ? `Done ${progress.periodLabel}`
+                          : `Open ${progress?.periodLabel ?? 'today'}`}
+                      </span>
+                      {progress && progress.currentStreak > 0 ? (
+                        <span className={pageStyles.chip}>{formatHabitStreak(progress)}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            {displayedHabits.length === 0 ? (
+              <div className={pageStyles.emptyState}>
+                <strong>No habits yet</strong>
+                <span>Add rituals in Execution so Home can become the quickest logging surface.</span>
+              </div>
+            ) : null}
+          </div>
+          <div className={pageStyles.inlineActions}>
+            <Button size="sm" variant="outline" onClick={() => navigate('/execution')}>
+              Open rituals
+            </Button>
+          </div>
+        </section>
+
+        <section className={pageStyles.section}>
+          <div className={pageStyles.sectionHeader}>
+            <div>
               <h2 className={pageStyles.sectionTitle}>Three Horizons</h2>
-              <p className={pageStyles.sectionDescription}>
-                Today, this week, and the current phase are the three layers that should stay in
-                tension.
-              </p>
+              {!reducedChrome ? (
+                <p className={pageStyles.sectionDescription}>
+                  Today, this week, and the current phase are the three layers that should stay in
+                  tension.
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -213,17 +341,21 @@ export function HomeDashboard(): JSX.Element {
               <div className={pageStyles.list}>
                 <div className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>Primary profile</span>
-                  <span className={pageStyles.rowMeta}>
-                    {summary.os.profiles.find(
-                      (profile) => profile.id === summary.os.active_profile_id
-                    )?.name ?? 'No profile selected'}
-                  </span>
+                  {!reducedChrome ? (
+                    <span className={pageStyles.rowMeta}>
+                      {summary.os.profiles.find(
+                        (profile) => profile.id === summary.os.active_profile_id
+                      )?.name ?? 'No profile selected'}
+                    </span>
+                  ) : null}
                 </div>
                 <div className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>Training</span>
-                  <span className={pageStyles.rowMeta}>
-                    {summary.os.today?.gym_done ? 'Completed today' : 'Still open'}
-                  </span>
+                  {!reducedChrome ? (
+                    <span className={pageStyles.rowMeta}>
+                      {summary.os.today?.gym_done ? 'Completed today' : 'Still open'}
+                    </span>
+                  ) : null}
                 </div>
               </div>
               <Button variant="outline" onClick={() => navigate('/execution')}>
@@ -312,18 +444,22 @@ export function HomeDashboard(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Attention</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Time pressure and blockers should stay close to the surface.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Time pressure and blockers should stay close to the surface.
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className={pageStyles.list}>
               {summary.countdowns.slice(0, 3).map((countdown) => (
                 <div key={countdown.id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{countdown.title}</span>
-                  <span className={pageStyles.rowMeta}>
-                    {countdown.category} · {countdown.days_remaining} days remaining
-                  </span>
+                  {!reducedChrome ? (
+                    <span className={pageStyles.rowMeta}>
+                      {countdown.category} · {countdown.days_remaining} days remaining
+                    </span>
+                  ) : null}
                 </div>
               ))}
               {summary.countdowns.length === 0 ? (
@@ -338,7 +474,7 @@ export function HomeDashboard(): JSX.Element {
                 summary.blocking_alerts.slice(0, 3).map((alert) => (
                   <div key={alert.id} className={pageStyles.row}>
                     <span className={pageStyles.rowTitle}>{alert.node_title}</span>
-                    <span className={pageStyles.rowMeta}>{alert.reason}</span>
+                    {!reducedChrome ? <span className={pageStyles.rowMeta}>{alert.reason}</span> : null}
                   </div>
                 ))
               ) : (
@@ -354,9 +490,11 @@ export function HomeDashboard(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Execution and proof</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Keep the inbox small, the action lanes concrete, and the proof/pipeline surfaces in reach.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Keep the inbox small, the action lanes concrete, and the proof/pipeline surfaces in reach.
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className={pageStyles.metricStrip}>
@@ -378,19 +516,23 @@ export function HomeDashboard(): JSX.Element {
                 summary.actions.focus.slice(0, 4).map((action) => (
                   <div key={action.id} className={pageStyles.row}>
                     <span className={pageStyles.rowTitle}>{action.title}</span>
-                    <span className={pageStyles.rowMeta}>
-                      {action.status.replace(/_/g, ' ')}
-                      {action.due_at ? ` · due ${formatDate(action.due_at)}` : ''}
-                    </span>
+                    {!reducedChrome ? (
+                      <span className={pageStyles.rowMeta}>
+                        {action.status.replace(/_/g, ' ')}
+                        {action.due_at ? ` · due ${formatDate(action.due_at)}` : ''}
+                      </span>
+                    ) : null}
                   </div>
                 ))
               ) : (
                 summary.pipeline.next_actions.slice(0, 3).map((application) => (
                   <div key={application.id} className={pageStyles.row}>
                     <span className={pageStyles.rowTitle}>{application.title}</span>
-                    <span className={pageStyles.rowMeta}>
-                      {application.status.replace(/_/g, ' ')}
-                    </span>
+                    {!reducedChrome ? (
+                      <span className={pageStyles.rowMeta}>
+                        {application.status.replace(/_/g, ' ')}
+                      </span>
+                    ) : null}
                   </div>
                 ))
               )}
@@ -412,9 +554,11 @@ export function HomeDashboard(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Notes and calendar</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Keep supporting context close: linked notes, imported calendars, and upcoming commitments.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Keep supporting context close: linked notes, imported calendars, and upcoming commitments.
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className={pageStyles.metricStrip}>
@@ -435,13 +579,13 @@ export function HomeDashboard(): JSX.Element {
               {summary.notes.recent.slice(0, 3).map((note) => (
                 <div key={note.id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{note.title}</span>
-                  <span className={pageStyles.rowMeta}>{note.type}</span>
+                  {!reducedChrome ? <span className={pageStyles.rowMeta}>{note.type}</span> : null}
                 </div>
               ))}
               {summary.calendar.upcoming.slice(0, 3).map((event) => (
                 <div key={event.id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{event.title}</span>
-                  <span className={pageStyles.rowMeta}>{formatDate(event.starts_at)}</span>
+                  {!reducedChrome ? <span className={pageStyles.rowMeta}>{formatDate(event.starts_at)}</span> : null}
                 </div>
               ))}
             </div>
@@ -457,9 +601,11 @@ export function HomeDashboard(): JSX.Element {
             <div className={pageStyles.sectionHeader}>
               <div>
                 <h2 className={pageStyles.sectionTitle}>Context packs and insight hooks</h2>
-                <p className={pageStyles.sectionDescription}>
-                  Generate portable packets for review, applications, and external LLM handoff without embedding a cloud copilot.
-                </p>
+                {!reducedChrome ? (
+                  <p className={pageStyles.sectionDescription}>
+                    Generate portable packets for review, applications, and external LLM handoff without embedding a cloud copilot.
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className={pageStyles.inlineActions}>
@@ -499,21 +645,25 @@ export function HomeDashboard(): JSX.Element {
             {lastPack ? (
               <div className={pageStyles.callout}>
                 <strong>{lastPack.title}</strong>
-                <p className={pageStyles.description}>{lastPack.summary}</p>
-                <p className={pageStyles.muted}>{lastPack.prompt_bundle}</p>
+                {!reducedChrome ? (
+                  <>
+                    <p className={pageStyles.description}>{lastPack.summary}</p>
+                    <p className={pageStyles.muted}>{lastPack.prompt_bundle}</p>
+                  </>
+                ) : null}
               </div>
             ) : null}
             <div className={pageStyles.list}>
               {summary.insights.drift_alerts.map((alert) => (
                 <div key={alert.id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{alert.title}</span>
-                  <span className={pageStyles.rowMeta}>{alert.body}</span>
+                  {!reducedChrome ? <span className={pageStyles.rowMeta}>{alert.body}</span> : null}
                 </div>
               ))}
               {summary.insights.proof_gaps.slice(0, 2).map((gap) => (
                 <div key={gap.id} className={pageStyles.row}>
                   <span className={pageStyles.rowTitle}>{gap.title}</span>
-                  <span className={pageStyles.rowMeta}>{gap.body}</span>
+                  {!reducedChrome ? <span className={pageStyles.rowMeta}>{gap.body}</span> : null}
                 </div>
               ))}
             </div>
@@ -523,16 +673,18 @@ export function HomeDashboard(): JSX.Element {
         {bundle?.dashboard_preferences.show_onboarding && summary.onboarding.needs_setup ? (
           <section className={pageStyles.callout}>
             <strong>Still missing a few foundation pieces</strong>
-            <div className={pageStyles.list}>
-              {summary.onboarding.missing.slice(0, 4).map((item) => (
-                <div key={item} className={pageStyles.row}>
-                  <span className={pageStyles.rowTitle}>{item}</span>
-                  <span className={pageStyles.rowMeta}>
-                    Add this once and the rest of the system becomes more useful automatically.
-                  </span>
-                </div>
-              ))}
-            </div>
+            {!reducedChrome ? (
+              <div className={pageStyles.list}>
+                {summary.onboarding.missing.slice(0, 4).map((item) => (
+                  <div key={item} className={pageStyles.row}>
+                    <span className={pageStyles.rowTitle}>{item}</span>
+                    <span className={pageStyles.rowMeta}>
+                      Add this once and the rest of the system becomes more useful automatically.
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : null}
       </div>

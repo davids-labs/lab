@@ -79,6 +79,13 @@ const bridge: LabBridge = {
     createLink: (input) => ipcRenderer.invoke('plan:create-link', input),
     deleteLink: (id) => ipcRenderer.invoke('plan:delete-link', id)
   },
+  workflow: {
+    getSnapshot: (view) => ipcRenderer.invoke('workflow:get-snapshot', view),
+    getProjectConnections: (projectId) =>
+      ipcRenderer.invoke('workflow:get-project-connections', projectId),
+    getSkillsPipeline: (targetRoleId) =>
+      ipcRenderer.invoke('workflow:get-skills-pipeline', targetRoleId)
+  },
   skills: {
     listDomains: () => ipcRenderer.invoke('skills:list-domains'),
     createDomain: (input) => ipcRenderer.invoke('skills:create-domain', input),
@@ -109,6 +116,7 @@ const bridge: LabBridge = {
     createHabit: (input) => ipcRenderer.invoke('os:create-habit', input),
     updateHabit: (input) => ipcRenderer.invoke('os:update-habit', input),
     deleteHabit: (id) => ipcRenderer.invoke('os:delete-habit', id),
+    listHabitLogs: () => ipcRenderer.invoke('os:list-habit-logs'),
     upsertHabitLog: (input) => ipcRenderer.invoke('os:upsert-habit-log', input),
     listCountdowns: () => ipcRenderer.invoke('os:list-countdowns'),
     createCountdown: (input) => ipcRenderer.invoke('os:create-countdown', input),
@@ -149,6 +157,10 @@ const bridge: LabBridge = {
     createRole: (input) => ipcRenderer.invoke('pipeline:create-role', input),
     updateRole: (input) => ipcRenderer.invoke('pipeline:update-role', input),
     deleteRole: (id) => ipcRenderer.invoke('pipeline:delete-role', id),
+    listRoleRequirements: (roleId) => ipcRenderer.invoke('pipeline:list-role-requirements', roleId),
+    createRoleRequirement: (input) => ipcRenderer.invoke('pipeline:create-role-requirement', input),
+    updateRoleRequirement: (input) => ipcRenderer.invoke('pipeline:update-role-requirement', input),
+    deleteRoleRequirement: (id) => ipcRenderer.invoke('pipeline:delete-role-requirement', id),
     listApplications: () => ipcRenderer.invoke('pipeline:list-applications'),
     createApplication: (input) => ipcRenderer.invoke('pipeline:create-application', input),
     updateApplication: (input) => ipcRenderer.invoke('pipeline:update-application', input),
@@ -178,6 +190,18 @@ const bridge: LabBridge = {
     createCvVariant: (input) => ipcRenderer.invoke('presence:create-cv-variant', input),
     updateCvVariant: (input) => ipcRenderer.invoke('presence:update-cv-variant', input),
     deleteCvVariant: (id) => ipcRenderer.invoke('presence:delete-cv-variant', id),
+    listCvSections: (cvVariantId) => ipcRenderer.invoke('presence:list-cv-sections', cvVariantId),
+    createCvSection: (input) => ipcRenderer.invoke('presence:create-cv-section', input),
+    updateCvSection: (input) => ipcRenderer.invoke('presence:update-cv-section', input),
+    deleteCvSection: (id) => ipcRenderer.invoke('presence:delete-cv-section', id),
+    listCvSectionSources: (sectionId) =>
+      ipcRenderer.invoke('presence:list-cv-section-sources', sectionId),
+    createCvSectionSource: (input) =>
+      ipcRenderer.invoke('presence:create-cv-section-source', input),
+    updateCvSectionSource: (input) =>
+      ipcRenderer.invoke('presence:update-cv-section-source', input),
+    deleteCvSectionSource: (id) => ipcRenderer.invoke('presence:delete-cv-section-source', id),
+    syncCvVariantContent: (id) => ipcRenderer.invoke('presence:sync-cv-variant-content', id),
     listContentIdeas: () => ipcRenderer.invoke('presence:list-content-ideas'),
     createContentIdea: (input) => ipcRenderer.invoke('presence:create-content-idea', input),
     updateContentIdea: (input) => ipcRenderer.invoke('presence:update-content-idea', input),

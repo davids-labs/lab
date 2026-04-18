@@ -9,6 +9,7 @@ import { usePipelineStore } from '@renderer/stores/pipelineStore'
 import { usePlanStore } from '@renderer/stores/planStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSkillsStore } from '@renderer/stores/skillsStore'
+import { useUiStore } from '@renderer/stores/uiStore'
 import pageStyles from './CommandCenterPages.module.css'
 
 export function NotesWorkspace(): JSX.Element {
@@ -33,6 +34,7 @@ export function NotesWorkspace(): JSX.Element {
   const loadSkills = useSkillsStore((state) => state.loadNodes)
   const { documents, excerpts, loadDocuments, selectDocument } = useLibraryStore()
   const { entries, loadEntries } = useCaptureStore()
+  const reducedChrome = useUiStore((state) => state.reducedChrome)
   const [noteTitle, setNoteTitle] = useState('')
   const [linkType, setLinkType] = useState<NoteLinkTargetType>('plan_node')
   const [linkTargetId, setLinkTargetId] = useState('')
@@ -84,7 +86,7 @@ export function NotesWorkspace(): JSX.Element {
   }, [linkTargets])
 
   return (
-    <div className={pageStyles.page}>
+    <div className={pageStyles.page} data-reduced-chrome={reducedChrome}>
       <div className={pageStyles.stack}>
         <section className={pageStyles.lead}>
           <span className={pageStyles.eyebrow}>Notes</span>
