@@ -30,9 +30,9 @@
   display: grid;
   gap: 8px;
   padding: 14px;
-  border: 1px solid var(--lab-border);
-  border-radius: 12px;
-  background: var(--lab-panel-subtle);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .moveHeader,
@@ -71,9 +71,9 @@
   gap: 6px;
   min-height: 28px;
   padding: 4px 10px;
-  border: 1px solid var(--lab-border);
+  border: 1px solid rgba(55, 53, 47, 0.1);
   border-radius: 999px;
-  background: white;
+  background: rgba(255, 255, 255, 0.84);
   color: var(--lab-text-muted);
   font-size: 0.76rem;
   font-weight: 700;
@@ -110,9 +110,9 @@
   display: grid;
   gap: 10px;
   padding: 14px;
-  border: 1px solid var(--lab-divider);
-  border-radius: 12px;
-  background: var(--lab-panel-subtle);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.68);
 }
 
 .fieldLabel {
@@ -125,8 +125,8 @@
   display: grid;
   gap: 10px;
   padding: 12px;
-  border: 1px dashed var(--lab-border);
-  border-radius: 12px;
+  border: 1px dashed rgba(55, 53, 47, 0.12);
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.65);
 }
 
@@ -195,7 +195,7 @@
   display: grid;
   gap: 10px;
   padding-left: 18px;
-  border-left: 1px solid var(--lab-divider);
+  border-left: 1px solid rgba(55, 53, 47, 0.08);
 }
 
 @media (max-width: 1080px) {

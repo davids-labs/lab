@@ -22,41 +22,103 @@ type ShellLink = {
 
 type ShellSection = {
   label: string
-  links: ShellLink[]
+  folders: Array<{
+    label: string
+    description: string
+    links: ShellLink[]
+  }>
 }
 
 const shellSections: ShellSection[] = [
   {
     label: 'Home',
-    links: [{ to: '/home', label: 'Overview', description: 'Daily command surface and quick capture.', symbol: 'H', end: true }]
+    folders: [
+      {
+        label: 'Overview',
+        description: 'Daily command surface and quick capture.',
+        links: [
+          { to: '/home', label: 'Home', description: 'Daily command surface and quick capture.', symbol: 'HM', end: true }
+        ]
+      }
+    ]
   },
   {
     label: 'Plan',
-    links: [
-      { to: '/day', label: 'Day', description: 'Morning directive and live pressure.', symbol: 'D' },
-      { to: '/week', label: 'Week', description: 'Priorities, review prefill, and evidence.', symbol: 'W' },
-      { to: '/month', label: 'Month', description: 'Monthly synthesis and cleanup.', symbol: 'M' },
-      { to: '/calendar', label: 'Calendar', description: 'Imported commitments and blocks.', symbol: 'CAL' },
-      { to: '/six-months', label: '6 Months', description: 'Skill, proof, CV, and applications.', symbol: '6M' },
-      { to: '/year-arc', label: 'Year & Arc', description: 'Long-range arcs and phases.', symbol: 'Y+' },
-      { to: '/direction', label: 'Direction', description: 'North star and fractal plan.', symbol: 'DIR' }
+    folders: [
+      {
+        label: 'Daily',
+        description: 'Day and week planning.',
+        links: [
+          { to: '/day', label: 'Day', description: 'Morning directive and live pressure.', symbol: 'DY' },
+          { to: '/week', label: 'Week', description: 'Priorities, review prefill, and evidence.', symbol: 'WK' }
+        ]
+      },
+      {
+        label: 'Planning',
+        description: 'Monthly cadence and calendar inputs.',
+        links: [
+          { to: '/month', label: 'Month', description: 'Monthly synthesis and cleanup.', symbol: 'MO' },
+          { to: '/calendar', label: 'Calendar', description: 'Imported commitments and blocks.', symbol: 'CA' }
+        ]
+      },
+      {
+        label: 'Strategy',
+        description: 'Long-range direction and arc.',
+        links: [
+          { to: '/six-months', label: 'Six Months', description: 'Skill, proof, CV, and applications.', symbol: '6M' },
+          { to: '/year-arc', label: 'Year Arc', description: 'Long-range arcs and phases.', symbol: 'YA' },
+          { to: '/direction', label: 'Direction', description: 'North star and plan structure.', symbol: 'DI' }
+        ]
+      }
     ]
   },
   {
     label: 'Work',
-    links: [
-      { to: '/execution', label: 'Execution', description: 'Daily logging, rituals, and review.', symbol: 'EX' },
-      { to: '/proof', label: 'Proof', description: 'Projects, evidence, and portfolio readiness.', symbol: 'PR' },
-      { to: '/pipeline', label: 'Pipeline', description: 'Targets, applications, and contacts.', symbol: 'PI' },
-      { to: '/presence', label: 'Presence', description: 'Narrative assets and CV structure.', symbol: 'PS' }
+    folders: [
+      {
+        label: 'Execution',
+        description: 'Rituals and review.',
+        links: [
+          { to: '/execution', label: 'Execution', description: 'Daily logging, rituals, and review.', symbol: 'EX' }
+        ]
+      },
+      {
+        label: 'Proof',
+        description: 'Projects and evidence.',
+        links: [
+          { to: '/proof', label: 'Proof', description: 'Projects, evidence, and portfolio readiness.', symbol: 'PR' },
+          { to: '/proof/projects', label: 'Projects', description: 'Finished, active, and portfolio-bound projects.', symbol: 'PJ' },
+          { to: '/proof/skills', label: 'Skills', description: 'Evidence-backed readiness across domains and nodes.', symbol: 'SK' }
+        ]
+      },
+      {
+        label: 'Pipeline',
+        description: 'Targets and public signal.',
+        links: [
+          { to: '/pipeline', label: 'Pipeline', description: 'Targets, applications, and contacts.', symbol: 'PI' },
+          { to: '/presence', label: 'Presence', description: 'Narrative assets and CV structure.', symbol: 'PS' }
+        ]
+      }
     ]
   },
   {
     label: 'Docs',
-    links: [
-      { to: '/notes', label: 'Notes', description: 'Working documents and captured thinking.', symbol: 'NO' },
-      { to: '/library', label: 'Library', description: 'Imported sources and excerpts.', symbol: 'LI' },
-      { to: '/settings', label: 'Settings', description: 'Identity, shell, integrations, defaults.', symbol: 'SE' }
+    folders: [
+      {
+        label: 'Documents',
+        description: 'Notes and imported sources.',
+        links: [
+          { to: '/notes', label: 'Notes', description: 'Working documents and captured thinking.', symbol: 'NO' },
+          { to: '/library', label: 'Library', description: 'Imported sources and excerpts.', symbol: 'LI' }
+        ]
+      },
+      {
+        label: 'System',
+        description: 'Identity and defaults.',
+        links: [
+          { to: '/settings', label: 'Settings', description: 'Identity, shell, integrations, defaults.', symbol: 'SE' }
+        ]
+      }
     ]
   }
 ]
@@ -299,13 +361,15 @@ export function CommandCenterLayout(): JSX.Element {
   const commandActions = useMemo<CommandPaletteAction[]>(
     () => [
       ...shellSections.flatMap((section) =>
-        section.links.map((link) => ({
-          id: `nav-${link.to}`,
-          title: link.label,
-          subtitle: link.description,
-          group: section.label,
-          onSelect: () => navigate(link.to)
-        }))
+        section.folders.flatMap((folder) =>
+          folder.links.map((link) => ({
+            id: `nav-${link.to}`,
+            title: link.label,
+            subtitle: link.description,
+            group: `${section.label} · ${folder.label}`,
+            onSelect: () => navigate(link.to)
+          }))
+        )
       ),
       {
         id: 'quick-projects',
@@ -359,6 +423,14 @@ export function CommandCenterLayout(): JSX.Element {
   const layoutStyle = {
     '--shell-accent': bundle?.theme_settings.accent_color ?? 'var(--lab-accent)'
   } as CSSProperties
+
+  function isLinkCurrent(link: ShellLink): boolean {
+    if (link.end) {
+      return location.pathname === link.to
+    }
+
+    return location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)
+  }
 
   async function persistDashboardPrefs(
     prefs: Parameters<typeof updateDashboardPreferences>[0]
@@ -426,24 +498,43 @@ export function CommandCenterLayout(): JSX.Element {
           {shellSections.map((section) => (
             <section key={section.label} className={styles.sidebarSection}>
               <span className={styles.sidebarSectionLabel}>{section.label}</span>
-              <div className={styles.sidebarLinks}>
-                {section.links.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    end={link.end}
-                    to={link.to}
-                    className={({ isActive }) =>
-                      `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
-                    }
+              <div className={styles.sidebarFolders}>
+                {section.folders.map((folder) => (
+                  <details
+                    key={folder.label}
+                    className={styles.sidebarFolder}
+                    open={folder.links.some((link) => isLinkCurrent(link))}
                   >
-                    <span className={styles.sidebarSymbol}>{link.symbol}</span>
-                    <span className={styles.sidebarLinkBody}>
-                      <span className={styles.sidebarLinkLabel}>{link.label}</span>
-                      {sidebarMode === 'compact' ? null : (
-                        <span className={styles.sidebarLinkDescription}>{link.description}</span>
-                      )}
-                    </span>
-                  </NavLink>
+                    <summary className={styles.sidebarFolderSummary}>
+                      <span className={styles.sidebarFolderBody}>
+                        <span className={styles.sidebarFolderLabel}>{folder.label}</span>
+                        {sidebarMode === 'compact' ? null : (
+                          <span className={styles.sidebarFolderDescription}>{folder.description}</span>
+                        )}
+                      </span>
+                      <span className={styles.sidebarFolderCount}>{folder.links.length}</span>
+                    </summary>
+                    <div className={styles.sidebarLinks}>
+                      {folder.links.map((link) => (
+                        <NavLink
+                          key={link.to}
+                          end={link.end}
+                          to={link.to}
+                          className={({ isActive }) =>
+                            `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
+                          }
+                        >
+                          <span className={styles.sidebarSymbol}>{link.symbol}</span>
+                          <span className={styles.sidebarLinkBody}>
+                            <span className={styles.sidebarLinkLabel}>{link.label}</span>
+                            {sidebarMode === 'compact' ? null : (
+                              <span className={styles.sidebarLinkDescription}>{link.description}</span>
+                            )}
+                          </span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </details>
                 ))}
               </div>
             </section>

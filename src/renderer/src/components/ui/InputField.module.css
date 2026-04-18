@@ -1,11 +1,11 @@
 .field {
   display: grid;
-  gap: 6px;
+  gap: 7px;
 }
 
 .label {
   color: var(--lab-text-faint);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -13,12 +13,12 @@
 
 .control {
   width: 100%;
-  border: 1px solid var(--lab-border);
-  border-radius: 8px;
-  background: var(--lab-panel);
+  border: 1px solid rgba(55, 53, 47, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
   color: var(--lab-text);
   padding: 10px 12px;
-  line-height: 1.5;
+  line-height: 1.45;
   transition:
     border-color var(--lab-transition),
     background var(--lab-transition),
@@ -26,7 +26,7 @@
 }
 
 .control:hover {
-  border-color: rgba(55, 53, 47, 0.18);
+  border-color: rgba(55, 53, 47, 0.2);
 }
 
 .control:focus {
@@ -40,7 +40,7 @@
 }
 
 textarea.control {
-  min-height: 104px;
+  min-height: 108px;
   resize: vertical;
 }
 

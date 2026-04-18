@@ -5,9 +5,9 @@
   gap: var(--lab-space-2);
   min-height: 34px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px 12px;
-  font-size: 0.84rem;
+  font-size: 0.83rem;
   font-weight: 600;
   transition:
     background var(--lab-transition),
@@ -20,11 +20,11 @@
   background: var(--lab-primary);
   border-color: var(--lab-primary);
   color: var(--lab-primary-ink);
+  box-shadow: none;
 }
 
 .primary:hover {
-  background: #1f1d1a;
-  box-shadow: 0 8px 20px rgba(31, 29, 26, 0.08);
+  background: #1c1a18;
 }
 
 .ghost {
@@ -39,7 +39,7 @@
 }
 
 .outline {
-  background: var(--lab-panel);
+  background: rgba(255, 255, 255, 0.84);
   border-color: var(--lab-border);
   color: var(--lab-text);
 }

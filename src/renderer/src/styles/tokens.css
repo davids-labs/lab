@@ -1,15 +1,15 @@
 :root {
-  --lab-bg: #f7f6f3;
-  --lab-page: #fcfbf8;
-  --lab-panel: #ffffff;
-  --lab-panel-muted: #f4f2ee;
-  --lab-panel-subtle: #faf8f5;
-  --lab-hover: #f0ede8;
-  --lab-active: #ebe7e1;
-  --lab-selected: rgba(55, 53, 47, 0.08);
-  --lab-selected-strong: rgba(55, 53, 47, 0.14);
-  --lab-primary: #2f2d29;
-  --lab-primary-dim: rgba(47, 45, 41, 0.08);
+  --lab-bg: #f6f4ef;
+  --lab-page: #fbfaf7;
+  --lab-panel: rgba(255, 255, 255, 0.92);
+  --lab-panel-muted: #f2efe9;
+  --lab-panel-subtle: rgba(255, 255, 255, 0.7);
+  --lab-hover: rgba(55, 53, 47, 0.05);
+  --lab-active: rgba(55, 53, 47, 0.08);
+  --lab-selected: rgba(47, 111, 235, 0.08);
+  --lab-selected-strong: rgba(47, 111, 235, 0.14);
+  --lab-primary: #24221f;
+  --lab-primary-dim: rgba(36, 34, 31, 0.08);
   --lab-primary-ink: #ffffff;
   --lab-accent: #2f6feb;
   --lab-accent-soft: rgba(47, 111, 235, 0.1);
@@ -22,12 +22,12 @@
   --lab-danger-dim: rgba(190, 75, 54, 0.1);
   --lab-warning: #a86f1e;
   --lab-success: #2b7a5b;
-  --lab-shadow-card: 0 14px 38px rgba(15, 15, 15, 0.06);
-  --lab-shadow-float: 0 18px 48px rgba(15, 15, 15, 0.08);
+  --lab-shadow-card: 0 12px 30px rgba(15, 15, 15, 0.045);
+  --lab-shadow-float: 0 18px 42px rgba(15, 15, 15, 0.07);
   --lab-font-display:
-    'Inter', 'Segoe UI Variable Display', 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    'Segoe UI Variable Display', 'SF Pro Display', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --lab-font-sans:
-    'Inter', 'Segoe UI Variable Text', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+    'Segoe UI Variable Text', 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --lab-font-mono: 'IBM Plex Mono', 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
   --lab-space-1: 4px;
   --lab-space-2: 8px;
@@ -39,16 +39,16 @@
   --lab-space-8: 32px;
   --lab-space-10: 40px;
   --lab-space-12: 48px;
-  --lab-radius-sm: 4px;
-  --lab-radius: 8px;
-  --lab-radius-lg: 10px;
-  --lab-radius-xl: 14px;
+  --lab-radius-sm: 6px;
+  --lab-radius: 10px;
+  --lab-radius-lg: 14px;
+  --lab-radius-xl: 18px;
   --lab-transition: 0.16s ease;
   --shell-sidebar-width: 240px;
   --shell-sidebar-compact-width: 72px;
   --shell-topbar-height: 52px;
-  --command-page-padding: 28px 36px 56px;
-  --command-page-gap: 28px;
+  --command-page-padding: 26px 32px 60px;
+  --command-page-gap: 26px;
   --command-panel-padding: 18px;
   --command-section-gap: 14px;
   color-scheme: light;

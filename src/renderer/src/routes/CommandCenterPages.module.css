@@ -2,12 +2,16 @@
   height: 100%;
   overflow: auto;
   padding: var(--command-page-padding);
+  display: grid;
+  justify-items: center;
+  background: var(--lab-page);
 }
 
 .stack {
   display: grid;
   gap: var(--command-page-gap);
   align-content: start;
+  width: min(100%, 1040px);
 }
 
 .hero,
@@ -28,10 +32,10 @@
 .title {
   margin: 0;
   font-family: var(--lab-font-display);
-  font-size: clamp(1.65rem, 1.2rem + 1.6vw, 2.3rem);
-  line-height: 1.04;
-  letter-spacing: -0.05em;
-  font-weight: 700;
+  font-size: clamp(1.68rem, 1.28rem + 1.55vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  font-weight: 650;
 }
 
 .description {
@@ -64,9 +68,9 @@
   display: grid;
   gap: 12px;
   padding: 16px 18px;
-  border: 1px solid var(--lab-border);
-  border-radius: 12px;
-  background: var(--lab-panel-subtle);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .callout strong {
@@ -78,8 +82,8 @@
   display: grid;
   gap: var(--command-section-gap);
   padding: var(--command-panel-padding);
-  border: 1px solid var(--lab-border);
-  border-radius: 14px;
+  border: 1px solid rgba(55, 53, 47, 0.1);
+  border-radius: 12px;
   background: var(--lab-panel);
   box-shadow: none;
 }
@@ -92,9 +96,9 @@
   display: grid;
   gap: var(--command-section-gap);
   padding: var(--command-panel-padding);
-  border: 1px solid var(--lab-divider);
-  border-radius: 14px;
-  background: var(--lab-panel-subtle);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .sectionHeader {
@@ -114,10 +118,11 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  padding: 12px 14px;
-  border: 1px solid var(--lab-divider);
-  border-radius: 14px;
-  background: var(--lab-panel-subtle);
+  padding: 12px 16px;
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(10px);
 }
 
 .toolbar > * {
@@ -128,9 +133,9 @@
   display: grid;
   gap: 14px;
   padding: var(--command-panel-padding);
-  border: 1px solid var(--lab-border);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 248, 245, 0.96));
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: none;
 }
 
@@ -208,14 +213,14 @@
 .collectionLayout {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
   align-items: start;
 }
 
 .collectionDetailLayout {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 320px);
+  grid-template-columns: minmax(220px, 240px) minmax(0, 1fr) minmax(240px, 300px);
   align-items: start;
 }
 
@@ -258,11 +263,60 @@
   gap: 8px;
 }
 
-.tabs {
-  padding: 6px;
-  border: 1px solid var(--lab-divider);
+.chipRow > *,
+.pillRow > *,
+.tabs > * {
+  min-width: 0;
+}
+
+.tab,
+.chip,
+.pill {
   border-radius: 999px;
-  background: var(--lab-panel-subtle);
+}
+
+.muted {
+  color: var(--lab-text-muted);
+  line-height: 1.55;
+}
+
+.row,
+.rowButton,
+.metric,
+.listItem,
+.panel,
+.previewCard {
+  border-color: rgba(55, 53, 47, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.rowButton:hover,
+.tab:hover,
+.chip:hover,
+.pill:hover {
+  background: var(--lab-hover);
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding: 18px 18px 40px;
+  }
+
+  .section,
+  .card,
+  .surface,
+  .softSection {
+    border-radius: 16px;
+  }
+}
+
+.tabs {
+  padding: 4px;
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .pill,
@@ -273,9 +327,9 @@
   gap: 6px;
   min-height: 30px;
   padding: 6px 10px;
-  border: 1px solid var(--lab-border);
+  border: 1px solid rgba(55, 53, 47, 0.1);
   border-radius: 999px;
-  background: var(--lab-panel);
+  background: rgba(255, 255, 255, 0.84);
   color: var(--lab-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -304,9 +358,9 @@
   display: grid;
   gap: 4px;
   padding: 12px 14px;
-  border: 1px solid var(--lab-divider);
-  border-radius: 12px;
-  background: var(--lab-panel-subtle);
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .metricValue {
@@ -367,8 +421,8 @@
 
 .table {
   display: grid;
-  border: 1px solid var(--lab-border);
-  border-radius: 14px;
+  border: 1px solid rgba(55, 53, 47, 0.08);
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -382,8 +436,8 @@
 }
 
 .tableHeader {
-  background: var(--lab-panel-subtle);
-  border-bottom: 1px solid var(--lab-divider);
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(55, 53, 47, 0.08);
   color: var(--lab-text-faint);
   font-size: 0.72rem;
   font-weight: 700;
@@ -392,7 +446,7 @@
 }
 
 .tableRow {
-  border-bottom: 1px solid var(--lab-divider);
+  border-bottom: 1px solid rgba(55, 53, 47, 0.08);
 }
 
 .tableRow:last-child {
@@ -437,10 +491,10 @@
   display: grid;
   gap: 8px;
   padding: 14px;
-  border: 1px dashed var(--lab-border);
-  border-radius: 12px;
+  border: 1px dashed rgba(55, 53, 47, 0.12);
+  border-radius: 10px;
   color: var(--lab-text-muted);
-  background: var(--lab-panel-subtle);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .propertyGrid {
@@ -458,7 +512,7 @@
   display: grid;
   gap: 4px;
   padding: 10px 0;
-  border-bottom: 1px solid var(--lab-divider);
+  border-bottom: 1px solid rgba(55, 53, 47, 0.08);
 }
 
 .propertyRow:last-child {
